@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 44;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,11 +14,10 @@
 		00B784B60FF439BC000DE1D7 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
+		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		B20CB7F64778437196D1F8CB /* Visualizer_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */; };
-		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
-		BD2849A6BFFB40F093059CD1 /* Resources.h in Headers */ = {isa = PBXBuildFile; fileRef = 5F70902D1A5C4662889367FC /* Resources.h */; };
 		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
+		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,12 +31,14 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		5323E6B50EAFCA7E003A9687 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
+		55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = Visualizer_Prefix.pch; sourceTree = "<group>"; };
+		5F70902D1A5C4662889367FC /* Resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
+		6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
+		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InfoPanel.cpp; sourceTree = "<group>"; };
+		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
+		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; name = VisualizerApp.cpp; };
-		5F70902D1A5C4662889367FC /* Resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ../include/Resources.h; sourceTree = "<group>"; name = Resources.h; };
-		6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; name = CinderApp.icns; };
-		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; name = Info.plist; };
-		55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = Visualizer_Prefix.pch; sourceTree = "<group>"; name = Visualizer_Prefix.pch; };
+		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,10 +60,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01B97315FEAEA392516A2CEA /* Blocks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Blocks;
+			sourceTree = "<group>";
+		};
 		080E96DDFE201D6D7F000001 /* Source */ = {
 			isa = PBXGroup;
 			children = (
 				7F945C3F150C458FB3352920 /* VisualizerApp.cpp */,
+				711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -112,16 +121,10 @@
 			name = Visualizer;
 			sourceTree = "<group>";
 		};
-		01B97315FEAEA392516A2CEA /* Blocks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Blocks;
-			sourceTree = "<group>";
-		};
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				711E97E8183DE8DF00BAFB0B /* InfoPanel.h */,
 				5F70902D1A5C4662889367FC /* Resources.h */,
 				55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */,
 			);
@@ -172,6 +175,9 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0500;
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Visualizer" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
@@ -208,6 +214,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */,
+				711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -218,24 +225,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
-				DEAD_CODE_STRIPPING = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = Visualizer_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Visualizer_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder_d.a\"";
 				PRODUCT_NAME = Visualizer;
-				WRAPPER_EXTENSION = app;
 				SYMROOT = ./build;
+				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
 		};
@@ -257,23 +264,23 @@
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder.a\"";
 				PRODUCT_NAME = Visualizer;
 				STRIP_INSTALLED_PRODUCT = YES;
-				WRAPPER_EXTENSION = app;
 				SYMROOT = ./build;
+				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
 		};
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CINDER_PATH = ../../../6650/cinder/cinder_master;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = i386;
-				CINDER_PATH = "../../../6650/cinder/cinder_master";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 			};
@@ -282,11 +289,10 @@
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CINDER_PATH = ../../../6650/cinder/cinder_master;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = i386;
-				CINDER_PATH = "../../../6650/cinder/cinder_master";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
