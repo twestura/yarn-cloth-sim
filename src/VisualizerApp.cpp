@@ -371,7 +371,7 @@ void VisualizerApp::drawInfoPanel()
 float VisualizerApp::getResidual(const NeighborLookupProc nlp) const {
   using namespace Eigen;
   int n = nlp.neighbors.size();
-  Matrix<float, 3, Dynamic> P(4, n);
+  Matrix<float, 4, Dynamic> P(4, n);
   Matrix<float, 3, Dynamic> Q(3, n);
   
   for(int i=0; i<n; i++) {
