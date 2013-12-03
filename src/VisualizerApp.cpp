@@ -17,6 +17,11 @@ using namespace std;
 
 #define CAMERA_DELTA .3
 #define GARMENT_PATH "data/item_afghan_onplane"
+#define XML_PATH "../../../../afghan/afghan_drop_step"
+#define XML_NAME "afghan_drop_step"
+#define NUM_FRAMES 3
+
+#define RESID_PATH "../../../../afghan/resid/"
 
 struct ControlPoint {
   float x;
@@ -47,13 +52,19 @@ class VisualizerApp : public AppNative {
   void drawInfoPanel();
   
   float getResidual(const NeighborLookupProc) const;
+  void loadFrame(const int);
+  void viewFrame(const int);
   
   InfoPanel	mInfoPanel;
   float mCounter = 0;
   
+  vector<Vec3f> points[NUM_FRAMES];
+  vector<ColorA> colors;
+  int currentFrame = 0;
+  
+  gl::GlslProg threadShader;
+  
   float radius = 1;
-  vector<Vec3f> points;
-  vector<Vec3f> pointsNext;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
   gl::VboMeshRef	mVboMesh;
   NeighborLookupProc selection = NeighborLookupProc();
@@ -67,134 +78,102 @@ class VisualizerApp : public AppNative {
 
 void VisualizerApp::setup()
 {
-  // Extract data from XML file for given frame and get the file of control point positions
-  XmlTree tree;
-  try {
-    tree = XmlTree(loadFile(getOpenFilePath()));
-  } catch (exception e) {
-    exit(0);
+  // Load all frames
+  for (int i=0; i<NUM_FRAMES; i++) {
+    loadFrame(i);
   }
-  XmlTree garment = tree.getChild(GARMENT_PATH);
-  string posfilename = garment.getChild("position").getAttribute("file");
-  if (posfilename.empty()) exit(0);
-  ifstream posfile;
-  try {
-    posfile.open(posfilename);
-  } catch (exception e) {
-    cout << e.what();
-    exit(1);
-  }
-  
-  while (!posfile.eof()) {
-    string line;
-    float pos[3];
-    bool set = true;
-    
-    for (int j=0; j<3; j++) {
-      assert(!posfile.eof());
-      try {
-        getline(posfile, line);
-        if (line.empty()) {
-          set = false;
-          break;
-        }
-        pos[j] = stof(line);
-      } catch (exception e) {
-        cout << line << " " << j;
-        exit(1);
-      }
-    }
-    
-    if (set) {
-      points.push_back(Vec3f(pos[0], pos[1], pos[2]));
-    }
-  }
-  
-  posfile.close();
   
   // Push the points to the GPU
   gl::VboMesh::Layout layout;
-  layout.setStaticPositions();
+  layout.setDynamicPositions();
   layout.setStaticIndices();
   layout.setDynamicColorsRGBA();
-  mVboMesh = gl::VboMesh::create(points.size(), 2*(points.size()-1), layout, GL_LINES);
+  mVboMesh = gl::VboMesh::create(points[0].size(), 2*(points[0].size()-1), layout, GL_LINES);
   
   vector<uint32_t> indexBuffer;
-  indexBuffer.reserve(2*(points.size()-1));
-  for(int i=0; i<2*(points.size()-1); i++) {
+  indexBuffer.reserve(2*(points[0].size()-1));
+  for(int i=0; i<2*(points[0].size()-1); i++) {
     indexBuffer.push_back(i);
     indexBuffer.push_back(i+1);
   }
-  mVboMesh->bufferPositions(points);
   mVboMesh->bufferIndices(indexBuffer);
   
-  gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
-  while (vIter.isDone()) {
-    vIter.setColorRGBA(ColorA(0.4, 0.4, 0.4, 0.4));
-    ++vIter;
-  }
+  viewFrame(0);
   
-  kdtree.initialize(points);
+  kdtree.initialize(points[0]);
   
   camera.setPerspective(40, getWindowAspectRatio(), 1, 1000);
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
   
   mInfoPanel.createTexture();
+  
+  gl::Texture depthTex;
+//  threadShader = gl::GlslProg(loadResource(RES_VERT_GLSL), loadResource(RES_FRAG_GLSL));
 }
 
 void VisualizerApp::mouseDown( MouseEvent event )
 {
   
   if (event.isRight()) {
-    pointsNext.clear();
-    pointsNext.reserve(points.size());
-  
-    XmlTree tree;
-    try {
-      tree = XmlTree(loadFile(getOpenFilePath()));
-    } catch (exception e) {
-      cout << e.what();
-      return;
-    }
-    XmlTree garment = tree.getChild(GARMENT_PATH);
-    string posfilename = garment.getChild("position").getAttribute("file");
-    if (posfilename.empty()) return;
-    ifstream posfile;
-    try {
-      posfile.open(posfilename);
-    } catch (exception e) {
-      cout << e.what();
-      exit(1);
-    }
     
-    while (!posfile.eof()) {
-      string line;
-      float pos[3];
-      bool set = true;
-      
-      for (int j=0; j<3; j++) {
-        assert(!posfile.eof());
-        try {
-          getline(posfile, line);
-          if (line.empty()) {
-            set = false;
-            break;
-          }
-          pos[j] = stof(line);
-        } catch (exception e) {
-          cout << line << " " << j;
-          exit(1);
+    stringstream filename;
+    filename << RESID_PATH << currentFrame << "-" << radius << ".resid";
+    ifstream residFile(filename.str());
+    float residual[points[0].size()];
+    float minRes = INFINITY;
+    float maxRes = -INFINITY;
+    
+    if (residFile) {
+      cout << "Cached file found. \n";
+      for (int i=0; i<points[0].size(); i++) {
+        string line;
+        getline(residFile, line);
+        residual[i] = stof(line);
+        if (residual[i] > maxRes) {
+          maxRes = residual[i];
+        }
+        if (residual[i] < minRes) {
+          minRes = residual[i];
         }
       }
-      
-      if (set) {
-        pointsNext.push_back(Vec3f(pos[0], pos[1], pos[2]));
+      residFile.close();
+    } else {
+      // compute all residuals, save to file
+      ofstream residOutFile(filename.str());
+      if (!residOutFile.is_open()) {
+        cerr << "Warning: failed to create cache: " << filename.str() << "\n";
       }
+      int percent = 0;
+      cout << "No cached file. Computing residuals... \n";
+      for (int i=0; i<points[0].size(); i++) {
+        int p =(int)((float)i/points[0].size()*100);
+        if (p != percent && p % 10 == 0) {
+          cout << p << "%\n";
+          percent = p;
+        }
+        NeighborLookupProc nlp = NeighborLookupProc();
+        kdtree.lookup(points[0][i], nlp, radius);
+        residual[i] = getResidual(nlp);
+        residOutFile << residual[i] << "\n";
+        if (residual[i] > maxRes) {
+          maxRes = residual[i];
+        }
+        if (residual[i] < minRes) {
+          minRes = residual[i];
+        }
+      }
+      residOutFile.close();
+      cout << "Done!\n";
     }
     
-    posfile.close();
-    assert(points.size() == pointsNext.size());
-    cout << getResidual(selection) << "\n";
+    // set colors
+    colors.clear();
+    for (int i=0; i<points[0].size(); i++) {
+      float c = (residual[i]-minRes)/(maxRes-minRes);
+      colors.push_back(ColorA(c, 0.4, 1-c, 0.4));
+    }
+    
+    viewFrame(currentFrame);
     
   } else {
     Vec2f mouse = event.getPos();
@@ -203,38 +182,49 @@ void VisualizerApp::mouseDown( MouseEvent event )
     
     int index = -1;
     float minDist = INFINITY;
-    for (int i=0; i<points.size(); i++) {
-      Vec3f toPoint = points[i] - mouseRay.getOrigin();
+    for (int i=0; i<points[0].size(); i++) {
+      Vec3f toPoint = points[currentFrame][i] - mouseRay.getOrigin();
       float thisDist = (toPoint - (toPoint.dot(mouseRay.getDirection()))*mouseRay.getDirection()).length();
       if (thisDist < minDist) {
         minDist = thisDist;
         index = i;
       }
     }
-    selection.neighbors.clear();
-    kdtree.lookup(points[index], selection, radius);
-    sort(selection.neighbors.begin(), selection.neighbors.end());
     
-    gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
-    int i=0;
-    for (int v : selection.neighbors) {
-      while (i < v) {
-        vIter.setColorRGBA(ColorA(0.4, 0.4, 0.4, 0.4));
-        ++vIter;
+    if (!selection.neighbors.empty() && !colors.empty()) {
+      for (int v : selection.neighbors) {
+        colors[v] = ColorA(0.4, 0.4, 0.4, 0.4);
+      }
+    }
+    
+    selection.neighbors.clear();
+    kdtree.lookup(points[currentFrame][index], selection, radius);
+    
+    if (colors.size() == 0) {
+      sort(selection.neighbors.begin(), selection.neighbors.end());
+      int i=0;
+      for (int v : selection.neighbors) {
+        while (i < v) {
+          colors.push_back(ColorA(0.4, 0.4, 0.4, 0.4));
+          ++i;
+        }
+        colors.push_back(ColorA(1, 0, 0, 0.6));
         ++i;
       }
-      vIter.setColorRGBA(ColorA(1, 0, 0, 0.6));
-      ++vIter;
-      ++i;
+      while (i < points[0].size()) {
+        colors.push_back(ColorA(0.4, 0.4, 0.4, 0.4));
+        ++i;
+      }
+    } else {
+      for (int v : selection.neighbors) {
+        colors[v] = ColorA(1, 0, 0, 0.6);
+      }
     }
-    while (vIter.isDone()) {
-      vIter.setColorRGBA(ColorA(0.4, 0.4, 0.4, 0.4));
-      ++vIter;
-    }
-    targetPos = points[index];
+    
+    viewFrame(currentFrame);
+    targetPos = points[currentFrame][index];
     camera.lookAt(targetPos);
   }
-  
 
 }
 
@@ -271,6 +261,20 @@ void VisualizerApp::keyDown( KeyEvent event )
         camBitfield += 32;
       }
       break;
+      
+    case event.KEY_LEFT:
+      if(currentFrame > 0) {
+        currentFrame--;
+        viewFrame(currentFrame);
+      }
+      break;
+    case event.KEY_RIGHT:
+      if(currentFrame < NUM_FRAMES-1) {
+        currentFrame++;
+        viewFrame(currentFrame);
+      }
+      break;
+      
     case event.KEY_ESCAPE:
       exit(0);
       break;
@@ -371,24 +375,97 @@ void VisualizerApp::drawInfoPanel()
 float VisualizerApp::getResidual(const NeighborLookupProc nlp) const {
   using namespace Eigen;
   int n = nlp.neighbors.size();
-  Matrix<float, 4, Dynamic> P(4, n);
-  Matrix<float, 3, Dynamic> Q(3, n);
+  Matrix<double, 3, Dynamic> P(3, n);
+  Matrix<double, 3, Dynamic> Q(3, n);
+  
+  Vec3f avg = Vec3f();
+  Vec3f avgNext = Vec3f();
+  for (int i=0; i<n; i++) {
+    avg += points[currentFrame][nlp.neighbors[i]];
+    avgNext += points[currentFrame+1][nlp.neighbors[i]];
+  }
+  
+  avg /= n;
+  avgNext /= n;
   
   for(int i=0; i<n; i++) {
-    P(0,i) = points[nlp.neighbors[i]].x;
-    P(1,i) = points[nlp.neighbors[i]].y;
-    P(2,i) = points[nlp.neighbors[i]].z;
-    P(3,i) = 1;
-    Q(0,i) = pointsNext[nlp.neighbors[i]].x;
-    Q(1,i) = pointsNext[nlp.neighbors[i]].y;
-    Q(2,i) = pointsNext[nlp.neighbors[i]].z;
+    P(0,i) = points[currentFrame][nlp.neighbors[i]].x - avg.x;
+    P(1,i) = points[currentFrame][nlp.neighbors[i]].y - avg.y;
+    P(2,i) = points[currentFrame][nlp.neighbors[i]].z - avg.z;
+    Q(0,i) = points[currentFrame+1][nlp.neighbors[i]].x - avgNext.x;
+    Q(1,i) = points[currentFrame+1][nlp.neighbors[i]].y - avgNext.y;
+    Q(2,i) = points[currentFrame+1][nlp.neighbors[i]].z - avgNext.z;
   }
+  
+  
   // Q = MP
   // M = QP'[PP']^-1
-  Matrix<float, 4, 4> A = P * P.transpose();
-  Matrix<float, 4, 3> B = P * Q.transpose();
-  Matrix<float, 3, 4> M = (A.fullPivHouseholderQr().solve(B)).transpose();
-  return (Q - M*P).norm();
+  Matrix<double, 3, 3> A = P * P.transpose();
+  Matrix<double, 3, 3> B = P * Q.transpose();
+  Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
+  return (float) (Q - M*P).norm();
+}
+
+void VisualizerApp::loadFrame(const int frame)
+{
+  assert(frame < NUM_FRAMES && frame >=0);
+  // Extract data from XML file for given frame and get the file of control point positions
+  XmlTree tree;
+  stringstream filename;
+  filename << XML_PATH << frame << "/" << XML_NAME << frame << ".xml";
+  
+  try {
+    tree = XmlTree(loadFile(filename.str()));
+  } catch (exception e) {
+    cerr << "Cannot load" << filename.str() << "\n";
+    exit(0);
+  }
+  XmlTree garment = tree.getChild(GARMENT_PATH);
+  string posfilename = garment.getChild("position").getAttribute("file");
+  ifstream posfile;
+  try {
+    posfile.open(posfilename);
+  } catch (exception e) {
+    cout << e.what();
+    exit(1);
+  }
+  
+  while (!posfile.eof()) {
+    string line;
+    float pos[3];
+    bool set = true;
+    
+    for (int j=0; j<3; j++) {
+      assert(!posfile.eof());
+      try {
+        getline(posfile, line);
+        if (line.empty()) {
+          set = false;
+          break;
+        }
+        pos[j] = stof(line);
+      } catch (exception e) {
+        cout << line << " " << j;
+        exit(1);
+      }
+    }
+    
+    if (set) {
+      points[frame].push_back(Vec3f(pos[0], pos[1], pos[2]));
+    }
+  }
+  
+  posfile.close();
+}
+
+void VisualizerApp::viewFrame(const int frame)
+{
+  gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
+  for (int i=0; i<points[0].size(); i++) {
+    vIter.setPosition(points[frame][i]);
+    vIter.setColorRGBA(colors.size() == 0 ? ColorA(0.4, 0.4, 0.4, 0.4) : colors[i]);
+    ++vIter;
+  }
 }
 
 CINDER_APP_NATIVE( VisualizerApp, RendererGl )
