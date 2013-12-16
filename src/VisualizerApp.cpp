@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <thread>
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Xml.h"
@@ -9,7 +10,9 @@
 #include "cinder/gl/Vbo.h"
 #include "Resources.h"
 #include "InfoPanel.h"
+#include "PosFileConv.h"
 #include "Eigen/Dense"
+#include <boost/circular_buffer.hpp>
 
 using namespace ci;
 using namespace ci::app;
@@ -17,19 +20,63 @@ using namespace std;
 
 #define CAMERA_DELTA .3
 #define GARMENT_PATH "data/item_afghan_onplane"
-#define XML_PATH "../../../../afghan/afghan_drop_step"
+#define DIR_PATH "../../../../afghan/"
 #define XML_NAME "afghan_drop_step"
-#define NUM_FRAMES 3
+#define NUM_FRAMES 7
+#define START_FRAME 0
+#define END_FRAME 60
 
 #define RESID_PATH "../../../../afghan/resid/"
+#define POS_PATH "../../../../afghan/pos/"
+#define MIN_RES 0
 
-struct ControlPoint {
-  float x;
-  float y;
-  float z;
-  Vec3f frameU;
-  Vec3f frameV;
-  float rotation;
+//#define CREATE_POS_FILES
+//#define CREATE_RESID_FILES
+//#define RADIUS_ONE_HALF
+
+#ifdef RADIUS_ONE_HALF
+#define RADIUS 0.5
+#define MAX_RES 0.08 // TODO: This should not be hard-coded.
+#else
+#define RADIUS 1
+#define MAX_RES 2.07
+#endif // ifdef RADIUS_ONE_HALF
+
+struct Frame {
+  float minResid;
+  float maxResid;
+  vector<float> resid;
+  vector<Vec3f> pos;
+  
+  Frame () {}
+  
+  Frame (vector<Vec3f> p) {
+    pos = p;
+    resid.clear();
+    minResid = maxResid = 0;
+  }
+  
+  Frame (vector<Vec3f> p, vector<float> r, float min, float max) {
+    pos = p;
+    resid = r;
+    minResid = min;
+    maxResid = max;
+  }
+  
+  Vec3f& operator[]( const uint32_t index )
+  {
+    return pos[index];
+  }
+  
+  const Vec3f& operator[]( const uint32_t index ) const
+  {
+    return pos[index];
+  }
+  
+  uint32_t size()
+  {
+    return pos.size();
+  }
 };
 
 struct NeighborLookupProc {
@@ -38,6 +85,68 @@ struct NeighborLookupProc {
   {
     neighbors.push_back(id);
   }
+};
+
+template <class T>
+struct ModCircularBuffer {
+private:
+  bool is_empty = true;
+  int offset = 0;
+  T zero;
+  boost::circular_buffer<T> cb;
+public:
+  
+  void init( const uint32_t size, int start_frame )
+  {
+    cb = boost::circular_buffer<T>(size);
+    offset = (start_frame == 0 ? 0 : -start_frame+1);
+  }
+  
+  T& operator[]( const uint32_t index )
+  {
+    if (index == 0) {
+      return zero;
+    } else {
+      return cb[(index-1) + offset];
+    }
+  }
+  
+  const T& operator[]( const uint32_t index ) const
+  {
+    if (index == 0) {
+      return zero;
+    } else {
+      return cb[(index-1) + offset];
+    }
+  }
+  
+  void push_back( T elt )
+  {
+    if (is_empty) {
+      zero = elt;
+      is_empty = false;
+    } else {
+      if (cb.full()) offset--;
+      cb.push_back(elt);
+    }
+  }
+  
+  void push_front( T elt )
+  {
+    if (cb.full()) offset++;
+    cb.push_front(elt);
+  }
+  
+  int left_buffer_size( int frame )
+  {
+    return cb.capacity() - frame - offset;
+  }
+  
+  int right_buffer_size( int frame )
+  {
+    return frame-1 + offset;
+  }
+  
 };
 
 class VisualizerApp : public AppNative {
@@ -50,21 +159,29 @@ class VisualizerApp : public AppNative {
 	void update();
 	void draw();
   void drawInfoPanel();
+  void readHandlerBack( const boost::system::error_code& ec,
+                       std::size_t bytes_transferred );
+  void readHandlerFront( const boost::system::error_code& ec,
+                        std::size_t bytes_transferred );
   
   float getResidual(const NeighborLookupProc) const;
-  void loadFrame(const int);
+  void loadFrame(const int, const bool);
   void viewFrame(const int);
+  void writeResidFile();
+  void createResidFiles(const int);
   
-  InfoPanel	mInfoPanel;
+  InfoPanel	mInfoPanel; // TODO: remove this?
   float mCounter = 0;
   
-  vector<Vec3f> points[NUM_FRAMES];
-  vector<ColorA> colors;
-  int currentFrame = 0;
+//  mutable_buffers_1 mbs;
+  
+  ModCircularBuffer<Frame> points;
+  int currentFrame = START_FRAME;
+  bool globalRelativeColoring = false;
   
   gl::GlslProg threadShader;
   
-  float radius = 1;
+  float radius = RADIUS;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
   gl::VboMeshRef	mVboMesh;
   NeighborLookupProc selection = NeighborLookupProc();
@@ -78,9 +195,18 @@ class VisualizerApp : public AppNative {
 
 void VisualizerApp::setup()
 {
-  // Load all frames
-  for (int i=0; i<NUM_FRAMES; i++) {
-    loadFrame(i);
+#ifdef CREATE_POS_FILES
+  createPosFiles(START_FRAME, END_FRAME);
+  exit(0);
+#endif
+  
+  // Load starting frames
+  points.init(NUM_FRAMES, START_FRAME);
+  loadFrame(0, true);
+  
+  int start =START_FRAME == 0 ? 1 : START_FRAME;
+  for (int i=start; i<start+NUM_FRAMES; i++) {
+    loadFrame(i, true);
   }
   
   // Push the points to the GPU
@@ -98,16 +224,22 @@ void VisualizerApp::setup()
   }
   mVboMesh->bufferIndices(indexBuffer);
   
-  viewFrame(0);
+  viewFrame(currentFrame);
   
-  kdtree.initialize(points[0]);
+  kdtree.initialize(points[0].pos);
   
   camera.setPerspective(40, getWindowAspectRatio(), 1, 1000);
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
   
   mInfoPanel.createTexture();
   
-  gl::Texture depthTex;
+#ifdef CREATE_RESID_FILES
+  createResidFiles(END_FRAME-1);
+  exit(0);
+#endif
+  
+  // TODO: remove this
+//  gl::Texture depthTex;
 //  threadShader = gl::GlslProg(loadResource(RES_VERT_GLSL), loadResource(RES_FRAG_GLSL));
 }
 
@@ -115,65 +247,13 @@ void VisualizerApp::mouseDown( MouseEvent event )
 {
   
   if (event.isRight()) {
-    
     stringstream filename;
     filename << RESID_PATH << currentFrame << "-" << radius << ".resid";
-    ifstream residFile(filename.str());
-    float residual[points[0].size()];
-    float minRes = INFINITY;
-    float maxRes = -INFINITY;
+    ifstream residFile(filename.str(), ios::binary);
     
-    if (residFile) {
-      cout << "Cached file found. \n";
-      for (int i=0; i<points[0].size(); i++) {
-        string line;
-        getline(residFile, line);
-        residual[i] = stof(line);
-        if (residual[i] > maxRes) {
-          maxRes = residual[i];
-        }
-        if (residual[i] < minRes) {
-          minRes = residual[i];
-        }
-      }
-      residFile.close();
-    } else {
-      // compute all residuals, save to file
-      ofstream residOutFile(filename.str());
-      if (!residOutFile.is_open()) {
-        cerr << "Warning: failed to create cache: " << filename.str() << "\n";
-      }
-      int percent = 0;
-      cout << "No cached file. Computing residuals... \n";
-      for (int i=0; i<points[0].size(); i++) {
-        int p =(int)((float)i/points[0].size()*100);
-        if (p != percent && p % 10 == 0) {
-          cout << p << "%\n";
-          percent = p;
-        }
-        NeighborLookupProc nlp = NeighborLookupProc();
-        kdtree.lookup(points[0][i], nlp, radius);
-        residual[i] = getResidual(nlp);
-        residOutFile << residual[i] << "\n";
-        if (residual[i] > maxRes) {
-          maxRes = residual[i];
-        }
-        if (residual[i] < minRes) {
-          minRes = residual[i];
-        }
-      }
-      residOutFile.close();
-      cout << "Done!\n";
+    if (!residFile) {
+      writeResidFile();
     }
-    
-    // set colors
-    colors.clear();
-    for (int i=0; i<points[0].size(); i++) {
-      float c = (residual[i]-minRes)/(maxRes-minRes);
-      colors.push_back(ColorA(c, 0.4, 1-c, 0.4));
-    }
-    
-    viewFrame(currentFrame);
     
   } else {
     Vec2f mouse = event.getPos();
@@ -191,37 +271,6 @@ void VisualizerApp::mouseDown( MouseEvent event )
       }
     }
     
-    if (!selection.neighbors.empty() && !colors.empty()) {
-      for (int v : selection.neighbors) {
-        colors[v] = ColorA(0.4, 0.4, 0.4, 0.4);
-      }
-    }
-    
-    selection.neighbors.clear();
-    kdtree.lookup(points[currentFrame][index], selection, radius);
-    
-    if (colors.size() == 0) {
-      sort(selection.neighbors.begin(), selection.neighbors.end());
-      int i=0;
-      for (int v : selection.neighbors) {
-        while (i < v) {
-          colors.push_back(ColorA(0.4, 0.4, 0.4, 0.4));
-          ++i;
-        }
-        colors.push_back(ColorA(1, 0, 0, 0.6));
-        ++i;
-      }
-      while (i < points[0].size()) {
-        colors.push_back(ColorA(0.4, 0.4, 0.4, 0.4));
-        ++i;
-      }
-    } else {
-      for (int v : selection.neighbors) {
-        colors[v] = ColorA(1, 0, 0, 0.6);
-      }
-    }
-    
-    viewFrame(currentFrame);
     targetPos = points[currentFrame][index];
     camera.lookAt(targetPos);
   }
@@ -263,16 +312,31 @@ void VisualizerApp::keyDown( KeyEvent event )
       break;
       
     case event.KEY_LEFT:
-      if(currentFrame > 0) {
+      if(currentFrame > START_FRAME) {
         currentFrame--;
         viewFrame(currentFrame);
+        if (points.right_buffer_size(currentFrame) < 1 && START_FRAME != currentFrame && 1 != currentFrame) {
+          for (int i=1; i<NUM_FRAMES-2 && currentFrame - i >= START_FRAME && currentFrame - i >= 1; i++) {
+            loadFrame(currentFrame - i, false);
+          }
+        }
       }
       break;
     case event.KEY_RIGHT:
-      if(currentFrame < NUM_FRAMES-1) {
+      if(currentFrame < END_FRAME) {
         currentFrame++;
         viewFrame(currentFrame);
+        if (points.left_buffer_size(currentFrame) < 1 && END_FRAME != currentFrame) {
+          for (int i=1; i<NUM_FRAMES-2 && currentFrame + i <= END_FRAME; i++) {
+            loadFrame(currentFrame + i, true);
+          }
+        }
       }
+      break;
+      
+    case event.KEY_m:
+      globalRelativeColoring = !globalRelativeColoring;
+      viewFrame(currentFrame);
       break;
       
     case event.KEY_ESCAPE:
@@ -326,6 +390,7 @@ void VisualizerApp::mouseWheel( MouseEvent event )
 
 void VisualizerApp::update()
 {
+  
   Vec3f delta = Vec3f::zero();
   if (camBitfield & 1) delta += Vec3f (1, 0, 0);
   if (camBitfield & 2) delta -= Vec3f (1, 0, 0);
@@ -372,7 +437,8 @@ void VisualizerApp::drawInfoPanel()
 }
 
 
-float VisualizerApp::getResidual(const NeighborLookupProc nlp) const {
+float VisualizerApp::getResidual(const NeighborLookupProc nlp) const
+{
   using namespace Eigen;
   int n = nlp.neighbors.size();
   Matrix<double, 3, Dynamic> P(3, n);
@@ -406,65 +472,181 @@ float VisualizerApp::getResidual(const NeighborLookupProc nlp) const {
   return (float) (Q - M*P).norm();
 }
 
-void VisualizerApp::loadFrame(const int frame)
+void VisualizerApp::loadFrame(const int frame, const bool back)
 {
-  assert(frame < NUM_FRAMES && frame >=0);
-  // Extract data from XML file for given frame and get the file of control point positions
-  XmlTree tree;
-  stringstream filename;
-  filename << XML_PATH << frame << "/" << XML_NAME << frame << ".xml";
+ // cout << "load frame " << frame << " to " << (back ? "back" : "front") << "\n";
   
-  try {
-    tree = XmlTree(loadFile(filename.str()));
-  } catch (exception e) {
-    cerr << "Cannot load" << filename.str() << "\n";
-    exit(0);
-  }
-  XmlTree garment = tree.getChild(GARMENT_PATH);
-  string posfilename = garment.getChild("position").getAttribute("file");
-  ifstream posfile;
-  try {
-    posfile.open(posfilename);
-  } catch (exception e) {
-    cout << e.what();
+  stringstream posFilename;
+  posFilename << POS_PATH << frame << ".pos";
+  ifstream posFile(posFilename.str(), ios::binary);
+  
+  if (!posFile) {
+    cerr << "Error: position file not found: " << posFilename.str() << "\n";
     exit(1);
   }
   
-  while (!posfile.eof()) {
-    string line;
-    float pos[3];
-    bool set = true;
-    
-    for (int j=0; j<3; j++) {
-      assert(!posfile.eof());
-      try {
-        getline(posfile, line);
-        if (line.empty()) {
-          set = false;
-          break;
-        }
-        pos[j] = stof(line);
-      } catch (exception e) {
-        cout << line << " " << j;
-        exit(1);
-      }
+  stringstream residFilename;
+  residFilename << RESID_PATH << frame << "-" << radius << ".resid";
+  ifstream residFile(residFilename.str(), ios::binary);
+  
+  if (!residFile) {
+    cerr << "Warning: resid file not found: " << residFilename.str() << "\n";
+  }
+  
+  vector<Vec3f> newPoints;
+  vector<float> newResid;
+  float minResid = INFINITY;
+  float maxResid = -INFINITY;
+  
+  while(!posFile.eof()) {
+    float point[4];
+    char in[sizeof(float)];
+    for (int i=0; i<3; i++) {
+      posFile.read(in, sizeof(float));
+      point[i] = *(float*)&in;
     }
+    newPoints.push_back(Vec3f(point[0], point[1], point[2]));
     
-    if (set) {
-      points[frame].push_back(Vec3f(pos[0], pos[1], pos[2]));
+    if (residFile) {
+      residFile.read(in, sizeof(float));
+      newResid.push_back(*(float*)&in);
+      
+      if (newResid[newResid.size()-1] > maxResid) {
+        maxResid = newResid[newResid.size()-1];
+      }
+      if (newResid[newResid.size()-1] < minResid) {
+        minResid = newResid[newResid.size()-1];
+      }
     }
   }
   
-  posfile.close();
+  cout << maxResid <<"\n";
+  Frame f = (newResid.empty() ? Frame(newPoints) : Frame(newPoints, newResid, minResid, maxResid));
+  
+  if (back) {
+    points.push_back(f);
+  } else {
+    points.push_front(f);
+  }
+  
+  posFile.close();
+  
+  /*
+  if (back) {
+    async_read(posfile, mbs, boost::bind(&VisualizerApp::readHandlerBack,
+                                         this, boost::asio::placeholders::error,
+                                         boost::asio::placeholders::bytes_transferred));
+  } else {
+    async_read(posfile, mbs, boost::bind(&VisualizerApp::readHandlerFront,
+                                         this, boost::asio::placeholders::error,
+                                         boost::asio::placeholders::bytes_transferred));
+  }
+  */
 }
+
+/*
+
+void VisualizerApp::readHandlerBack(const boost::system::error_code& ec,
+                 size_t bytes_transferred)
+{
+  if (ec) {
+    cout << "Error reading pos file: " << ec << "\n";
+    exit(1);
+  }
+  vector<Vec3f> newPoints;
+  // TODO: reserve space
+  int i=0;
+  for (i=0; i<bytes_transferred; i++) {
+    bool set = true;
+    float pos[3];
+    for (int j=0; j<3; j++) {
+      stringstream s;
+      while (mbs[i] != '\n') {
+        s << mbs[i];
+        i++;
+      }
+      string line = s.str();
+      if (line.empty()) {
+        set = false;
+        break;
+      }
+      pos[j] = stof(line);
+    }
+    if (set) {
+      newPoints.push_back(Vec3f(pos[0], pos[1], pos[2]));
+    }
+  }
+  
+  points.push_back(newPoints);
+}
+ 
+*/
 
 void VisualizerApp::viewFrame(const int frame)
 {
+  float minResid = (globalRelativeColoring ? MIN_RES : points[frame].minResid);
+  float maxResid = (globalRelativeColoring ? MAX_RES : points[frame].maxResid);
   gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
   for (int i=0; i<points[0].size(); i++) {
     vIter.setPosition(points[frame][i]);
-    vIter.setColorRGBA(colors.size() == 0 ? ColorA(0.4, 0.4, 0.4, 0.4) : colors[i]);
+    float c = (points[frame].resid.empty() ? 0 : (points[frame].resid[i]-minResid)/(maxResid-minResid));
+    vIter.setColorRGBA(ColorA(c, 0.4, 1-c, 0.6));
     ++vIter;
+  }
+}
+
+void VisualizerApp::writeResidFile()
+{
+  stringstream filename;
+  filename << RESID_PATH << currentFrame << "-" << radius << ".resid";
+  
+  cout << "Creating cache for frame " << currentFrame << "...\n";
+  // compute all residuals, save to file
+  ofstream residOutFile(filename.str(), ios::binary | ios::trunc);
+  if (!residOutFile.is_open()) {
+    cerr << "Warning: failed to create cache: " << filename.str() << "\n";
+  }
+  int percent = 0;
+  points[currentFrame].minResid = INFINITY;
+  points[currentFrame].maxResid = -INFINITY;
+  points[currentFrame].resid.clear();
+  for (int i=0; i<points[0].size(); i++) {
+    int p =(int)((float)i/points[0].size()*100);
+    if (p != percent && p % 10 == 0) {
+      cout << p << "%\n";
+      percent = p;
+    }
+    NeighborLookupProc nlp = NeighborLookupProc();
+    kdtree.lookup(points[0][i], nlp, radius);
+    points[currentFrame].resid.push_back(getResidual(nlp));
+    
+    if (points[currentFrame].resid[i] > points[currentFrame].maxResid) {
+      points[currentFrame].maxResid = points[currentFrame].resid[i];
+    }
+    if (points[currentFrame].resid[i] < points[currentFrame].minResid) {
+      points[currentFrame].minResid = points[currentFrame].resid[i];
+    }
+    
+    char* out = (char*)&(points[currentFrame].resid[i]); // Here be more dragons.
+    for(int j=0; j<sizeof(float); j++) {
+      residOutFile << out[j]; // Even more dragons...
+    }
+  }
+  residOutFile.close();
+  cout << "Done!\n";
+  
+}
+
+void VisualizerApp::createResidFiles(const int endFile)
+{
+  while (currentFrame <= endFile) {
+    writeResidFile();
+    currentFrame++;
+    if (points.left_buffer_size(currentFrame) < 1) {
+      for (int i=1; i<NUM_FRAMES-2 && currentFrame + i <= END_FRAME; i++) {
+        loadFrame(currentFrame + i, true);
+      }
+    }
   }
 }
 
