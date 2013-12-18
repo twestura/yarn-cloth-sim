@@ -36,6 +36,7 @@ using namespace std;
 
 //#define CREATE_POS_FILES
 //#define CREATE_RESID_FILES
+//#define DECOMPRESS
 //#define RADIUS_ONE_HALF
 
 #define MIN_RES 0
@@ -176,6 +177,7 @@ class VisualizerApp : public AppNative {
   bool getBoundingBox(Bvh* bvh);
   int writeKeyframeFile() const;
   int writeCompressedFrame();
+  void decompressFrame(const int frame);
   
 //  mutable_buffers_1 mbs;
   
@@ -207,6 +209,12 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
+#ifdef DECOMPRESS
+  points.init(NUM_FRAMES, START_FRAME);
+  decompressFrame(0);
+  decompressFrame(1);
+  loadFrame(2, true);
+#else
   // Load starting frames
   points.init(NUM_FRAMES, START_FRAME);
   loadFrame(0, true);
@@ -215,6 +223,7 @@ void VisualizerApp::setup()
   for (int i=start; i<start+NUM_FRAMES; i++) {
     loadFrame(i, true);
   }
+#endif // ifdef DECOMPRESS
   
   // Push the points to the GPU
   gl::VboMesh::Layout layout;
@@ -243,7 +252,11 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
+#ifdef DECOMPRESS
+#else
   compress();
+#endif
+  
   cout << "nodes: " << bvhVec.size() << "\n";
   
   // TODO: remove this
@@ -552,10 +565,119 @@ float VisualizerApp::newGetResidual(const vector<uint32_t> indices, const bool r
   return ret;
 }
 
+void VisualizerApp::decompressFrame(const int frame)
+{
+  stringstream posFilename;
+  posFilename << COMP_PATH << frame << ".key";
+  ifstream posFile(posFilename.str(), ios::binary);
+  
+  if (posFile) { // Decompress keyframe
+    bvhVec.clear();
+    vector<Vec3f> newPoints;
+    
+    posFile.seekg(0, posFile.end);
+    int length = posFile.tellg();
+    posFile.seekg(0, posFile.beg);
+    
+    int counter = 0;
+    int bytesRead = 0;
+    while (bytesRead < length) {
+      char in[3*sizeof(float)];
+      posFile.read(in, sizeof(char));
+      bytesRead++;
+      int numPoints = in[0];
+      if (numPoints < 0) { // Black magic to get around the absence of uchar
+        numPoints &= 127;
+        numPoints += 128;
+      }
+      bvhVec.push_back(Bvh());
+      for (int i=0; i<numPoints; i++) {
+        posFile.read(in, 3*sizeof(float));
+        bytesRead += 3*sizeof(float);
+        newPoints.push_back(Vec3f(*(float*)(&in[0]), *(float*)(&in[sizeof(float)]), *(float*)(&in[2*sizeof(float)])));
+        bvhVec[bvhVec.size()-1].indices.push_back(counter);
+        counter++;
+      }
+    }
+    
+    Frame f = Frame(newPoints);
+    points.push_back(f);
+    
+    posFile.close();
+    return;
+  }
+  
+  posFilename = stringstream();
+  posFilename << COMP_PATH << frame << ".comp";
+  posFile = ifstream(posFilename.str(), ios::binary);
+  
+  if (posFile) { // Decompress compressed file
+    vector<Vec3f> newPoints;
+    
+    for (Bvh bvh : bvhVec) {
+      Matrix33f T;
+      char in[12*sizeof(float)];
+      posFile.read(in, 12*sizeof(float));
+      for (int i=0; i<9; i++) {
+        T[i] = *(float*)(&in[i*sizeof(float)]);
+      }
+      Vec3f avg = Vec3f(*(float*)(&in[9*sizeof(float)]), *(float*)(&in[10*sizeof(float)]), *(float*)(&in[11*sizeof(float)]));
+      
+      Vec3f avgPrev;
+      for (int index : bvh.indices) {
+        avgPrev += points[frame-1][index];
+      }
+      avgPrev /= bvh.indices.size();
+      
+      posFile.read(in, sizeof(char));
+      int numBad = in[0];
+      if (numBad < 0) { // Black magic to get around the absence of uchar
+        numBad &= 127;
+        numBad += 128;
+      }
+      vector<uint> badIndices;
+      for (int i=0; i<numBad; i++) {
+        posFile.read(in, sizeof(char));
+        int badIndex = in[0];
+        if (badIndex < 0) { // Black magic to get around the absence of uchar
+          badIndex &= 127;
+          badIndex += 128;
+        }
+        badIndices.push_back(badIndex);
+      }
+      
+      int counter = 0;
+      for (int index : bvh.indices) {
+        Vec3f newPoint = points[frame-1][index] - avgPrev;
+        newPoint = T * newPoint;
+        newPoint += avg;
+        
+        for (int i=0; i<3; i++) {
+          if (binary_search(badIndices.begin(), badIndices.end(), counter)) {
+            posFile.read(in, sizeof(float));
+            newPoint[i] = *(float*)in;
+          } else {
+            posFile.read(in, sizeof(int16_t));
+            int16_t correction = *(int16_t*)in;
+            newPoint[i] += correction*RESOLUTION;
+          }
+          counter++;
+        }
+        newPoints.push_back(newPoint);
+      }
+    }
+    
+    Frame f = Frame(newPoints);
+    points.push_back(f);
+    
+    posFile.close();
+  } else {
+    cerr << "Error: no compressed frame found: " << posFilename.str() << "\n";
+  }
+}
+
 void VisualizerApp::loadFrame(const int frame, const bool back)
 {
- // cout << "load frame " << frame << " to " << (back ? "back" : "front") << "\n";
-  
   stringstream posFilename;
   posFilename << POS_PATH << frame << ".pos";
   ifstream posFile(posFilename.str(), ios::binary);
@@ -735,6 +857,10 @@ void VisualizerApp::compress()
   getBoundingBox(&(bvhVec[0]));
   divideBvh(0);
   
+  writeKeyframeFile();
+  currentFrame++;
+  writeCompressedFrame();
+  currentFrame--;
 }
 
 bool VisualizerApp::getBoundingBox(Bvh* bvh)
@@ -812,13 +938,18 @@ int VisualizerApp::writeKeyframeFile() const
   }
   
   int bytesWritten = 0;
+  int maxbvh = 0;
   
   for (Bvh bvh : bvhVec) {
-    assert(bvh.indices.size() <= 255);
+    assert(bvh.indices.size() <= UCHAR_MAX);
     outFile << (char)bvh.indices.size();
+    if (maxbvh < bvh.indices.size()){
+      maxbvh = bvh.indices.size();
+    }
     bytesWritten++;
     for (uint32_t index : bvh.indices) {
       for (int i=0; i<3; i++) {
+        float test = points[currentFrame][index][i];
         char* out = (char*)&(points[currentFrame][index][i]); // Here be dragons.
         for(int j=0; j<sizeof(float); j++) {
           outFile << out[j]; // Even more dragons...
@@ -827,6 +958,8 @@ int VisualizerApp::writeKeyframeFile() const
       }
     }
   }
+  
+  cout << "maxbvh: " << maxbvh << "\n";
   
   outFile.close();
   return bytesWritten;
@@ -845,6 +978,7 @@ int VisualizerApp::writeCompressedFrame()
     cerr << "Unable to create outfile: " << outFileName.str() << "\n";
   }
   
+  int numbad = 0;
   int bytesWritten = 0;
   for (Bvh bvh : bvhVec) {
     // get transformation
@@ -883,9 +1017,8 @@ int VisualizerApp::writeCompressedFrame()
         bytesWritten++;
       }
     }
-    Vec3f delta = avg - avgPrev;
     for (int i=0; i<3; i++) {
-      char* out = (char*)&(delta[i]); // Here be dragons.
+      char* out = (char*)&(avg[i]); // Here be dragons.
       for(int j=0; j<sizeof(float); j++) {
         outFile << out[j]; // Even more dragons...
         bytesWritten++;
@@ -907,10 +1040,11 @@ int VisualizerApp::writeCompressedFrame()
         float qNew = q[j] + avg[j];
         float actual = points[currentFrame][bvh.indices[i]][j];
         if (abs(qNew - actual) > THRESHOLD) {
+          numbad++;
           badIndices.push_back(3*i+j);
           badPos.push_back(actual);
         } else {
-          int steps = round(((((double)qNew)-actual)/RESOLUTION));
+          int steps = round(((((double)actual)-qNew)/RESOLUTION));
           assert(abs(steps) <= MAX_STEPS);
           corrections.push_back((int16_t)steps);
         }
@@ -946,7 +1080,7 @@ int VisualizerApp::writeCompressedFrame()
       }
     }
   }
-  
+  cout << "bad: " << numbad <<"\n";
   outFile.close();
   return bytesWritten;
 }
