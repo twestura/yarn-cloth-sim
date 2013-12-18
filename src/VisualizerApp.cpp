@@ -28,14 +28,17 @@ using namespace std;
 
 #define RESID_PATH "../../../../afghan/resid/"
 #define POS_PATH "../../../../afghan/pos/"
-#define MIN_RES 0
+#define COMP_PATH "../../../../afghan/comp/"
 
-#define THRESHOLD (1E-7)*(65535)
+#define RESOLUTION (1E-7)
+#define MAX_STEPS 32767
+#define THRESHOLD (RESOLUTION*MAX_STEPS)
 
 //#define CREATE_POS_FILES
 //#define CREATE_RESID_FILES
 //#define RADIUS_ONE_HALF
 
+#define MIN_RES 0
 #ifdef RADIUS_ONE_HALF
 #define RADIUS 0.5
 #define MAX_RES 0.08 // TODO: This should not be hard-coded.
@@ -167,10 +170,12 @@ class VisualizerApp : public AppNative {
   void viewFrame(const int);
   void writeResidFile();
   void createResidFiles(const int);
-    
+  
   void compress();
-  void divideBvh(Bvh*);
+  void divideBvh(const int index);
   bool getBoundingBox(Bvh* bvh);
+  int writeKeyframeFile() const;
+  int writeCompressedFrame();
   
 //  mutable_buffers_1 mbs;
   
@@ -185,7 +190,7 @@ class VisualizerApp : public AppNative {
   gl::VboMeshRef	mVboMesh;
   NeighborLookupProc selection = NeighborLookupProc();
   
-  Bvh bvh;
+  vector<Bvh> bvhVec;
   
   CameraPersp camera = CameraPersp();
   Vec3f eyePos = Vec3f( 100, 40, 0 );
@@ -196,7 +201,7 @@ class VisualizerApp : public AppNative {
 
 void VisualizerApp::setup()
 {
-
+  
 #ifdef CREATE_POS_FILES
   createPosFiles(START_FRAME, END_FRAME);
   exit(0);
@@ -238,7 +243,8 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
-//  compress();
+  compress();
+  cout << "nodes: " << bvhVec.size() << "\n";
   
   // TODO: remove this
 //  gl::Texture depthTex;
@@ -410,13 +416,6 @@ void VisualizerApp::update()
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
 }
 
-void drawBox(Bvh* bvh)
-{
-  gl::drawStrokedCube(AxisAlignedBox3f(bvh->aabb[0], bvh->aabb[1]));
-  for (Bvh c : bvh->children) {
-    drawBox(&c);
-  }
-}
 
 void VisualizerApp::draw()
 {
@@ -432,9 +431,9 @@ void VisualizerApp::draw()
   // draw the scene
   gl::draw(mVboMesh);
   
-  if (!bvh.indices.empty()) {
-    gl::color(0, 1, 0);
-    drawBox(&bvh);
+  gl::color(0, 1, 0, 0.6);
+  for (Bvh bvh : bvhVec) {
+    gl::drawStrokedCube(AxisAlignedBox3f(bvh.aabb[0], bvh.aabb[1]));
   }
 }
 
@@ -455,6 +454,19 @@ float VisualizerApp::getResidual(const NeighborLookupProc nlp, bool retMax) cons
   avg /= n;
   avgNext /= n;
   
+  Matrix<double, 3, 3> A = Array33d::Zero();
+  Matrix<double, 3, 3> B = Array33d::Zero();
+  for (uint32_t index : nlp.neighbors) {
+    for (int i=0; i<3; i++) {
+      for (int j=0; j<3; j++) {
+        Vec3f p = points[currentFrame][index] - avg;
+        A(i,j) += p[i]*p[j];
+        Vec3f pNext = points[currentFrame+1][index] - avgNext;
+        B(i,j) += p[i]*pNext[j];
+      }
+    }
+  }
+  
   for(int i=0; i<n; i++) {
     P(0,i) = points[currentFrame][nlp.neighbors[i]].x - avg.x;
     P(1,i) = points[currentFrame][nlp.neighbors[i]].y - avg.y;
@@ -464,11 +476,8 @@ float VisualizerApp::getResidual(const NeighborLookupProc nlp, bool retMax) cons
     Q(2,i) = points[currentFrame+1][nlp.neighbors[i]].z - avgNext.z;
   }
   
-  
   // Q = MP
   // M = QP'[PP']^-1
-  Matrix<double, 3, 3> A = P * P.transpose();
-  Matrix<double, 3, 3> B = P * Q.transpose();
   Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
 
   return (float) (retMax ? std::max((Q-M*P).maxCoeff(), abs((Q-M*P).minCoeff())) : (Q - M*P).norm());
@@ -607,17 +616,6 @@ void VisualizerApp::loadFrame(const int frame, const bool back)
   
   posFile.close();
   
-  /*
-  if (back) {
-    async_read(posfile, mbs, boost::bind(&VisualizerApp::readHandlerBack,
-                                         this, boost::asio::placeholders::error,
-                                         boost::asio::placeholders::bytes_transferred));
-  } else {
-    async_read(posfile, mbs, boost::bind(&VisualizerApp::readHandlerFront,
-                                         this, boost::asio::placeholders::error,
-                                         boost::asio::placeholders::bytes_transferred));
-  }
-  */
 }
 
 /*
@@ -729,17 +727,13 @@ void VisualizerApp::createResidFiles(const int endFile)
 void VisualizerApp::compress()
 {
   // Get bounding box
-  
+  bvhVec.clear();
+  bvhVec.push_back(Bvh());
   for (int i=0; i<points[0].size(); i++) {
-    bvh.indices.push_back(i);
+    bvhVec[0].indices.push_back(i);
   }
-  getBoundingBox(&bvh);
-  divideBvh(&bvh);
-  
-  cout << "num nodes: " << bvh.num_nodes() << "\n";
-  int leaf = bvh.num_leaf_nodes();
-  cout << "num leaf nodes: " << leaf << "\n";
-  cout << "avg leaf size: " << ((float)bvh.num_leaf_indices())/leaf << "\n";
+  getBoundingBox(&(bvhVec[0]));
+  divideBvh(0);
   
 }
 
@@ -763,40 +757,198 @@ bool VisualizerApp::getBoundingBox(Bvh* bvh)
 }
 
 
-void VisualizerApp::divideBvh(Bvh* bvh)
+void VisualizerApp::divideBvh(const int index)
 {
   NeighborLookupProc nlp;
-  nlp.neighbors = bvh->indices;
+  nlp.neighbors = bvhVec[index].indices;
   float resid = getResidual(nlp, true);
   
   if (resid < THRESHOLD) return;
   
-  assert(bvh->indices.size() > 1);
+  assert(bvhVec[index].indices.size() > 1);
   
   // Get widest dimension
-  int dim = (bvh->aabb[1][0] - bvh->aabb[0][0] > bvh->aabb[1][1] - bvh->aabb[0][1] ? 0 : 1);
-  dim = (bvh->aabb[1][2] - bvh->aabb[0][2] > bvh->aabb[1][dim] - bvh->aabb[0][dim] ? 2 : dim);
+  int dim = (bvhVec[index].aabb[1][0] - bvhVec[index].aabb[0][0] > bvhVec[index].aabb[1][1] - bvhVec[index].aabb[0][1] ? 0 : 1);
+  dim = (bvhVec[index].aabb[1][2] - bvhVec[index].aabb[0][2] > bvhVec[index].aabb[1][dim] - bvhVec[index].aabb[0][dim] ? 2 : dim);
   
   // TODO: sort points?
   // for now just split the volume in half. I think this makes more sense anyway.
-  float split = (bvh->aabb[0][dim] + bvh->aabb[1][dim])/2;
-  bvh->children.clear();
-  bvh->children.push_back(Bvh());
-  bvh->children.push_back(Bvh());
+  float split = (bvhVec[index].aabb[0][dim] + bvhVec[index].aabb[1][dim])/2;
   
-  for (uint32_t index : bvh->indices) {
+  bvhVec.push_back(Bvh());
+  int sibling = bvhVec.size()-1;
+  assert(bvhVec[sibling].indices.empty());
+  vector<uint32_t> newIndices;
+  for (uint32_t index : bvhVec[index].indices) {
     if (points[0][index][dim] < split) {
-      bvh->children[0].indices.push_back(index);
+      newIndices.push_back(index);
     } else {
-      bvh->children[1].indices.push_back(index);
+      bvhVec[sibling].indices.push_back(index);
+    }
+  }
+  bvhVec[index].indices = newIndices;
+  
+  getBoundingBox(&bvhVec[index]);
+  getBoundingBox(&bvhVec[sibling]);
+  divideBvh(index);
+  divideBvh(sibling);
+  
+  
+}
+
+int VisualizerApp::writeKeyframeFile() const
+{
+  if (bvhVec.empty()) {
+    cerr << "Tried to write keyframe with empty bvh\n";
+    exit(1);
+  }
+  
+  stringstream outFileName;
+  outFileName << COMP_PATH << currentFrame << ".key";
+  ofstream outFile(outFileName.str(), ios::trunc | ios::binary );
+  
+  if (!outFile) {
+    cerr << "Unable to create outfile: " << outFileName.str() << "\n";
+  }
+  
+  int bytesWritten = 0;
+  
+  for (Bvh bvh : bvhVec) {
+    assert(bvh.indices.size() <= 255);
+    outFile << (char)bvh.indices.size();
+    bytesWritten++;
+    for (uint32_t index : bvh.indices) {
+      for (int i=0; i<3; i++) {
+        char* out = (char*)&(points[currentFrame][index][i]); // Here be dragons.
+        for(int j=0; j<sizeof(float); j++) {
+          outFile << out[j]; // Even more dragons...
+          bytesWritten++;
+        }
+      }
     }
   }
   
-  getBoundingBox(&(bvh->children[0]));
-  getBoundingBox(&(bvh->children[1]));
-  divideBvh(&(bvh->children[0]));
-  divideBvh(&(bvh->children[1]));
+  outFile.close();
+  return bytesWritten;
+}
+
+
+int VisualizerApp::writeCompressedFrame()
+{
+  using namespace Eigen;
   
+  stringstream outFileName;
+  outFileName << COMP_PATH << currentFrame << ".comp";
+  ofstream outFile(outFileName.str(), ios::trunc | ios::binary );
+  
+  if (!outFile) {
+    cerr << "Unable to create outfile: " << outFileName.str() << "\n";
+  }
+  
+  int bytesWritten = 0;
+  for (Bvh bvh : bvhVec) {
+    // get transformation
+    Vec3f avgPrev;
+    Vec3f avg;
+    for (uint32_t index : bvh.indices) {
+      avgPrev += points[currentFrame-1][index];
+      avg += points[currentFrame][index];
+    }
+    avg /= bvh.indices.size();
+    avgPrev /= bvh.indices.size();
+    
+    Matrix<double, 3, 3> A = Array33d::Zero();
+    Matrix<double, 3, 3> B = Array33d::Zero();
+    
+    for (uint32_t index : bvh.indices) {
+      for (int i=0; i<3; i++) {
+        for (int j=0; j<3; j++) {
+          Vec3f pPrev = points[currentFrame-1][index] - avgPrev;
+          A(i,j) += pPrev[i]*pPrev[j];
+          Vec3f p = points[currentFrame][index] - avg;
+          B(i,j) += pPrev[i]*p[j];
+        }
+      }
+    }
+    
+    Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
+    Matrix<float, 3, 3> Mf;
+    
+    // write transformation
+    for (int i=0; i<9; i++) {
+      Mf(i) = M(i);
+      char* out = (char*)&(Mf(i)); // Here be dragons.
+      for(int j=0; j<sizeof(float); j++) {
+        outFile << out[j]; // Even more dragons...
+        bytesWritten++;
+      }
+    }
+    Vec3f delta = avg - avgPrev;
+    for (int i=0; i<3; i++) {
+      char* out = (char*)&(delta[i]); // Here be dragons.
+      for(int j=0; j<sizeof(float); j++) {
+        outFile << out[j]; // Even more dragons...
+        bytesWritten++;
+      }
+    }
+    
+    //   transform points, get number of bad transformations
+    vector<int> badIndices;
+    vector<int16_t> corrections;
+    vector<float> badPos;
+    Vector3f p;
+    Vector3f q;
+    for (int i=0; i<bvh.indices.size(); i++) {
+      for (int j=0; j<3; j++) {
+        p(j) = points[currentFrame-1][bvh.indices[i]][j] - avgPrev[j];
+      }
+      q = Mf * p;
+      for (int j=0; j<3; j++) {
+        float qNew = q[j] + avg[j];
+        float actual = points[currentFrame][bvh.indices[i]][j];
+        if (abs(qNew - actual) > THRESHOLD) {
+          badIndices.push_back(3*i+j);
+          badPos.push_back(actual);
+        } else {
+          int steps = round(((((double)qNew)-actual)/RESOLUTION));
+          assert(abs(steps) <= MAX_STEPS);
+          corrections.push_back((int16_t)steps);
+        }
+      }
+    }
+    
+    assert(badIndices.size() < UCHAR_MAX); // TODO: fall back to keyframe if this happens
+    outFile << (char)badIndices.size();
+    bytesWritten++;
+    for (int index : badIndices) {
+      assert(index < UCHAR_MAX); // TODO: fall back to keyframe if this happens
+      outFile << (char)index;
+      bytesWritten++;
+    }
+    
+    auto correctionsIter = corrections.begin();
+    auto badPosIter = badPos.begin();
+    for (int i=0; i<corrections.size() + badPos.size(); i++) {
+      if(std::binary_search(badIndices.begin(), badIndices.end(), i)) {
+        char* out = (char*)&(*badPosIter); // Here be dragons.
+        for(int j=0; j<sizeof(float); j++) {
+          outFile << out[j]; // Even more dragons...
+          bytesWritten++;
+        }
+        ++badPosIter;
+      } else {
+        char* out = (char*)&(*correctionsIter); // Here be dragons.
+        for(int j=0; j<sizeof(int16_t); j++) {
+          outFile << out[j]; // Even more dragons...
+          bytesWritten++;
+        }
+        ++correctionsIter;
+      }
+    }
+  }
+  
+  outFile.close();
+  return bytesWritten;
 }
 
 CINDER_APP_NATIVE( VisualizerApp, RendererGl )
