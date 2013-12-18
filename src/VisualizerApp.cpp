@@ -9,8 +9,8 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/gl/Vbo.h"
 #include "Resources.h"
-#include "InfoPanel.h"
 #include "PosFileConv.h"
+#include "Compressor.h"
 #include "Eigen/Dense"
 #include <boost/circular_buffer.hpp>
 
@@ -29,6 +29,8 @@ using namespace std;
 #define RESID_PATH "../../../../afghan/resid/"
 #define POS_PATH "../../../../afghan/pos/"
 #define MIN_RES 0
+
+#define THRESHOLD (1E-7)*(65535)
 
 //#define CREATE_POS_FILES
 //#define CREATE_RESID_FILES
@@ -158,20 +160,19 @@ class VisualizerApp : public AppNative {
   void mouseWheel( MouseEvent event );
 	void update();
 	void draw();
-  void drawInfoPanel();
-  void readHandlerBack( const boost::system::error_code& ec,
-                       std::size_t bytes_transferred );
-  void readHandlerFront( const boost::system::error_code& ec,
-                        std::size_t bytes_transferred );
   
-  float getResidual(const NeighborLookupProc) const;
+  float getResidual(const NeighborLookupProc, const bool) const;
+  float newGetResidual(const vector<uint32_t>, const bool) const;
   void loadFrame(const int, const bool);
   void viewFrame(const int);
   void writeResidFile();
   void createResidFiles(const int);
   
-  InfoPanel	mInfoPanel; // TODO: remove this?
-  float mCounter = 0;
+  void writePoints(const int) const;
+  
+  void compress();
+  void divideBvh(Bvh*);
+  bool getBoundingBox(Bvh* bvh);
   
 //  mutable_buffers_1 mbs;
   
@@ -179,12 +180,14 @@ class VisualizerApp : public AppNative {
   int currentFrame = START_FRAME;
   bool globalRelativeColoring = false;
   
-  gl::GlslProg threadShader;
+//  gl::GlslProg threadShader;
   
   float radius = RADIUS;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
   gl::VboMeshRef	mVboMesh;
   NeighborLookupProc selection = NeighborLookupProc();
+  
+  Bvh bvh;
   
   CameraPersp camera = CameraPersp();
   Vec3f eyePos = Vec3f( 100, 40, 0 );
@@ -199,6 +202,9 @@ void VisualizerApp::setup()
   createPosFiles(START_FRAME, END_FRAME);
   exit(0);
 #endif
+  
+  char a = 128;
+  cout << (int)a << "\n";
   
   // Load starting frames
   points.init(NUM_FRAMES, START_FRAME);
@@ -231,12 +237,13 @@ void VisualizerApp::setup()
   camera.setPerspective(40, getWindowAspectRatio(), 1, 1000);
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
   
-  mInfoPanel.createTexture();
-  
 #ifdef CREATE_RESID_FILES
   createResidFiles(END_FRAME-1);
   exit(0);
 #endif
+  
+//  compress();
+  writePoints(currentFrame);
   
   // TODO: remove this
 //  gl::Texture depthTex;
@@ -271,8 +278,13 @@ void VisualizerApp::mouseDown( MouseEvent event )
       }
     }
     
+    selection.neighbors.clear();
     targetPos = points[currentFrame][index];
+    kdtree.lookup(targetPos, selection, radius);
     camera.lookAt(targetPos);
+    //cout << "old resid: " << getResidual(selection, false) << "\n";
+    float n = getResidual(selection, false);
+    cout << "old resid: " << n << "\n";
   }
 
 }
@@ -403,6 +415,14 @@ void VisualizerApp::update()
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
 }
 
+void drawBox(Bvh* bvh)
+{
+  gl::drawStrokedCube(AxisAlignedBox3f(bvh->aabb[0], bvh->aabb[1]));
+  for (Bvh c : bvh->children) {
+    drawBox(&c);
+  }
+}
+
 void VisualizerApp::draw()
 {
   gl::enableAlphaBlending();
@@ -417,27 +437,13 @@ void VisualizerApp::draw()
   // draw the scene
   gl::draw(mVboMesh);
   
-  // drawInfoPanel();
-  
-  mCounter++;
+  if (!bvh.indices.empty()) {
+    gl::color(0, 1, 0);
+    drawBox(&bvh);
+  }
 }
 
-void VisualizerApp::drawInfoPanel()
-{
-	glDisable( GL_LIGHTING );
-	glEnable( GL_TEXTURE_2D );
-	glColor4f( 1, 1, 1, 1 );
-	
-	gl::pushMatrices();
-	gl::setMatricesWindow( getWindowSize() );
-	mInfoPanel.update( Vec2f( getWindowWidth(), getWindowHeight() ), 0 );
-	gl::popMatrices();
-  
-	glDisable( GL_TEXTURE_2D );
-}
-
-
-float VisualizerApp::getResidual(const NeighborLookupProc nlp) const
+float VisualizerApp::getResidual(const NeighborLookupProc nlp, bool retMax) const
 {
   using namespace Eigen;
   int n = nlp.neighbors.size();
@@ -469,7 +475,77 @@ float VisualizerApp::getResidual(const NeighborLookupProc nlp) const
   Matrix<double, 3, 3> A = P * P.transpose();
   Matrix<double, 3, 3> B = P * Q.transpose();
   Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
-  return (float) (Q - M*P).norm();
+
+  return (float) (retMax ? std::max((Q-M*P).maxCoeff(), abs((Q-M*P).minCoeff())) : (Q - M*P).norm());
+}
+
+float VisualizerApp::newGetResidual(const vector<uint32_t> indices, const bool retMax) const
+{
+  using namespace Eigen;
+  int n = indices.size();
+  
+  // Compute centroids
+  Vec3f c = Vec3f();
+  Vec3f cTilde = Vec3f();
+  for (int index : indices) {
+    c += points[currentFrame][index];
+    cTilde += points[currentFrame][index]; //here
+  }
+  c /= n;
+  cTilde /= n;
+  
+  // Create least squares system--see James and Twigg, Appendix A.
+  Matrix<float, 12, 12> M;
+  M << cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, 0, 0, 0, cTilde[0], 0, 0,
+       cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, 0, 0, 0, cTilde[0], 0,
+       cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, 0, 0, 0, cTilde[0],
+       0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, cTilde[1], 0, 0,
+       0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, cTilde[1], 0,
+       0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, cTilde[1],
+       0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], cTilde[2], 0, 0,
+       0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, cTilde[2], 0,
+       0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2],  0, 0, cTilde[2],
+       cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 0, 0, 1, 0, 0,
+       0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 1, 0,
+       0, 0, 0, 0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 1;
+  
+  Matrix<float, 12, 1> B;
+  B << c[0]*cTilde[0], c[1]*cTilde[0], c[2]*cTilde[0], c[0]*cTilde[1], c[1]*cTilde[1], c[2]*cTilde[1],
+  c[0]*cTilde[2], c[1]*cTilde[2], c[2]*cTilde[2], c[0], c[1], c[2];
+  
+  // Solve least squares, convert to affine transform matrix
+  Matrix<float, 12, 1> X = M.fullPivLu().solve(B);
+  
+  Matrix<float, 3, 4> Transform;
+  for (int i=0; i<9; i++) {
+    Transform(i/3, i%3) = X(i);
+  }
+  Transform(0,3) = X(9);
+  Transform(1,3) = X(10);
+  Transform(2,3) = X(11);
+  
+  cout << Transform << "\n";
+  
+  // Compute residuals
+  float ret = 0;
+  Vec3f temp;
+  Vector4f input;
+  Vector3f output;
+  for (int index : indices) {
+    temp = points[currentFrame][index] - c;
+    input << temp.x, temp.y, temp.z, 1;
+    output = Transform * input;
+    for (int j=0; j<3; j++) {
+      float diff = abs(output(j) + cTilde[j] - points[currentFrame][index][j]); //here
+      if (retMax) {
+        ret = max(ret, diff);
+      } else {
+        ret += diff * diff;
+      }
+    }
+  }
+  
+  return ret;
 }
 
 void VisualizerApp::loadFrame(const int frame, const bool back)
@@ -618,7 +694,7 @@ void VisualizerApp::writeResidFile()
     }
     NeighborLookupProc nlp = NeighborLookupProc();
     kdtree.lookup(points[0][i], nlp, radius);
-    points[currentFrame].resid.push_back(getResidual(nlp));
+    points[currentFrame].resid.push_back(getResidual(nlp, false));
     
     if (points[currentFrame].resid[i] > points[currentFrame].maxResid) {
       points[currentFrame].maxResid = points[currentFrame].resid[i];
@@ -648,6 +724,79 @@ void VisualizerApp::createResidFiles(const int endFile)
       }
     }
   }
+}
+
+void VisualizerApp::compress()
+{
+  // Get bounding box
+  
+  for (int i=0; i<points[0].size(); i++) {
+    bvh.indices.push_back(i);
+  }
+  getBoundingBox(&bvh);
+  divideBvh(&bvh);
+  
+  cout << "num nodes: " << bvh.num_nodes() << "\n";
+  int leaf = bvh.num_leaf_nodes();
+  cout << "num leaf nodes: " << leaf << "\n";
+  cout << "avg leaf size: " << ((float)bvh.num_leaf_indices())/leaf << "\n";
+  
+}
+
+bool VisualizerApp::getBoundingBox(Bvh* bvh)
+{
+  if (bvh->indices.empty()) return false;
+  bvh->aabb[0] = Vec3f(points[0][bvh->indices[0]]); //min
+  bvh->aabb[1] = Vec3f(points[0][bvh->indices[0]]); //max
+  for (int i=1; i<bvh->indices.size(); i++) {
+    for (int j=0; j<3; j++) {
+      if (points[0][bvh->indices[i]][j] < bvh->aabb[0][j]) {
+        bvh->aabb[0][j] = points[0][bvh->indices[i]][j];
+      }
+      if (points[0][bvh->indices[i]][j] > bvh->aabb[1][j]) {
+        bvh->aabb[1][j] = points[0][bvh->indices[i]][j];
+      }
+    }
+  }
+  
+  return true;
+}
+
+
+void VisualizerApp::divideBvh(Bvh* bvh)
+{
+  NeighborLookupProc nlp;
+  nlp.neighbors = bvh->indices;
+  float resid = getResidual(nlp, true);
+  
+  if (resid < THRESHOLD) return;
+  
+  assert(bvh->indices.size() > 1);
+  
+  // Get widest dimension
+  int dim = (bvh->aabb[1][0] - bvh->aabb[0][0] > bvh->aabb[1][1] - bvh->aabb[0][1] ? 0 : 1);
+  dim = (bvh->aabb[1][2] - bvh->aabb[0][2] > bvh->aabb[1][dim] - bvh->aabb[0][dim] ? 2 : dim);
+  
+  // TODO: sort points?
+  // for now just split the volume in half. I think this makes more sense anyway.
+  float split = (bvh->aabb[0][dim] + bvh->aabb[1][dim])/2;
+  bvh->children.clear();
+  bvh->children.push_back(Bvh());
+  bvh->children.push_back(Bvh());
+  
+  for (uint32_t index : bvh->indices) {
+    if (points[0][index][dim] < split) {
+      bvh->children[0].indices.push_back(index);
+    } else {
+      bvh->children[1].indices.push_back(index);
+    }
+  }
+  
+  getBoundingBox(&(bvh->children[0]));
+  getBoundingBox(&(bvh->children[1]));
+  divideBvh(&(bvh->children[0]));
+  divideBvh(&(bvh->children[1]));
+  
 }
 
 CINDER_APP_NATIVE( VisualizerApp, RendererGl )
