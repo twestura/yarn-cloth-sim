@@ -72,7 +72,7 @@ int createPosFiles(int startFile, int endFile) {
       exit(1);
     }
     for (int k=0; k<newPoints.size(); k++) {
-      char* out = (char*)&(newPoints[k]); // Here be more dragons.
+      char* out = (char*)&(newPoints[k]); // Here be dragons.
       for(int j=0; j<sizeof(float); j++) {
         posOutFile << out[j]; // Even more dragons...
       }

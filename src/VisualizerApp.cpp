@@ -75,7 +75,7 @@ struct Frame {
     return pos[index];
   }
   
-  uint32_t size()
+  const uint32_t size() const
   {
     return pos.size();
   }
@@ -167,9 +167,7 @@ class VisualizerApp : public AppNative {
   void viewFrame(const int);
   void writeResidFile();
   void createResidFiles(const int);
-  
-  void writePoints(const int) const;
-  
+    
   void compress();
   void divideBvh(Bvh*);
   bool getBoundingBox(Bvh* bvh);
@@ -198,13 +196,11 @@ class VisualizerApp : public AppNative {
 
 void VisualizerApp::setup()
 {
+
 #ifdef CREATE_POS_FILES
   createPosFiles(START_FRAME, END_FRAME);
   exit(0);
 #endif
-  
-  char a = 128;
-  cout << (int)a << "\n";
   
   // Load starting frames
   points.init(NUM_FRAMES, START_FRAME);
@@ -243,7 +239,6 @@ void VisualizerApp::setup()
 #endif
   
 //  compress();
-  writePoints(currentFrame);
   
   // TODO: remove this
 //  gl::Texture depthTex;
@@ -574,8 +569,13 @@ void VisualizerApp::loadFrame(const int frame, const bool back)
   float minResid = INFINITY;
   float maxResid = -INFINITY;
   
-  while(!posFile.eof()) {
-    float point[4];
+  posFile.seekg(0, posFile.end);
+  int length = posFile.tellg();
+  posFile.seekg(0, posFile.beg);
+  newPoints.reserve(length/3/sizeof(float));
+  if (residFile) newResid.reserve(length/sizeof(float));
+  for (int j=0; j<length/3/sizeof(float); j++) {
+    float point[3];
     char in[sizeof(float)];
     for (int i=0; i<3; i++) {
       posFile.read(in, sizeof(float));
