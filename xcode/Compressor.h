@@ -13,8 +13,3 @@
 
 #endif /* defined(__Visualizer__Compressor__) */
 
-struct Bvh {
-  ci::Vec3f aabb[2];
-  std::vector<uint32_t> indices;
-  
-};

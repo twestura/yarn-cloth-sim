@@ -1,16 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include <thread>
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Xml.h"
 #include "cinder/KdTree.h"
 #include "cinder/Camera.h"
-#include "cinder/gl/GlslProg.h"
 #include "cinder/gl/Vbo.h"
-#include "Resources.h"
 #include "PosFileConv.h"
-#include "Compressor.h"
 #include "Eigen/Dense"
 #include <boost/circular_buffer.hpp>
 
@@ -36,6 +32,7 @@ using namespace std;
 
 //#define CREATE_POS_FILES
 //#define CREATE_RESID_FILES
+//#define COMPRESS
 //#define DECOMPRESS
 //#define RADIUS_ONE_HALF
 
@@ -48,6 +45,8 @@ using namespace std;
 #define MAX_RES 2.07
 #endif // ifdef RADIUS_ONE_HALF
 
+// A struct representing one frame of the animation.
+// Optionally stores residual information.
 struct Frame {
   float minResid;
   float maxResid;
@@ -85,6 +84,8 @@ struct Frame {
   }
 };
 
+// A struct for use in the KD-tree. Finds all control points within
+// a given squared distance.
 struct NeighborLookupProc {
   vector<uint32_t> neighbors;
   void process( uint32_t id, float distSqrd, float &maxDistSqrd )
@@ -93,6 +94,17 @@ struct NeighborLookupProc {
   }
 };
 
+// A group of control points within an AABB.
+// TODO: This is not a bounding volume heirchy. Rename this to something
+// more accurate.
+struct Bvh {
+  ci::Vec3f aabb[2];
+  std::vector<uint32_t> indices;
+  bool ok = false;
+};
+
+// A modified circular buffer to load in frames dynamically. Always allows
+// access to the first element of the buffer.
 template <class T>
 struct ModCircularBuffer {
 private:
@@ -179,13 +191,9 @@ class VisualizerApp : public AppNative {
   int writeCompressedFrame();
   void decompressFrame(const int frame);
   
-//  mutable_buffers_1 mbs;
-  
   ModCircularBuffer<Frame> points;
   int currentFrame = START_FRAME;
   bool globalRelativeColoring = false;
-  
-//  gl::GlslProg threadShader;
   
   float radius = RADIUS;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
@@ -198,22 +206,26 @@ class VisualizerApp : public AppNative {
   Vec3f eyePos = Vec3f( 100, 40, 0 );
   Vec3f targetPos = Vec3f( -65, 16, 36 );
   unsigned char camBitfield = 0;
-  
 };
 
 void VisualizerApp::setup()
 {
   
 #ifdef CREATE_POS_FILES
+  // create binary position files
   createPosFiles(START_FRAME, END_FRAME);
   exit(0);
 #endif
   
 #ifdef DECOMPRESS
+  // decompress and load compressed frames
   points.init(NUM_FRAMES, START_FRAME);
   decompressFrame(0);
   decompressFrame(1);
-  loadFrame(2, true);
+//  decompressFrame(2);
+//  decompressFrame(3);
+//  decompressFrame(4);
+//  decompressFrame(5);
 #else
   // Load starting frames
   points.init(NUM_FRAMES, START_FRAME);
@@ -252,18 +264,12 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
-#ifdef DECOMPRESS
-#else
+#ifdef COMPRESS
   compress();
 #endif
-  
-  cout << "nodes: " << bvhVec.size() << "\n";
-  
-  // TODO: remove this
-//  gl::Texture depthTex;
-//  threadShader = gl::GlslProg(loadResource(RES_VERT_GLSL), loadResource(RES_FRAG_GLSL));
 }
 
+// Triggered when the mouse is clicked.
 void VisualizerApp::mouseDown( MouseEvent event )
 {
   
@@ -296,13 +302,13 @@ void VisualizerApp::mouseDown( MouseEvent event )
     targetPos = points[currentFrame][index];
     kdtree.lookup(targetPos, selection, radius);
     camera.lookAt(targetPos);
-    //cout << "old resid: " << getResidual(selection, false) << "\n";
-    float n = getResidual(selection, false);
-    cout << "old resid: " << n << "\n";
+//    float n = getResidual(selection, false);
+//    cout << "old resid: " << n << "\n";
   }
 
 }
 
+// Triggered when a key is pressed.
 void VisualizerApp::keyDown( KeyEvent event )
 {
   switch (event.getCode()) {
@@ -375,6 +381,7 @@ void VisualizerApp::keyDown( KeyEvent event )
   
 }
 
+// Triggered when a key is released.
 void VisualizerApp::keyUp( KeyEvent event )
 {
   switch (event.getCode()) {
@@ -402,6 +409,7 @@ void VisualizerApp::keyUp( KeyEvent event )
   }
 }
 
+// Triggered on a mouse wheel event.
 void VisualizerApp::mouseWheel( MouseEvent event )
 {
   float inc = event.getWheelIncrement();
@@ -414,6 +422,7 @@ void VisualizerApp::mouseWheel( MouseEvent event )
   }
 }
 
+// Called when the application is running.
 void VisualizerApp::update()
 {
   
@@ -429,7 +438,7 @@ void VisualizerApp::update()
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
 }
 
-
+// Draw the scene.
 void VisualizerApp::draw()
 {
   gl::enableAlphaBlending();
@@ -445,17 +454,23 @@ void VisualizerApp::draw()
   gl::draw(mVboMesh);
   
   gl::color(0, 1, 0, 0.6);
+  /*
   for (Bvh bvh : bvhVec) {
     gl::drawStrokedCube(AxisAlignedBox3f(bvh.aabb[0], bvh.aabb[1]));
   }
+   */
 }
 
+// Given a group of points, compute the residual from the least squares
+// best fit transformation from the current frame to the next. If retMax
+// is true, the maximum error is returned; otherwise, the total error squared
+// is returned.
 float VisualizerApp::getResidual(const NeighborLookupProc nlp, bool retMax) const
 {
   using namespace Eigen;
   int n = nlp.neighbors.size();
-  Matrix<double, 3, Dynamic> P(3, n);
-  Matrix<double, 3, Dynamic> Q(3, n);
+  
+  if (n==1) return 0;
   
   Vec3f avg = Vec3f();
   Vec3f avgNext = Vec3f();
@@ -480,22 +495,35 @@ float VisualizerApp::getResidual(const NeighborLookupProc nlp, bool retMax) cons
     }
   }
   
-  for(int i=0; i<n; i++) {
-    P(0,i) = points[currentFrame][nlp.neighbors[i]].x - avg.x;
-    P(1,i) = points[currentFrame][nlp.neighbors[i]].y - avg.y;
-    P(2,i) = points[currentFrame][nlp.neighbors[i]].z - avg.z;
-    Q(0,i) = points[currentFrame+1][nlp.neighbors[i]].x - avgNext.x;
-    Q(1,i) = points[currentFrame+1][nlp.neighbors[i]].y - avgNext.y;
-    Q(2,i) = points[currentFrame+1][nlp.neighbors[i]].z - avgNext.z;
-  }
-  
   // Q = MP
   // M = QP'[PP']^-1
   Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
-
-  return (float) (retMax ? std::max((Q-M*P).maxCoeff(), abs((Q-M*P).minCoeff())) : (Q - M*P).norm());
+  
+  // Compute residuals
+  float ret = 0;
+  Vec3f temp;
+  Vector3d input;
+  Vector3d output;
+  for (int index : nlp.neighbors) {
+    temp = points[currentFrame][index] - avg;
+    input << temp.x, temp.y, temp.z;
+    output = M * input;
+    for (int j=0; j<3; j++) {
+      float diff = abs(output(j) - (points[currentFrame+1][index][j] - avgNext[j]));
+      if (retMax) {
+        ret = max(ret, diff);
+      } else {
+        ret += diff * diff;
+      }
+    }
+  }
+  
+  return ret;
+  
 }
 
+// Similar to the method above, in an attempt to get things to be more accurate.
+// Not entirely successful.
 float VisualizerApp::newGetResidual(const vector<uint32_t> indices, const bool retMax) const
 {
   using namespace Eigen;
@@ -565,8 +593,11 @@ float VisualizerApp::newGetResidual(const vector<uint32_t> indices, const bool r
   return ret;
 }
 
+// Decompress a given frame (.comp or .key) and load it into
+// the circular buffer.
 void VisualizerApp::decompressFrame(const int frame)
 {
+  cout << "Decompress frame " << frame << "\n";
   stringstream posFilename;
   posFilename << COMP_PATH << frame << ".key";
   ifstream posFile(posFilename.str(), ios::binary);
@@ -676,6 +707,7 @@ void VisualizerApp::decompressFrame(const int frame)
   }
 }
 
+// Load a .pos file into the circular buffer.
 void VisualizerApp::loadFrame(const int frame, const bool back)
 {
   stringstream posFilename;
@@ -740,44 +772,7 @@ void VisualizerApp::loadFrame(const int frame, const bool back)
   
 }
 
-/*
-
-void VisualizerApp::readHandlerBack(const boost::system::error_code& ec,
-                 size_t bytes_transferred)
-{
-  if (ec) {
-    cout << "Error reading pos file: " << ec << "\n";
-    exit(1);
-  }
-  vector<Vec3f> newPoints;
-  // TODO: reserve space
-  int i=0;
-  for (i=0; i<bytes_transferred; i++) {
-    bool set = true;
-    float pos[3];
-    for (int j=0; j<3; j++) {
-      stringstream s;
-      while (mbs[i] != '\n') {
-        s << mbs[i];
-        i++;
-      }
-      string line = s.str();
-      if (line.empty()) {
-        set = false;
-        break;
-      }
-      pos[j] = stof(line);
-    }
-    if (set) {
-      newPoints.push_back(Vec3f(pos[0], pos[1], pos[2]));
-    }
-  }
-  
-  points.push_back(newPoints);
-}
- 
-*/
-
+// Prime a frame to be drawn.
 void VisualizerApp::viewFrame(const int frame)
 {
   float minResid = (globalRelativeColoring ? MIN_RES : points[frame].minResid);
@@ -791,6 +786,7 @@ void VisualizerApp::viewFrame(const int frame)
   }
 }
 
+// Write a .resid file containing residual information for this frame.
 void VisualizerApp::writeResidFile()
 {
   stringstream filename;
@@ -833,6 +829,7 @@ void VisualizerApp::writeResidFile()
   
 }
 
+// Create .resid files for a range of frames.
 void VisualizerApp::createResidFiles(const int endFile)
 {
   while (currentFrame <= endFile) {
@@ -846,35 +843,64 @@ void VisualizerApp::createResidFiles(const int endFile)
   }
 }
 
+// Compress a range of frames. Create a .comp file if possible; otherwise create a .key file.
 void VisualizerApp::compress()
 {
-  // Get bounding box
-  bvhVec.clear();
-  bvhVec.push_back(Bvh());
-  for (int i=0; i<points[0].size(); i++) {
-    bvhVec[0].indices.push_back(i);
+  while (currentFrame <= END_FRAME) {
+    if (points.left_buffer_size(currentFrame) < 1) {
+      for (int i=1; i<NUM_FRAMES-2 && currentFrame + i <= END_FRAME; i++) {
+        loadFrame(currentFrame + i, true);
+      }
+    }
+    int size;
+    if (currentFrame != START_FRAME) {
+      cout << "Compressing frame " << currentFrame << "...\n";
+      size = writeCompressedFrame();
+    }
+    if (currentFrame == START_FRAME || size > points[0].size()*3*sizeof(float)) {
+      cout << "Compression failed. Making keyframe...";
+      stringstream s;
+      s << COMP_PATH << currentFrame << ".comp";
+      remove(s.str().c_str());
+      
+      bvhVec.clear();
+      bvhVec.push_back(Bvh());
+      for (int i=0; i<points[0].size(); i++) {
+        bvhVec[0].indices.push_back(i);
+      }
+      getBoundingBox(&(bvhVec[0]));
+      bool done = false;
+      while (!done) {
+        done = true;
+        for (int i=0; i<bvhVec.size(); i++) {
+          if (!bvhVec[i].ok) {
+            done = false;
+            divideBvh(i);
+          }
+        }
+      }
+      cout << "num nodes: " << bvhVec.size() << "\n";
+      writeKeyframeFile();
+    }
+    currentFrame++;
   }
-  getBoundingBox(&(bvhVec[0]));
-  divideBvh(0);
   
-  writeKeyframeFile();
-  currentFrame++;
-  writeCompressedFrame();
-  currentFrame--;
+  
 }
 
+// Set the bounding box of a bvh.
 bool VisualizerApp::getBoundingBox(Bvh* bvh)
 {
   if (bvh->indices.empty()) return false;
-  bvh->aabb[0] = Vec3f(points[0][bvh->indices[0]]); //min
-  bvh->aabb[1] = Vec3f(points[0][bvh->indices[0]]); //max
+  bvh->aabb[0] = Vec3f(points[currentFrame][bvh->indices[0]]); //min
+  bvh->aabb[1] = Vec3f(points[currentFrame][bvh->indices[0]]); //max
   for (int i=1; i<bvh->indices.size(); i++) {
     for (int j=0; j<3; j++) {
-      if (points[0][bvh->indices[i]][j] < bvh->aabb[0][j]) {
-        bvh->aabb[0][j] = points[0][bvh->indices[i]][j];
+      if (points[currentFrame][bvh->indices[i]][j] < bvh->aabb[0][j]) {
+        bvh->aabb[0][j] = points[currentFrame][bvh->indices[i]][j];
       }
-      if (points[0][bvh->indices[i]][j] > bvh->aabb[1][j]) {
-        bvh->aabb[1][j] = points[0][bvh->indices[i]][j];
+      if (points[currentFrame][bvh->indices[i]][j] > bvh->aabb[1][j]) {
+        bvh->aabb[1][j] = points[currentFrame][bvh->indices[i]][j];
       }
     }
   }
@@ -882,14 +908,17 @@ bool VisualizerApp::getBoundingBox(Bvh* bvh)
   return true;
 }
 
-
+// Divide a bvh recursively.
 void VisualizerApp::divideBvh(const int index)
 {
   NeighborLookupProc nlp;
   nlp.neighbors = bvhVec[index].indices;
   float resid = getResidual(nlp, true);
   
-  if (resid < THRESHOLD) return;
+  if (resid < THRESHOLD && bvhVec[index].indices.size() <= UCHAR_MAX) {
+    bvhVec[index].ok = true;
+    return;
+  }
   
   assert(bvhVec[index].indices.size() > 1);
   
@@ -906,7 +935,7 @@ void VisualizerApp::divideBvh(const int index)
   assert(bvhVec[sibling].indices.empty());
   vector<uint32_t> newIndices;
   for (uint32_t index : bvhVec[index].indices) {
-    if (points[0][index][dim] < split) {
+    if (points[currentFrame][index][dim] < split) {
       newIndices.push_back(index);
     } else {
       bvhVec[sibling].indices.push_back(index);
@@ -916,12 +945,10 @@ void VisualizerApp::divideBvh(const int index)
   
   getBoundingBox(&bvhVec[index]);
   getBoundingBox(&bvhVec[sibling]);
-  divideBvh(index);
-  divideBvh(sibling);
-  
   
 }
 
+// Write a .key file.
 int VisualizerApp::writeKeyframeFile() const
 {
   if (bvhVec.empty()) {
@@ -938,18 +965,13 @@ int VisualizerApp::writeKeyframeFile() const
   }
   
   int bytesWritten = 0;
-  int maxbvh = 0;
   
   for (Bvh bvh : bvhVec) {
     assert(bvh.indices.size() <= UCHAR_MAX);
     outFile << (char)bvh.indices.size();
-    if (maxbvh < bvh.indices.size()){
-      maxbvh = bvh.indices.size();
-    }
     bytesWritten++;
     for (uint32_t index : bvh.indices) {
       for (int i=0; i<3; i++) {
-        float test = points[currentFrame][index][i];
         char* out = (char*)&(points[currentFrame][index][i]); // Here be dragons.
         for(int j=0; j<sizeof(float); j++) {
           outFile << out[j]; // Even more dragons...
@@ -959,13 +981,11 @@ int VisualizerApp::writeKeyframeFile() const
     }
   }
   
-  cout << "maxbvh: " << maxbvh << "\n";
-  
   outFile.close();
   return bytesWritten;
 }
 
-
+// Write a .comp compressed file.
 int VisualizerApp::writeCompressedFrame()
 {
   using namespace Eigen;
@@ -990,22 +1010,27 @@ int VisualizerApp::writeCompressedFrame()
     }
     avg /= bvh.indices.size();
     avgPrev /= bvh.indices.size();
-    
-    Matrix<double, 3, 3> A = Array33d::Zero();
-    Matrix<double, 3, 3> B = Array33d::Zero();
-    
-    for (uint32_t index : bvh.indices) {
-      for (int i=0; i<3; i++) {
-        for (int j=0; j<3; j++) {
-          Vec3f pPrev = points[currentFrame-1][index] - avgPrev;
-          A(i,j) += pPrev[i]*pPrev[j];
-          Vec3f p = points[currentFrame][index] - avg;
-          B(i,j) += pPrev[i]*p[j];
+    Matrix<double, 3, 3> M;
+    if (bvh.indices.size() == 1) {
+      M.Identity();
+    } else {
+      
+      Matrix<double, 3, 3> A = Array33d::Zero();
+      Matrix<double, 3, 3> B = Array33d::Zero();
+      
+      for (uint32_t index : bvh.indices) {
+        for (int i=0; i<3; i++) {
+          for (int j=0; j<3; j++) {
+            Vec3f pPrev = points[currentFrame-1][index] - avgPrev;
+            A(i,j) += pPrev[i]*pPrev[j];
+            Vec3f p = points[currentFrame][index] - avg;
+            B(i,j) += pPrev[i]*p[j];
+          }
         }
       }
+      
+      M = (A.fullPivHouseholderQr().solve(B)).transpose();
     }
-    
-    Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
     Matrix<float, 3, 3> Mf;
     
     // write transformation
@@ -1025,7 +1050,7 @@ int VisualizerApp::writeCompressedFrame()
       }
     }
     
-    //   transform points, get number of bad transformations
+    // transform points, get number of bad transformations
     vector<int> badIndices;
     vector<int16_t> corrections;
     vector<float> badPos;
@@ -1051,11 +1076,17 @@ int VisualizerApp::writeCompressedFrame()
       }
     }
     
-    assert(badIndices.size() < UCHAR_MAX); // TODO: fall back to keyframe if this happens
+    if(badIndices.size() > UCHAR_MAX) {
+      outFile.close();
+      return INT32_MAX;
+    }
     outFile << (char)badIndices.size();
     bytesWritten++;
     for (int index : badIndices) {
-      assert(index < UCHAR_MAX); // TODO: fall back to keyframe if this happens
+      if(index >= UCHAR_MAX) {
+        outFile.close();
+        return INT32_MAX;
+      }
       outFile << (char)index;
       bytesWritten++;
     }

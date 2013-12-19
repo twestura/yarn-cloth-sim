@@ -19,6 +19,7 @@
 using namespace std;
 using namespace ci;
 
+// Create a range of .pos files.
 int createPosFiles(int startFile, int endFile) {
   for (int i=startFile; i<=endFile; i++) {
     cout << "Creating pos file for frame " << i << "...\n";
