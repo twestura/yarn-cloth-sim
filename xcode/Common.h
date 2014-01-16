@@ -31,7 +31,7 @@ using namespace ci;
 
 #define NUM_FRAMES 7
 #define START_FRAME 0
-#define END_FRAME 60
+#define END_FRAME 70
 
 #define RESID_PATH "../../../../afghan/resid/"
 #define POS_PATH "../../../../afghan/pos/"
@@ -83,15 +83,6 @@ struct NeighborLookupProc {
   {
     neighbors.push_back(id);
   }
-};
-
-// A group of control points within an AABB.
-// TODO: This is not a bounding volume heirchy. Rename this to something
-// more accurate.
-struct Bvh {
-  ci::Vec3f aabb[2];
-  std::vector<uint32_t> indices;
-  bool ok = false;
 };
 
 // A modified circular buffer to load in frames dynamically. Always allows
@@ -159,7 +150,7 @@ public:
 };
 
 struct AppData {
-  ModCircularBuffer<Frame> points;
+  ModCircularBuffer<Frame> frames;
   int currentFrame = START_FRAME;
 };
 
@@ -167,7 +158,7 @@ struct AppData {
 // best fit transformation from the current frame to the next. If retMax
 // is true, the maximum error is returned; otherwise, the total error squared
 // is returned.
-float getResidual(const AppData ad, const vector<uint32_t> indices, const int curFrame, const int nextFrame, const bool retMax);
+float getResidual(const AppData& ad, const vector<uint32_t> indices, const int curFrame, const int nextFrame, const bool retMax);
 
 // Similar to the method above, in an attempt to get things to be more accurate.
 // Not entirely successful.
@@ -243,7 +234,10 @@ float newGetResidual(const vector<uint32_t> indices, const bool retMax)
 */
 
 // Load a .pos file into the circular buffer.
-void loadFrame(AppData * ad, const int frame, const bool back);
+void loadFrame(AppData& ad, const int frame, const bool back);
 
+// A fairly unsafe method that writes contiguous memory to a given file.
+// Abstracted here to confine the dragons and black magic.
+void writeBinary(const void* data, const uint size, ofstream* outFile);
 
 #endif

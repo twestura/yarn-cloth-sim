@@ -6,6 +6,7 @@
 //
 //
 
+#include "Common.h"
 #include "PosFileConv.h"
 #include <iostream>
 #include <fstream>
@@ -73,10 +74,8 @@ int createPosFiles(int startFile, int endFile) {
       exit(1);
     }
     for (int k=0; k<newPoints.size(); k++) {
-      char* out = (char*)&(newPoints[k]); // Here be dragons.
-      for(int j=0; j<sizeof(float); j++) {
-        posOutFile << out[j]; // Even more dragons...
-      }
+      writeBinary(&(newPoints[k]), sizeof(float), &posOutFile);
+
     }
     posOutFile.close();
     

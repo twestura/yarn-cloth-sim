@@ -59,7 +59,7 @@ void VisualizerApp::setup()
   
 #ifdef DECOMPRESS
   // decompress and load compressed frames
-  ad.points.init(NUM_FRAMES, START_FRAME);
+  ad.frames.init(NUM_FRAMES, START_FRAME);
   decompressFrame(0);
   decompressFrame(1);
 //  decompressFrame(2);
@@ -68,12 +68,12 @@ void VisualizerApp::setup()
 //  decompressFrame(5);
 #else
   // Load starting frames
-  ad.points.init(NUM_FRAMES, START_FRAME);
-  loadFrame(&ad, 0, true);
+  ad.frames.init(NUM_FRAMES, START_FRAME);
+  loadFrame(ad, 0, true);
   
   int start =START_FRAME == 0 ? 1 : START_FRAME;
   for (int i=start; i<start+NUM_FRAMES; i++) {
-    loadFrame(&ad, i, true);
+    loadFrame(ad, i, true);
   }
 #endif // ifdef DECOMPRESS
   
@@ -82,11 +82,11 @@ void VisualizerApp::setup()
   layout.setDynamicPositions();
   layout.setStaticIndices();
   layout.setDynamicColorsRGBA();
-  mVboMesh = gl::VboMesh::create(ad.points[0].size(), 2*(ad.points[0].size()-1), layout, GL_LINES);
+  mVboMesh = gl::VboMesh::create(ad.frames[0].size(), 2*(ad.frames[0].size()-1), layout, GL_LINES);
   
   vector<uint32_t> indexBuffer;
-  indexBuffer.reserve(2*(ad.points[0].size()-1));
-  for(int i=0; i<2*(ad.points[0].size()-1); i++) {
+  indexBuffer.reserve(2*(ad.frames[0].size()-1));
+  for(int i=0; i<2*(ad.frames[0].size()-1); i++) {
     indexBuffer.push_back(i);
     indexBuffer.push_back(i+1);
   }
@@ -94,7 +94,7 @@ void VisualizerApp::setup()
   
   viewFrame(ad.currentFrame);
   
-  kdtree.initialize(ad.points[0].pos);
+  kdtree.initialize(ad.frames[0].pos);
   
   camera.setPerspective(40, getWindowAspectRatio(), 1, 1000);
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
@@ -129,8 +129,8 @@ void VisualizerApp::mouseDown( MouseEvent event )
     
     int index = -1;
     float minDist = INFINITY;
-    for (int i=0; i<ad.points[0].size(); i++) {
-      Vec3f toPoint = ad.points[ad.currentFrame][i] - mouseRay.getOrigin();
+    for (int i=0; i<ad.frames[0].size(); i++) {
+      Vec3f toPoint = ad.frames[ad.currentFrame][i] - mouseRay.getOrigin();
       float thisDist = (toPoint - (toPoint.dot(mouseRay.getDirection()))*mouseRay.getDirection()).length();
       if (thisDist < minDist) {
         minDist = thisDist;
@@ -139,11 +139,11 @@ void VisualizerApp::mouseDown( MouseEvent event )
     }
     
     selection.neighbors.clear();
-    targetPos = ad.points[ad.currentFrame][index];
+    targetPos = ad.frames[ad.currentFrame][index];
     kdtree.lookup(targetPos, selection, radius);
     camera.lookAt(targetPos);
-//    float n = getResidual(selection, false);
-//    cout << "old resid: " << n << "\n";
+//    float n = getResidual(ad, selection.neighbors, ad.currentFrame, ad.currentFrame+1, false);
+//    cout << n << "\n";
   }
 
 }
@@ -187,9 +187,9 @@ void VisualizerApp::keyDown( KeyEvent event )
       if(ad.currentFrame > START_FRAME) {
         ad.currentFrame--;
         viewFrame(ad.currentFrame);
-        if (ad.points.right_buffer_size(ad.currentFrame) < 1 && START_FRAME != ad.currentFrame && 1 != ad.currentFrame) {
+        if (ad.frames.right_buffer_size(ad.currentFrame) < 1 && START_FRAME != ad.currentFrame && 1 != ad.currentFrame) {
           for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame - i >= START_FRAME && ad.currentFrame - i >= 1; i++) {
-            loadFrame(&ad, ad.currentFrame - i, false);
+            loadFrame(ad, ad.currentFrame - i, false);
           }
         }
       }
@@ -198,9 +198,9 @@ void VisualizerApp::keyDown( KeyEvent event )
       if(ad.currentFrame < END_FRAME) {
         ad.currentFrame++;
         viewFrame(ad.currentFrame);
-        if (ad.points.left_buffer_size(ad.currentFrame) < 1 && END_FRAME != ad.currentFrame) {
+        if (ad.frames.left_buffer_size(ad.currentFrame) < 1 && END_FRAME != ad.currentFrame) {
           for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame + i <= END_FRAME; i++) {
-            loadFrame(&ad, ad.currentFrame + i, true);
+            loadFrame(ad, ad.currentFrame + i, true);
           }
         }
       }
@@ -295,8 +295,8 @@ void VisualizerApp::draw()
   
   gl::color(0, 1, 0, 0.6);
   /*
-  for (Bvh bvh : bvhVec) {
-    gl::drawStrokedCube(AxisAlignedBox3f(bvh.aabb[0], bvh.aabb[1]));
+  for (AAGroup group : groupVec) {
+    gl::drawStrokedCube(AxisAlignedBox3f(group.aabb[0], group.aabb[1]));
   }
    */
 }
@@ -304,12 +304,12 @@ void VisualizerApp::draw()
 // Prime a frame to be drawn.
 void VisualizerApp::viewFrame(const int frame)
 {
-  float minResid = (globalRelativeColoring ? MIN_RES : ad.points[frame].minResid);
-  float maxResid = (globalRelativeColoring ? MAX_RES : ad.points[frame].maxResid);
+  float minResid = (globalRelativeColoring ? MIN_RES : ad.frames[frame].minResid);
+  float maxResid = (globalRelativeColoring ? MAX_RES : ad.frames[frame].maxResid);
   gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
-  for (int i=0; i<ad.points[0].size(); i++) {
-    vIter.setPosition(ad.points[frame][i]);
-    float c = (ad.points[frame].resid.empty() ? 0 : (ad.points[frame].resid[i]-minResid)/(maxResid-minResid));
+  for (int i=0; i<ad.frames[0].size(); i++) {
+    vIter.setPosition(ad.frames[frame][i]);
+    float c = (ad.frames[frame].resid.empty() ? 0 : (ad.frames[frame].resid[i]-minResid)/(maxResid-minResid));
     vIter.setColorRGBA(ColorA(c, 0.4, 1-c, 0.6));
     ++vIter;
   }
@@ -321,37 +321,40 @@ void VisualizerApp::writeResidFile()
   stringstream filename;
   filename << RESID_PATH << ad.currentFrame << "-" << radius << ".resid";
   
-  cout << "Creating cache for frame " << ad.currentFrame << "...\n";
+  cout << "Creating resid cache for frame " << ad.currentFrame << ", radius " << radius << "...\n";
   // compute all residuals, save to file
   ofstream residOutFile(filename.str(), ios::binary | ios::trunc);
   if (!residOutFile.is_open()) {
-    cerr << "Warning: failed to create cache: " << filename.str() << "\n";
+    cerr << "Warning: failed to create resid cache: " << filename.str() << "\n";
+    return;
   }
   int percent = 0;
-  ad.points[ad.currentFrame].minResid = INFINITY;
-  ad.points[ad.currentFrame].maxResid = -INFINITY;
-  ad.points[ad.currentFrame].resid.clear();
-  for (int i=0; i<ad.points[0].size(); i++) {
-    int p =(int)((float)i/ad.points[0].size()*100);
+  
+  Frame* curFrame = &ad.frames[ad.currentFrame];
+  
+  curFrame->minResid = INFINITY;
+  curFrame->maxResid = -INFINITY;
+  curFrame->resid.clear();
+  for (int i=0; i<ad.frames[0].size(); i++) {
+    int p =(int)((float)i/ad.frames[0].size()*100);
     if (p != percent && p % 10 == 0) {
       cout << p << "%\n";
       percent = p;
     }
+    
     NeighborLookupProc nlp = NeighborLookupProc();
-    kdtree.lookup(ad.points[0][i], nlp, radius);
-    ad.points[ad.currentFrame].resid.push_back(getResidual(ad, nlp.neighbors, ad.currentFrame, ad.currentFrame+1, false));
+    kdtree.lookup(ad.frames[0][i], nlp, radius);
     
-    if (ad.points[ad.currentFrame].resid[i] > ad.points[ad.currentFrame].maxResid) {
-      ad.points[ad.currentFrame].maxResid = ad.points[ad.currentFrame].resid[i];
+    curFrame->resid.push_back(getResidual(ad, nlp.neighbors, ad.currentFrame, ad.currentFrame+1, false));
+    
+    if (curFrame->resid[i] > curFrame->maxResid) {
+      curFrame->maxResid = curFrame->resid[i];
     }
-    if (ad.points[ad.currentFrame].resid[i] < ad.points[ad.currentFrame].minResid) {
-      ad.points[ad.currentFrame].minResid = ad.points[ad.currentFrame].resid[i];
+    if (curFrame->resid[i] < curFrame->minResid) {
+      curFrame->minResid = curFrame->resid[i];
     }
     
-    char* out = (char*)&(ad.points[ad.currentFrame].resid[i]); // Here be more dragons.
-    for(int j=0; j<sizeof(float); j++) {
-      residOutFile << out[j]; // Even more dragons...
-    }
+    writeBinary(&(curFrame->resid[i]), sizeof(float), &residOutFile);
   }
   residOutFile.close();
   cout << "Done!\n";
@@ -364,9 +367,9 @@ void VisualizerApp::createResidFiles(const int endFile)
   while (ad.currentFrame <= endFile) {
     writeResidFile();
     ad.currentFrame++;
-    if (ad.points.left_buffer_size(ad.currentFrame) < 1) {
+    if (ad.frames.left_buffer_size(ad.currentFrame) < 1) {
       for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame + i <= END_FRAME; i++) {
-        loadFrame(&ad, ad.currentFrame + i, true);
+        loadFrame(ad, ad.currentFrame + i, true);
       }
     }
   }

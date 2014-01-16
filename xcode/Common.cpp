@@ -16,7 +16,7 @@ using namespace std;
 using namespace ci;
 
 // Load a .pos file into the circular buffer.
-void loadFrame(AppData * ad, const int frame, const bool back)
+void loadFrame(AppData& ad, const int frame, const bool back)
 {
   stringstream posFilename;
   posFilename << POS_PATH << frame << ".pos";
@@ -71,11 +71,11 @@ void loadFrame(AppData * ad, const int frame, const bool back)
   Frame f = (newResid.empty() ? Frame(newPoints) : Frame(newPoints, newResid, minResid, maxResid));
   
   if (back) {
-    ad->points.push_back(f);
+    ad.frames.push_back(f);
   } else {
-    ad->points.push_front(f);
+    ad.frames.push_front(f);
   }
-    
+  
   posFile.close();
   
 }
@@ -84,7 +84,7 @@ void loadFrame(AppData * ad, const int frame, const bool back)
 // best fit transformation from the current frame to the next. If retMax
 // is true, the maximum error is returned; otherwise, the total error squared
 // is returned.
-float getResidual(const AppData ad, const vector<uint32_t> indices, const int curFrame, const int nextFrame, const bool retMax)
+float getResidual(const AppData& ad, const vector<uint32_t> indices, const int curFrameNum, const int nextFrameNum, const bool retMax)
 {
   using namespace Eigen;
   int n = indices.size();
@@ -96,12 +96,14 @@ float getResidual(const AppData ad, const vector<uint32_t> indices, const int cu
   }
   
   // TODO: check that both frames are in memory
+  const Frame* curFrame = &ad.frames[curFrameNum];
+  const Frame* nextFrame = &ad.frames[nextFrameNum];
   
   Vec3f curAvg = Vec3f();
   Vec3f nextAvg = Vec3f();
   for (uint32_t index : indices) {
-    curAvg += ad.points[curFrame][index];
-    nextAvg += ad.points[nextFrame][index];
+    curAvg += (*curFrame)[index];
+    nextAvg += (*nextFrame)[index];
   }
   
   curAvg /= n;
@@ -112,9 +114,9 @@ float getResidual(const AppData ad, const vector<uint32_t> indices, const int cu
   for (uint32_t index : indices) {
     for (int i=0; i<3; i++) {
       for (int j=0; j<3; j++) {
-        Vec3f p = ad.points[curFrame][index] - curAvg;
+        Vec3f p = (*curFrame)[index] - curAvg;
         A(i,j) += p[i]*p[j];
-        Vec3f pNext = ad.points[nextFrame][index] - nextAvg;
+        Vec3f pNext = (*nextFrame)[index] - nextAvg;
         B(i,j) += p[i]*pNext[j];
       }
     }
@@ -130,11 +132,11 @@ float getResidual(const AppData ad, const vector<uint32_t> indices, const int cu
   Vector3d input;
   Vector3d output;
   for (uint32_t index : indices) {
-    temp = ad.points[curFrame][index] - curAvg;
+    temp = (*curFrame)[index] - curAvg;
     input << temp.x, temp.y, temp.z;
     output = M * input;
     for (int j=0; j<3; j++) {
-      float diff = abs(output(j) - (ad.points[nextFrame][index][j] - nextAvg[j]));
+      float diff = abs(output(j) - ((*nextFrame)[index][j] - nextAvg[j]));
       if (retMax) {
         ret = max(ret, diff);
       } else {
@@ -145,4 +147,14 @@ float getResidual(const AppData ad, const vector<uint32_t> indices, const int cu
   
   return ret;
   
+}
+
+// A fairly unsafe method that writes contiguous memory to a given file.
+// Abstracted here to confine the dragons and black magic.
+void writeBinary(const void* data, const uint size, ofstream* outFile)
+{
+  char* out = (char*) data;
+  for (int i=0; i<size; i++) {
+    (*outFile) << out[i];
+  }
 }
