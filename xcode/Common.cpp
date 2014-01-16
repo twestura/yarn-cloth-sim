@@ -124,6 +124,8 @@ float getResidual(const AppData& ad, const vector<uint32_t> indices, const int c
   
   // Q = MP
   // M = QP'[PP']^-1
+  // P'M' = Q'
+  // (PP')M' = PQ'
   Matrix<double, 3, 3> M = (A.fullPivHouseholderQr().solve(B)).transpose();
   
   // Compute residuals
@@ -143,6 +145,10 @@ float getResidual(const AppData& ad, const vector<uint32_t> indices, const int c
         ret += diff * diff;
       }
     }
+  }
+  
+  if (!retMax) {
+    ret = sqrt(ret);
   }
   
   return ret;
