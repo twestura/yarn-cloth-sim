@@ -106,7 +106,7 @@ int writeKeyframeFile(const AppData& ad)
     bytesWritten++;
     for (uint32_t index : group.indices) {
       for (int i=0; i<3; i++) {
-        writeBinary(&(ad.frames[ad.currentFrame][index][i]), sizeof(float), &outFile);
+        writeBinary(&(ad.frames[ad.currentFrame][index][i]), sizeof(float), outFile);
         bytesWritten += sizeof(float);
       }
     }
@@ -168,11 +168,11 @@ int writeCompressedFrame(const AppData& ad)
     for (int i=0; i<9; i++) {
       Mf(i) = M(i);
       
-      writeBinary(&(Mf(i)), sizeof(float), &outFile);
+      writeBinary(&(Mf(i)), sizeof(float), outFile);
       bytesWritten += sizeof(float);
     }
     for (int i=0; i<3; i++) {
-      writeBinary(&(avg[i]), sizeof(float), &outFile);
+      writeBinary(&(avg[i]), sizeof(float), outFile);
       bytesWritten += sizeof(float);
     }
     
@@ -221,11 +221,11 @@ int writeCompressedFrame(const AppData& ad)
     auto badPosIter = badPos.begin();
     for (int i=0; i<corrections.size() + badPos.size(); i++) {
       if(std::binary_search(badIndices.begin(), badIndices.end(), i)) {
-        writeBinary(&(*badPosIter), sizeof(float), &outFile);
+        writeBinary(&(*badPosIter), sizeof(float), outFile);
         bytesWritten += sizeof(float);
         ++badPosIter;
       } else {
-        writeBinary(&(*correctionsIter), sizeof(int16_t), &outFile);
+        writeBinary(&(*correctionsIter), sizeof(int16_t), outFile);
         bytesWritten += sizeof(int16_t);
         ++correctionsIter;
       }

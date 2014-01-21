@@ -84,7 +84,7 @@ void loadFrame(AppData& ad, const int frame, const bool back)
 // best fit transformation from the current frame to the next. If retMax
 // is true, the maximum error is returned; otherwise, the total error squared
 // is returned.
-float getResidual(const AppData& ad, const vector<uint32_t> indices, const int curFrameNum, const int nextFrameNum, const bool retMax)
+float getResidual(const AppData& ad, const vector<uint32_t>& indices, const int curFrameNum, const int nextFrameNum, const bool retMax)
 {
   using namespace Eigen;
   int n = indices.size();
@@ -157,10 +157,10 @@ float getResidual(const AppData& ad, const vector<uint32_t> indices, const int c
 
 // A fairly unsafe method that writes contiguous memory to a given file.
 // Abstracted here to confine the dragons and black magic.
-void writeBinary(const void* data, const uint size, ofstream* outFile)
+void writeBinary(const void* data, const uint size, ofstream& outFile)
 {
   char* out = (char*) data;
   for (int i=0; i<size; i++) {
-    (*outFile) << out[i];
+    outFile << out[i];
   }
 }

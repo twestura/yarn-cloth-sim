@@ -354,7 +354,7 @@ void VisualizerApp::writeResidFile()
       curFrame->minResid = curFrame->resid[i];
     }
     
-    writeBinary(&(curFrame->resid[i]), sizeof(float), &residOutFile);
+    writeBinary(&(curFrame->resid[i]), sizeof(float), residOutFile);
   }
   residOutFile.close();
   cout << "Done!\n";

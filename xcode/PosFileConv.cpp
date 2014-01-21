@@ -74,7 +74,7 @@ int createPosFiles(int startFile, int endFile) {
       exit(1);
     }
     for (int k=0; k<newPoints.size(); k++) {
-      writeBinary(&(newPoints[k]), sizeof(float), &posOutFile);
+      writeBinary(&(newPoints[k]), sizeof(float), posOutFile);
 
     }
     posOutFile.close();

@@ -158,7 +158,7 @@ struct AppData {
 // best fit transformation from the current frame to the next. If retMax
 // is true, the maximum error is returned; otherwise, the total error squared
 // is returned.
-float getResidual(const AppData& ad, const vector<uint32_t> indices, const int curFrame, const int nextFrame, const bool retMax);
+float getResidual(const AppData& ad, const vector<uint32_t>& indices, const int curFrame, const int nextFrame, const bool retMax);
 
 // Similar to the method above, in an attempt to get things to be more accurate.
 // Not entirely successful.
@@ -238,6 +238,6 @@ void loadFrame(AppData& ad, const int frame, const bool back);
 
 // A fairly unsafe method that writes contiguous memory to a given file.
 // Abstracted here to confine the dragons and black magic.
-void writeBinary(const void* data, const uint size, ofstream* outFile);
+void writeBinary(const void* data, const uint size, ofstream& outFile);
 
 #endif
