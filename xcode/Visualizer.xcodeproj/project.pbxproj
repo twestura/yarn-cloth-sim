@@ -18,6 +18,7 @@
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
 		716A6BB5185F6E5100AB90DC /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 716A6BB3185F6E5100AB90DC /* Compressor.cpp */; };
+		717DD768188EF95E00D3BFA2 /* BetterComp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* BetterComp.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
 		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
@@ -45,6 +46,8 @@
 		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		716A6BB3185F6E5100AB90DC /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Compressor.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		716A6BB4185F6E5100AB90DC /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compressor.h; sourceTree = "<group>"; };
+		717DD766188EF95E00D3BFA2 /* BetterComp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BetterComp.cpp; sourceTree = "<group>"; };
+		717DD767188EF95E00D3BFA2 /* BetterComp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterComp.h; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -81,6 +84,7 @@
 			children = (
 				7F945C3F150C458FB3352920 /* VisualizerApp.cpp */,
 				715454C3188495D200F2C196 /* Common.cpp */,
+				717DD766188EF95E00D3BFA2 /* BetterComp.cpp */,
 				716A6BB3185F6E5100AB90DC /* Compressor.cpp */,
 				7101FBBF18595AA9008553D8 /* PosFileConv.cpp */,
 				711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */,
@@ -136,6 +140,7 @@
 		29B97315FDCFA39411CA2CEA /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				717DD767188EF95E00D3BFA2 /* BetterComp.h */,
 				711E97E8183DE8DF00BAFB0B /* InfoPanel.h */,
 				716A6BB4185F6E5100AB90DC /* Compressor.h */,
 				7101FBC018595AA9008553D8 /* PosFileConv.h */,
@@ -230,6 +235,7 @@
 			files = (
 				716A6BB5185F6E5100AB90DC /* Compressor.cpp in Sources */,
 				C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */,
+				717DD768188EF95E00D3BFA2 /* BetterComp.cpp in Sources */,
 				7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */,
 				715454C4188495D300F2C196 /* Common.cpp in Sources */,
 				711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */,

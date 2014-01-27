@@ -155,6 +155,81 @@ float getResidual(const AppData& ad, const vector<uint32_t>& indices, const int 
   
 }
 
+
+// FIXME: this is broken.
+float newGetResidual(const AppData& ad, const vector<uint32_t>& indices, const int curFrame, const int nextFrame, const bool retMax)
+{
+  using namespace Eigen;
+  int n = indices.size();
+  
+  // Compute centroids
+  Vec3f c = Vec3f::zero();
+  Vec3f cTilde = Vec3f::zero();
+  for (int index : indices) {
+    c += ad.frames[nextFrame][index];
+    cTilde += ad.frames[curFrame][index];
+  }
+  c /= n;
+  cTilde /= n;
+  
+  // Create least squares system--see James and Twigg, Appendix A.
+  Matrix<double, 12, 12> M;
+  M << cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, 0, 0, 0, cTilde[0], 0, 0,
+  cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, 0, 0, 0, cTilde[0], 0,
+  cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, 0, 0, 0, cTilde[0],
+  0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, cTilde[1], 0, 0,
+  0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, cTilde[1], 0,
+  0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, cTilde[1],
+  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], cTilde[2], 0, 0,
+  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, cTilde[2], 0,
+  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2],  0, 0, cTilde[2],
+  cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 0, 0, 1, 0, 0,
+  0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 1, 0,
+  0, 0, 0, 0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 1;
+  
+  Matrix<double, 12, 1> B;
+  B << c[0]*cTilde[0], c[1]*cTilde[0], c[2]*cTilde[0], c[0]*cTilde[1], c[1]*cTilde[1], c[2]*cTilde[1],
+  c[0]*cTilde[2], c[1]*cTilde[2], c[2]*cTilde[2], c[0], c[1], c[2];
+  
+  // Solve least squares, convert to affine transform matrix
+  Matrix<double, 12, 1> X = M.fullPivHouseholderQr().solve(B);
+  
+  Matrix<float, 3, 4> Transform;
+  for (int i=0; i<9; i++) {
+    Transform(i/3, i%3) = X(i);
+  }
+  Transform(0,3) = X(9);
+  Transform(1,3) = X(10);
+  Transform(2,3) = X(11);
+  
+  cout << Transform << "\n";
+  
+  // Compute residuals
+  float ret = 0;
+  Vec3f temp;
+  Vector4f input;
+  Vector3f output;
+  for (int index : indices) {
+    temp = ad.frames[curFrame][index];
+    input << temp.x, temp.y, temp.z, 1;
+    output = Transform * input;
+    for (int j=0; j<3; j++) {
+      float diff = abs(output(j) - ad.frames[nextFrame][index][j]);
+      if (retMax) {
+        ret = max(ret, diff);
+      } else {
+        ret += diff * diff;
+      }
+    }
+  }
+  
+  if (!retMax) {
+    ret = sqrt(ret);
+  }
+  
+  return ret;
+}
+
 // A fairly unsafe method that writes contiguous memory to a given file.
 // Abstracted here to confine the dragons and black magic.
 void writeBinary(const void* data, const uint size, ofstream& outFile)
@@ -164,3 +239,21 @@ void writeBinary(const void* data, const uint size, ofstream& outFile)
     outFile << out[i];
   }
 }
+
+// Load more frames into the circular buffer if necessary
+void loadFramesIfNecessary(AppData& ad, const Direction d, const int frame) {
+  if (d == Direction::Right) {
+    if (ad.frames.left_buffer_size(frame) < 1 && END_FRAME != ad.currentFrame) {
+      for (int i=1; i<NUM_FRAMES-2 && frame + i <= END_FRAME; i++) {
+        loadFrame(ad, frame + i, true);
+      }
+    }
+  } else {
+    if (ad.frames.right_buffer_size(frame) < 1 && START_FRAME != frame && 1 != frame) {
+      for (int i=1; i<NUM_FRAMES-2 && frame - i >= START_FRAME && frame - i >= 1; i++) {
+        loadFrame(ad, frame - i, false);
+      }
+    }
+  }
+}
+

@@ -1,14 +1,17 @@
 #include <iostream>
 #include <fstream>
+
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Xml.h"
 #include "cinder/KdTree.h"
 #include "cinder/Camera.h"
 #include "cinder/gl/Vbo.h"
+#include "cinder/Rand.h"
+
 #include "Common.h"
+#include "BetterComp.h"
 #include "PosFileConv.h"
-#include "Eigen/Dense"
 
 using namespace ci;
 using namespace ci::app;
@@ -29,6 +32,7 @@ class VisualizerApp : public AppNative {
 	void update();
 	void draw();
   
+  void perturb(const float p);
   void viewFrame(const int);
   void writeResidFile();
   void createResidFiles(const int);
@@ -71,7 +75,7 @@ void VisualizerApp::setup()
   ad.frames.init(NUM_FRAMES, START_FRAME);
   loadFrame(ad, 0, true);
   
-  int start =START_FRAME == 0 ? 1 : START_FRAME;
+  int start = START_FRAME == 0 ? 1 : START_FRAME;
   for (int i=start; i<start+NUM_FRAMES; i++) {
     loadFrame(ad, i, true);
   }
@@ -104,9 +108,14 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
+  cout << "# vertices: " << ad.frames[0].size() <<"\n";
+
 #ifdef COMPRESS
-  compress();
+  Compressor c(ad, kdtree);
+  c.compress(10);
+  exit(0);
 #endif
+  
 }
 
 // Triggered when the mouse is clicked.
@@ -142,8 +151,9 @@ void VisualizerApp::mouseDown( MouseEvent event )
     targetPos = ad.frames[ad.currentFrame][index];
     kdtree.lookup(targetPos, selection, radius);
     camera.lookAt(targetPos);
-//    float n = getResidual(ad, selection.neighbors, ad.currentFrame, ad.currentFrame+1, false);
-//    cout << n << "\n";
+    float n = getResidual(ad, selection.neighbors, ad.currentFrame, ad.currentFrame+1, false);
+    float newn = newGetResidual(ad, selection.neighbors, ad.currentFrame, ad.currentFrame+1, false);
+    cout << "old: " << n << "\nnew: " << newn << "\n";
   }
 
 }
@@ -187,28 +197,24 @@ void VisualizerApp::keyDown( KeyEvent event )
       if(ad.currentFrame > START_FRAME) {
         ad.currentFrame--;
         viewFrame(ad.currentFrame);
-        if (ad.frames.right_buffer_size(ad.currentFrame) < 1 && START_FRAME != ad.currentFrame && 1 != ad.currentFrame) {
-          for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame - i >= START_FRAME && ad.currentFrame - i >= 1; i++) {
-            loadFrame(ad, ad.currentFrame - i, false);
-          }
-        }
+        loadFramesIfNecessary(ad, Direction::Left, ad.currentFrame);
       }
       break;
     case event.KEY_RIGHT:
       if(ad.currentFrame < END_FRAME) {
         ad.currentFrame++;
         viewFrame(ad.currentFrame);
-        if (ad.frames.left_buffer_size(ad.currentFrame) < 1 && END_FRAME != ad.currentFrame) {
-          for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame + i <= END_FRAME; i++) {
-            loadFrame(ad, ad.currentFrame + i, true);
-          }
-        }
+        loadFramesIfNecessary(ad, Direction::Right, ad.currentFrame);
       }
       break;
       
     case event.KEY_m:
       globalRelativeColoring = !globalRelativeColoring;
       viewFrame(ad.currentFrame);
+      break;
+      
+    case event.KEY_p:
+      perturb(.005);
       break;
       
     case event.KEY_ESCAPE:
@@ -219,6 +225,23 @@ void VisualizerApp::keyDown( KeyEvent event )
       break;
   }
   
+}
+
+void VisualizerApp::perturb(const float p)
+{
+  float minResid = (globalRelativeColoring ? MIN_RES : ad.frames[ad.currentFrame].minResid);
+  float maxResid = (globalRelativeColoring ? MAX_RES : ad.frames[ad.currentFrame].maxResid);
+  gl::VboMesh::VertexIter vIter = mVboMesh->mapVertexBuffer();
+  Rand r(getElapsedFrames());
+  for (int i=0; i<ad.frames[0].size(); i++) {
+    Vec3f temp = ad.frames[ad.currentFrame][i];
+    for (int j=0; j<3; j++)
+      temp[j] += r.nextFloat(-p, p);
+    vIter.setPosition(temp);
+    float c = (ad.frames[ad.currentFrame].resid.empty() ? 0 : (ad.frames[ad.currentFrame].resid[i]-minResid)/(maxResid-minResid));
+    vIter.setColorRGBA(ColorA(c, 0.4, 1-c, 0.6));
+    ++vIter;
+  }
 }
 
 // Triggered when a key is released.

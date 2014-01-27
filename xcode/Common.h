@@ -161,77 +161,7 @@ struct AppData {
 float getResidual(const AppData& ad, const vector<uint32_t>& indices, const int curFrame, const int nextFrame, const bool retMax);
 
 // Similar to the method above, in an attempt to get things to be more accurate.
-// Not entirely successful.
-/*
-float newGetResidual(const vector<uint32_t> indices, const bool retMax)
-{
-  using namespace Eigen;
-  int n = indices.size();
-  
-  // Compute centroids
-  Vec3f c = Vec3f();
-  Vec3f cTilde = Vec3f();
-  for (int index : indices) {
-    c += points[currentFrame][index];
-    cTilde += points[currentFrame][index]; //here
-  }
-  c /= n;
-  cTilde /= n;
-  
-  // Create least squares system--see James and Twigg, Appendix A.
-  Matrix<float, 12, 12> M;
-  M << cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, 0, 0, 0, cTilde[0], 0, 0,
-  cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, 0, 0, 0, cTilde[0], 0,
-  cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, 0, 0, 0, cTilde[0],
-  0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], 0, 0, 0, cTilde[1], 0, 0,
-  0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, 0, 0, 0, cTilde[1], 0,
-  0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2], 0, 0, 0, 0, 0, cTilde[1],
-  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[0], cTilde[1]*cTilde[0], cTilde[2]*cTilde[0], cTilde[2], 0, 0,
-  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[1], cTilde[1]*cTilde[1], cTilde[2]*cTilde[1], 0, cTilde[2], 0,
-  0, 0, 0, 0, 0, 0, cTilde[0]*cTilde[2], cTilde[1]*cTilde[2], cTilde[2]*cTilde[2],  0, 0, cTilde[2],
-  cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 0, 0, 1, 0, 0,
-  0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 0, 0, 1, 0,
-  0, 0, 0, 0, 0, 0, cTilde[0], cTilde[1], cTilde[2], 0, 0, 1;
-  
-  Matrix<float, 12, 1> B;
-  B << c[0]*cTilde[0], c[1]*cTilde[0], c[2]*cTilde[0], c[0]*cTilde[1], c[1]*cTilde[1], c[2]*cTilde[1],
-  c[0]*cTilde[2], c[1]*cTilde[2], c[2]*cTilde[2], c[0], c[1], c[2];
-  
-  // Solve least squares, convert to affine transform matrix
-  Matrix<float, 12, 1> X = M.fullPivLu().solve(B);
-  
-  Matrix<float, 3, 4> Transform;
-  for (int i=0; i<9; i++) {
-    Transform(i/3, i%3) = X(i);
-  }
-  Transform(0,3) = X(9);
-  Transform(1,3) = X(10);
-  Transform(2,3) = X(11);
-  
-  cout << Transform << "\n";
-  
-  // Compute residuals
-  float ret = 0;
-  Vec3f temp;
-  Vector4f input;
-  Vector3f output;
-  for (int index : indices) {
-    temp = points[currentFrame][index] - c;
-    input << temp.x, temp.y, temp.z, 1;
-    output = Transform * input;
-    for (int j=0; j<3; j++) {
-      float diff = abs(output(j) + cTilde[j] - points[currentFrame][index][j]); //here
-      if (retMax) {
-        ret = max(ret, diff);
-      } else {
-        ret += diff * diff;
-      }
-    }
-  }
-  
-  return ret;
-}
-*/
+float newGetResidual(const AppData& ad, const vector<uint32_t>& indices, const int curFrame, const int nextFrame, const bool retMax);
 
 // Load a .pos file into the circular buffer.
 void loadFrame(AppData& ad, const int frame, const bool back);
@@ -239,5 +169,13 @@ void loadFrame(AppData& ad, const int frame, const bool back);
 // A fairly unsafe method that writes contiguous memory to a given file.
 // Abstracted here to confine the dragons and black magic.
 void writeBinary(const void* data, const uint size, ofstream& outFile);
+
+enum Direction {
+  Left,
+  Right
+};
+
+// Load more frames into the circular buffer if necessary
+void loadFramesIfNecessary(AppData& ad, const Direction, const int);
 
 #endif
