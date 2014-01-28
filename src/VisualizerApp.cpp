@@ -12,6 +12,7 @@
 #include "Common.h"
 #include "BetterComp.h"
 #include "PosFileConv.h"
+#include "Decompressor.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -38,8 +39,10 @@ class VisualizerApp : public AppNative {
   void createResidFiles(const int);
   
   AppData ad;
+  Decompressor decomp;
   
   bool globalRelativeColoring = false;
+  bool compressedMode = false;
   
   float radius = RADIUS;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
@@ -61,16 +64,6 @@ void VisualizerApp::setup()
   exit(0);
 #endif
   
-#ifdef DECOMPRESS
-  // decompress and load compressed frames
-  ad.frames.init(NUM_FRAMES, START_FRAME);
-  decompressFrame(0);
-  decompressFrame(1);
-//  decompressFrame(2);
-//  decompressFrame(3);
-//  decompressFrame(4);
-//  decompressFrame(5);
-#else
   // Load starting frames
   ad.frames.init(NUM_FRAMES, START_FRAME);
   loadFrame(ad, 0, true);
@@ -79,7 +72,6 @@ void VisualizerApp::setup()
   for (int i=start; i<start+NUM_FRAMES; i++) {
     loadFrame(ad, i, true);
   }
-#endif // ifdef DECOMPRESS
   
   // Push the points to the GPU
   gl::VboMesh::Layout layout;
@@ -217,6 +209,16 @@ void VisualizerApp::keyDown( KeyEvent event )
       perturb(.005);
       break;
       
+    case event.KEY_c:
+      if (compressedMode) {
+        compressedMode = false;
+        decomp.clear();
+      } else {
+        compressedMode = true;
+        decomp.init();
+      }
+      break;
+      
     case event.KEY_ESCAPE:
       exit(0);
       break;
@@ -314,14 +316,14 @@ void VisualizerApp::draw()
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) );
   // draw the scene
-  gl::draw(mVboMesh);
+  if (compressedMode) {
+    decomp.draw();
+  } else {
+    gl::draw(mVboMesh);
+  }
   
   gl::color(0, 1, 0, 0.6);
-  /*
-  for (AAGroup group : groupVec) {
-    gl::drawStrokedCube(AxisAlignedBox3f(group.aabb[0], group.aabb[1]));
-  }
-   */
+
 }
 
 // Prime a frame to be drawn.

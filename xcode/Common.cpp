@@ -47,16 +47,15 @@ void loadFrame(AppData& ad, const int frame, const bool back)
   if (residFile) newResid.reserve(length/sizeof(float));
   for (int j=0; j<length/3/sizeof(float); j++) {
     float point[3];
-    char in[sizeof(float)];
     for (int i=0; i<3; i++) {
-      posFile.read(in, sizeof(float));
-      point[i] = *(float*)&in;
+      readBinary(point[i], posFile);
     }
     newPoints.push_back(Vec3f(point[0], point[1], point[2]));
     
     if (residFile) {
-      residFile.read(in, sizeof(float));
-      newResid.push_back(*(float*)&in);
+      float resid;
+      readBinary(resid, residFile);
+      newResid.push_back(resid);
       
       if (newResid[newResid.size()-1] > maxResid) {
         maxResid = newResid[newResid.size()-1];
@@ -230,7 +229,7 @@ float newGetResidual(const AppData& ad, const vector<uint32_t>& indices, const i
   return ret;
 }
 
-// A fairly unsafe method that writes contiguous memory to a given file.
+// A fairly unsafe method that writes contiguous memory to a given binary file.
 // Abstracted here to confine the dragons and black magic.
 void writeBinary(const void* data, const uint size, ofstream& outFile)
 {
@@ -238,6 +237,27 @@ void writeBinary(const void* data, const uint size, ofstream& outFile)
   for (int i=0; i<size; i++) {
     outFile << out[i];
   }
+}
+
+// A fairly unsafe method that reads from a given binary file.
+// Abstracted here to confine the dragons and black magic.
+template <class T>
+void readBinary(T& data, ifstream& inFile)
+{
+  char in[sizeof(T)];
+  inFile.read(in, sizeof(T));
+  data = *(T*)(&in);
+}
+
+// Actually generate symbols for specific instances of readBinary.
+// FIXME: There has got to be a better way to do this. This kind of
+// defeats the point of having a template function. Stupid linker.
+void fakeyfakestupidmethoddontcallthis() {
+  ifstream stupid("fakeyfakefile.txt");
+  int wowthisisdumb;
+  readBinary(wowthisisdumb, stupid);
+  unsigned char sodumb;
+  readBinary(sodumb, stupid);
 }
 
 // Load more frames into the circular buffer if necessary

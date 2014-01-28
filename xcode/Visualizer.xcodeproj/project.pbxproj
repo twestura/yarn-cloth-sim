@@ -19,6 +19,9 @@
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
 		716A6BB5185F6E5100AB90DC /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 716A6BB3185F6E5100AB90DC /* Compressor.cpp */; };
 		717DD768188EF95E00D3BFA2 /* BetterComp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* BetterComp.cpp */; };
+		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
+		71AAF9E21898425100710A16 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
+		71AAF9E31898425100710A16 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
 		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
@@ -48,6 +51,10 @@
 		716A6BB4185F6E5100AB90DC /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compressor.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* BetterComp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BetterComp.cpp; sourceTree = "<group>"; };
 		717DD767188EF95E00D3BFA2 /* BetterComp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BetterComp.h; sourceTree = "<group>"; };
+		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Decompressor.cpp; sourceTree = "<group>"; };
+		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
+		71AAF9E01898425100710A16 /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = frag.glsl; path = ../resources/frag.glsl; sourceTree = "<group>"; };
+		71AAF9E11898425100710A16 /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = vert.glsl; path = ../resources/vert.glsl; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -83,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				7F945C3F150C458FB3352920 /* VisualizerApp.cpp */,
+				71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */,
 				715454C3188495D200F2C196 /* Common.cpp */,
 				717DD766188EF95E00D3BFA2 /* BetterComp.cpp */,
 				716A6BB3185F6E5100AB90DC /* Compressor.cpp */,
@@ -145,6 +153,7 @@
 				716A6BB4185F6E5100AB90DC /* Compressor.h */,
 				7101FBC018595AA9008553D8 /* PosFileConv.h */,
 				5F70902D1A5C4662889367FC /* Resources.h */,
+				71AAF9DE1896EB8D00710A16 /* Decompressor.h */,
 				715454C2187C6D4600F2C196 /* Common.h */,
 				55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */,
 			);
@@ -154,6 +163,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				71AAF9E01898425100710A16 /* frag.glsl */,
+				71AAF9E11898425100710A16 /* vert.glsl */,
 				6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */,
 				BB0A1373225F4D5196F608BC /* Info.plist */,
 			);
@@ -223,6 +234,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */,
+				71AAF9E31898425100710A16 /* vert.glsl in Resources */,
+				71AAF9E21898425100710A16 /* frag.glsl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,6 +247,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				716A6BB5185F6E5100AB90DC /* Compressor.cpp in Sources */,
+				71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */,
 				C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */,
 				717DD768188EF95E00D3BFA2 /* BetterComp.cpp in Sources */,
 				7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */,

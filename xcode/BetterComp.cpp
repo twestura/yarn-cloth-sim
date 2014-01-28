@@ -38,6 +38,8 @@ void Compressor::compress(const int frame) {
   cout << "Compressing frame 0...\n";
   int numPoints = ad.frames[0].size();
   writeBinary(&numPoints, sizeof(int), outFile);
+  int numPJs = proxyJoints.size();
+  writeBinary(&numPJs, sizeof(int), outFile);
   for (int i=0; i<numPoints; i++) {
     for (int j=0; j<3; j++)
       writeBinary(&ad.frames[0][j], sizeof(float), outFile);
@@ -48,10 +50,6 @@ void Compressor::compress(const int frame) {
       writeBinary(&vertices[i].weights[j], sizeof(float), outFile);
     }
   }
-  int numPJs = proxyJoints.size();
-  writeBinary(&numPJs, sizeof(int), outFile);
-  for (int pj : proxyJoints)
-    writeBinary(&pj, sizeof(int), outFile); // TODO: Compress these ints
   
   writeBinary(&frame, sizeof(int), outFile);
   // write compframe

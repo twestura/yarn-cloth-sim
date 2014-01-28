@@ -45,7 +45,6 @@ class Compressor {
 public:
   Compressor(AppData&, KdTree<Vec3f, 3, NeighborLookupProc>&);
   
-  
   void compress(const int);
 };
 

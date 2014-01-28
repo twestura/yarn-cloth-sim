@@ -166,9 +166,14 @@ float newGetResidual(const AppData& ad, const vector<uint32_t>& indices, const i
 // Load a .pos file into the circular buffer.
 void loadFrame(AppData& ad, const int frame, const bool back);
 
-// A fairly unsafe method that writes contiguous memory to a given file.
+// A fairly unsafe method that writes contiguous memory to a given binary file.
 // Abstracted here to confine the dragons and black magic.
 void writeBinary(const void* data, const uint size, ofstream& outFile);
+
+// A fairly unsafe method that reads from a given binary file.
+// Abstracted here to confine the dragons and black magic.
+template <class T>
+void readBinary(T& data, ifstream& inFile);
 
 enum Direction {
   Left,
