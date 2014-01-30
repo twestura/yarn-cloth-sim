@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include "cinder/gl/GlslProg.h"
+
 using namespace ci;
 
 class Decompressor {
@@ -18,6 +19,13 @@ class Decompressor {
   std::pair<std::vector<Matrix33f*>, std::vector<Vec3f*>> frames;
   gl::GlslProg skinningProg;
   gl::VboMeshRef mesh;
+  
+  ///DEBUG
+  gl::VboMeshRef debugMesh;
+  std::vector<Vec3f> debugPoints;
+  std::vector<Vec4f> debugpjis;
+  std::vector<Vec4f> debugpjws;
+  ///
   
   
 public:

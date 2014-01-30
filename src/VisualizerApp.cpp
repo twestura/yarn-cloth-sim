@@ -186,14 +186,18 @@ void VisualizerApp::keyDown( KeyEvent event )
       break;
       
     case event.KEY_LEFT:
-      if(ad.currentFrame > START_FRAME) {
+      if (compressedMode) {
+        decomp.currentFrame--;
+      } else if(ad.currentFrame > START_FRAME) {
         ad.currentFrame--;
         viewFrame(ad.currentFrame);
         loadFramesIfNecessary(ad, Direction::Left, ad.currentFrame);
       }
       break;
     case event.KEY_RIGHT:
-      if(ad.currentFrame < END_FRAME) {
+      if (compressedMode) {
+        decomp.currentFrame++;
+      } else if(ad.currentFrame < END_FRAME) {
         ad.currentFrame++;
         viewFrame(ad.currentFrame);
         loadFramesIfNecessary(ad, Direction::Right, ad.currentFrame);
@@ -215,7 +219,9 @@ void VisualizerApp::keyDown( KeyEvent event )
         decomp.clear();
       } else {
         compressedMode = true;
+        mVboMesh->unbindBuffers();
         decomp.init();
+        mVboMesh->bindAllData();
       }
       break;
       
@@ -319,7 +325,9 @@ void VisualizerApp::draw()
   if (compressedMode) {
     decomp.draw();
   } else {
+    mVboMesh->bindAllData();
     gl::draw(mVboMesh);
+    mVboMesh->unbindBuffers();
   }
   
   gl::color(0, 1, 0, 0.6);

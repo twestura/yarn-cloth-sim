@@ -28,7 +28,7 @@ void Compressor::compress(const int frame) {
 
   // compress
   stringstream outFileName;
-  outFileName << CompPath << "afghan.comp"; // TODO: generalize
+  outFileName << CompPath << "afghan-test.comp"; // TODO: generalize ///DEBUG
   ofstream outFile(outFileName.str(), ios::trunc | ios::binary);
   if (!outFile) {
     cerr << "Unable to create outfile: " << outFileName.str() << "\n";
@@ -42,7 +42,7 @@ void Compressor::compress(const int frame) {
   writeBinary(&numPJs, sizeof(int), outFile);
   for (int i=0; i<numPoints; i++) {
     for (int j=0; j<3; j++)
-      writeBinary(&ad.frames[0][j], sizeof(float), outFile);
+      writeBinary(&ad.frames[0][i][j], sizeof(float), outFile);
     uchar numPJs = vertices[i].proxyJoints.size();
     writeBinary(&numPJs, sizeof(uchar), outFile);
     for (int j=0; j<numPJs; j++) {
@@ -53,10 +53,15 @@ void Compressor::compress(const int frame) {
   
   writeBinary(&frame, sizeof(int), outFile);
   // write compframe
-  for (int f=1; f<frame; f++) {
+  for (int f=1; f<=frame; f++) {
     loadFramesIfNecessary(ad, Direction::Right, f);
     cout << "Compressing frame " << f << "...\n";
     vector<Matrixf34> trans = ls(f);
+    
+    ///DEBUG
+    cout << trans[4] << "\n";
+    ///
+    
     for (Matrixf34 m : trans) {
       for (int i=0; i<12; i++) {
         writeBinary(&m(i), sizeof(float), outFile);

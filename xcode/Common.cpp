@@ -244,6 +244,7 @@ void writeBinary(const void* data, const uint size, ofstream& outFile)
 template <class T>
 void readBinary(T& data, ifstream& inFile)
 {
+  assert(!inFile.eof());
   char in[sizeof(T)];
   inFile.read(in, sizeof(T));
   data = *(T*)(&in);
