@@ -28,14 +28,14 @@ void Compressor::compress(const int frame) {
 
   // compress
   stringstream outFileName;
-  outFileName << CompPath << "afghan-test.comp"; // TODO: generalize ///DEBUG
+  outFileName << CompPath << "afghan.comp"; // TODO: generalize
   ofstream outFile(outFileName.str(), ios::trunc | ios::binary);
   if (!outFile) {
     cerr << "Unable to create outfile: " << outFileName.str() << "\n";
   }
   
-  // write first frame
-  cout << "Compressing frame 0...\n";
+  // write header
+  cout << "Compressing header...\n";
   int numPoints = ad.frames[0].size();
   writeBinary(&numPoints, sizeof(int), outFile);
   int numPJs = proxyJoints.size();
@@ -51,16 +51,13 @@ void Compressor::compress(const int frame) {
     }
   }
   
-  writeBinary(&frame, sizeof(int), outFile);
+  int numFrames = frame+1;
+  writeBinary(&numFrames, sizeof(int), outFile);
   // write compframe
-  for (int f=1; f<=frame; f++) {
+  for (int f=0; f<=frame; f++) {
     loadFramesIfNecessary(ad, Direction::Right, f);
     cout << "Compressing frame " << f << "...\n";
     vector<Matrixf34> trans = ls(f);
-    
-    ///DEBUG
-    cout << trans[4] << "\n";
-    ///
     
     for (Matrixf34 m : trans) {
       for (int i=0; i<12; i++) {
@@ -103,14 +100,11 @@ void Compressor::initialize() {
   
   float maxDist = 0;
   for (int i=1; i<ad.frames[0].size(); i++) {
-    float myMaxDist = 0;
     for (int pjIndex : proxyJoints) {
       float dist = (ad.frames[0][i] - ad.frames[0][pjIndex]).length();
-      if (dist > myMaxDist)
-        myMaxDist = dist;
+      if (dist > maxDist)
+        maxDist = dist;
     }
-    if (myMaxDist > maxDist)
-      maxDist = myMaxDist;
   }
   
   const float influence = maxDist * ProxyJointInfluence;
@@ -125,7 +119,7 @@ void Compressor::initialize() {
     NeighborLookupProc nlp;
     kdt.lookup(ad.frames[0][pjIndex], nlp, influence);
     for (int vIndex : nlp.neighbors) {
-      float weight = (ad.frames[0][vIndex] - ad.frames[0][pjIndex]).length() / influence;
+      float weight = 1 - ((ad.frames[0][vIndex] - ad.frames[0][pjIndex]).length() / influence);
       if (vertices[vIndex].proxyJoints.size() < 4) {
         vertices[vIndex].proxyJoints.push_back(i);
         vertices[vIndex].weights.push_back(weight);
@@ -151,10 +145,8 @@ void Compressor::initialize() {
     float sum = 0;
     for (float w : v.weights)
       sum += w;
-    if (sum > 1) {
-      for (int i=0; i<v.weights.size(); i++)
-        v.weights[i] /= sum;
-    }
+    for (int i=0; i<v.weights.size(); i++)
+      v.weights[i] /= sum;
   }
   
   cout << "Done!\n";

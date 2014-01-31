@@ -20,7 +20,7 @@ using namespace ci;
 
 void Decompressor::init() {
   if (isInit) return;
-  assert(MaxProxyJoints == 100); // Reprogram the vertex shader if you need to change this
+  assert(MaxProxyJoints == 150); // Reprogram the vertex shader if you need to change this
   cout << "Starting compressed mode...\n";
   
   // Load compressed file
@@ -50,9 +50,6 @@ void Decompressor::init() {
       readBinary(newPoint[j], inFile);
     }
     points.push_back(newPoint);
-    ///DEBUG
-    debugPoints.push_back(newPoint);
-    ///
     
     uchar numPJs;
     readBinary(numPJs, inFile);
@@ -68,10 +65,11 @@ void Decompressor::init() {
     pji.push_back(newpji);
     pjw.push_back(newpjw);
     
-    ///DEBUG
+#ifdef GPUDEBUG
+    debugPoints.push_back(newPoint);
     debugpjis.push_back(newpji);
     debugpjws.push_back(newpjw);
-    ///
+#endif
   }
   
   int totalFrames;
@@ -129,72 +127,33 @@ void Decompressor::init() {
     ++vIter;
   }
 
-  /// DEBUG
+
+#ifdef GPUDEBUG
   gl::VboMesh::Layout debugLayout;
   debugLayout.setStaticPositions();
   debugLayout.setStaticIndices();
   debugMesh = gl::VboMesh::create(points.size(), 2*points.size()-1, debugLayout, GL_LINES);
   debugMesh->bufferIndices(indexBuffer);
   debugMesh->bufferPositions(points);
-  ///
+#endif
   
   
   inFile.close();
   currentFrame = 0;
+  viewFrame();
   isInit = true;
 }
 
 void Decompressor::draw() {
   if (!isInit) init();
-  if (currentFrame >= 0 && currentFrame < frames.first.size()) {
-    skinningProg.bind();
-    if (currentFrame == 0) {
-      Matrix33f mats[MaxProxyJoints];
-      Vec3f vecs[MaxProxyJoints];
-      for (int i=0; i<MaxProxyJoints; i++) {
-        vecs[i] = Vec3f::zero();
-      }
-      skinningProg.uniform("worldProxyJoints", mats, MaxProxyJoints);
-      skinningProg.uniform("worldProxyJointsT", vecs, MaxProxyJoints);
-    } else {
-      skinningProg.uniform("worldProxyJoints", frames.first[currentFrame], MaxProxyJoints);
-      skinningProg.uniform("worldProxyJointsT", frames.second[currentFrame], MaxProxyJoints);
-    }
-    gl::draw(mesh);
-    skinningProg.unbind();
-    
-    /// DEBUG
-    std::vector<Vec3f> debugPosBuffer;
-    for (int i=0; i<debugPoints.size(); i++) {
-      if (currentFrame == 0) {
-        gl::color(0, 1, 0, 0.6);
-        debugPosBuffer.push_back(debugPoints[i]);
-      } else {
-        Vec3f pos = debugPoints[i] * (1-debugpjws[i][0]-debugpjws[i][1]-debugpjws[i][2]-debugpjws[i][3]);
-        for (int j=0; j<4; j++) {
-          Matrix33f& pjm = frames.first[currentFrame][(int)(debugpjis[i][j])];
-          Vec3f& pjv = frames.second[currentFrame][(int)(debugpjis[i][j])];
-          Matrix44f mat;
-          mat.setColumn(0, Vec4f(pjm.at(0, 0), pjm.at(1, 0), pjm.at(2, 0), 0));
-          mat.setColumn(1, Vec4f(pjm.at(0, 1), pjm.at(1, 1), pjm.at(2, 1), 0));
-          mat.setColumn(2, Vec4f(pjm.at(0, 2), pjm.at(1, 2), pjm.at(2, 2), 0));
-          mat.setColumn(3, Vec4f(pjv.x, pjv.y, pjv.z, 0));
-          
-          Vec3f temp = mat.transformVec(debugPoints[i]);
-          pos += temp * debugpjws[i][j];
-        }
-        
-        debugPosBuffer.push_back(pos);
-        gl::color(1, 0, 0, 0.6);
-      }
-    }
-    debugMesh->bufferPositions(debugPosBuffer);
-    gl::draw(debugMesh);
-    ///
-    
-  } else {
-    cerr << "Warning: compressed frame out of bounds\n";
-  }
+  skinningProg.bind();
+  gl::draw(mesh);
+  skinningProg.unbind();
+  
+#ifdef GPUDEBUG
+  gl::color(0, 1, 0, 0.6);
+  gl::draw(debugMesh);
+#endif
 }
 
 void Decompressor::clear() {
@@ -208,6 +167,53 @@ void Decompressor::clear() {
   }
   frames.second.clear();
   isInit = false;
+}
+
+void Decompressor::changeFrame(Direction d) {
+  if (d == Direction::Left) {
+    if (currentFrame == 0)
+      return;
+    currentFrame--;
+  } else {
+    if (currentFrame == frames.first.size()-1)
+      return;
+    currentFrame++;
+  }
+  
+  viewFrame();
+}
+
+void Decompressor::viewFrame() {
+  skinningProg.bind();
+  skinningProg.uniform("worldProxyJoints", frames.first[currentFrame], MaxProxyJoints);
+  skinningProg.uniform("worldProxyJointsT", frames.second[currentFrame], MaxProxyJoints);
+  skinningProg.unbind();
+  
+#ifdef GPUDEBUG
+  std::vector<Vec3f> debugPosBuffer;
+  for (int i=0; i<debugPoints.size(); i++) {
+    if (currentFrame == 0) {
+      debugPosBuffer.push_back(debugPoints[i]);
+    } else {
+      Vec3f pos = debugPoints[i] * (1-debugpjws[i][0]-debugpjws[i][1]-debugpjws[i][2]-debugpjws[i][3]);
+      for (int j=0; j<4; j++) {
+        Matrix33f& pjm = frames.first[currentFrame][(int)(debugpjis[i][j])];
+        Vec3f& pjv = frames.second[currentFrame][(int)(debugpjis[i][j])];
+        Matrix44f mat;
+        mat.setColumn(0, Vec4f(pjm.at(0, 0), pjm.at(1, 0), pjm.at(2, 0), 0));
+        mat.setColumn(1, Vec4f(pjm.at(0, 1), pjm.at(1, 1), pjm.at(2, 1), 0));
+        mat.setColumn(2, Vec4f(pjm.at(0, 2), pjm.at(1, 2), pjm.at(2, 2), 0));
+        mat.setColumn(3, Vec4f(pjv.x, pjv.y, pjv.z, 0));
+        
+        Vec3f temp = mat.transformVec(debugPoints[i]);
+        pos += temp * debugpjws[i][j];
+      }
+      
+      debugPosBuffer.push_back(pos);
+    }
+  }
+  debugMesh->bufferPositions(debugPosBuffer);
+#endif
 }
 
 Decompressor::~Decompressor() {

@@ -24,12 +24,9 @@ struct Vertex {
   std::vector<float> weights;
 };
 
-const int MaxProxyJoints = 100;
+const int MaxProxyJoints = 150;
 const float ProxyJointInfluence = 1.5;
 
-const double Resolution = .002;
-const int MaxSteps = 127;
-const double Threshold = Resolution * MaxSteps;
 const std::string CompPath = "../../../../afghan/comp/";
 
 class Compressor {

@@ -52,7 +52,7 @@ class VisualizerApp : public AppNative {
   CameraPersp camera = CameraPersp();
   Vec3f eyePos = Vec3f( 100, 40, 0 );
   Vec3f targetPos = Vec3f( -65, 16, 36 );
-  unsigned char camBitfield = 0;
+  unsigned int camBitfield = 0;
 };
 
 void VisualizerApp::setup()
@@ -104,7 +104,7 @@ void VisualizerApp::setup()
 
 #ifdef COMPRESS
   Compressor c(ad, kdtree);
-  c.compress(10);
+  c.compress(70);
   exit(0);
 #endif
   
@@ -155,39 +155,57 @@ void VisualizerApp::keyDown( KeyEvent event )
 {
   switch (event.getCode()) {
     case event.KEY_w:
-      if (!(camBitfield & 1)) {
+      if (!(camBitfield & 1))
         camBitfield += 1;
-      }
       break;
     case event.KEY_s:
-      if (!(camBitfield & 2)) {
+      if (!(camBitfield & 2))
         camBitfield += 2;
-      }
       break;
     case event.KEY_a:
-      if (!(camBitfield & 4)) {
+      if (!(camBitfield & 4))
         camBitfield += 4;
-      }
       break;
     case event.KEY_d:
-      if (!(camBitfield & 8)) {
+      if (!(camBitfield & 8))
         camBitfield += 8;
-      }
       break;
     case event.KEY_e:
-      if (!(camBitfield & 16)) {
+      if (!(camBitfield & 16))
         camBitfield += 16;
-      }
       break;
     case event.KEY_q:
-      if (!(camBitfield & 32)) {
+      if (!(camBitfield & 32))
         camBitfield += 32;
-      }
+      break;
+    case event.KEY_i:
+      if (!(camBitfield & 64))
+        camBitfield += 64;
+      break;
+    case event.KEY_k:
+      if (!(camBitfield & 128))
+        camBitfield += 128;
+      break;
+    case event.KEY_j:
+      if (!(camBitfield & 256))
+        camBitfield += 256;
+      break;
+    case event.KEY_l:
+      if(!(camBitfield & 512))
+        camBitfield += 512;
+      break;
+    case event.KEY_u:
+      if (!(camBitfield & 1024))
+        camBitfield += 1024;
+      break;
+    case event.KEY_o:
+      if(!(camBitfield & 2048))
+        camBitfield += 2048;
       break;
       
     case event.KEY_LEFT:
       if (compressedMode) {
-        decomp.currentFrame--;
+        decomp.changeFrame(Left);
       } else if(ad.currentFrame > START_FRAME) {
         ad.currentFrame--;
         viewFrame(ad.currentFrame);
@@ -196,7 +214,7 @@ void VisualizerApp::keyDown( KeyEvent event )
       break;
     case event.KEY_RIGHT:
       if (compressedMode) {
-        decomp.currentFrame++;
+        decomp.changeFrame(Right);
       } else if(ad.currentFrame < END_FRAME) {
         ad.currentFrame++;
         viewFrame(ad.currentFrame);
@@ -219,9 +237,7 @@ void VisualizerApp::keyDown( KeyEvent event )
         decomp.clear();
       } else {
         compressedMode = true;
-        mVboMesh->unbindBuffers();
         decomp.init();
-        mVboMesh->bindAllData();
       }
       break;
       
@@ -274,6 +290,24 @@ void VisualizerApp::keyUp( KeyEvent event )
     case event.KEY_q:
       camBitfield -= 32;
       break;
+    case event.KEY_i:
+      camBitfield -= 64;
+      break;
+    case event.KEY_k:
+      camBitfield -= 128;
+      break;
+    case event.KEY_j:
+      camBitfield -= 256;
+      break;
+    case event.KEY_l:
+      camBitfield -= 512;
+      break;
+    case event.KEY_u:
+      camBitfield -= 1024;
+      break;
+    case event.KEY_o:
+      camBitfield -= 2048;
+      break;
       
     default:
       break;
@@ -305,7 +339,16 @@ void VisualizerApp::update()
   if (camBitfield & 16) delta += Vec3f (0, 1, 0);
   if (camBitfield & 32) delta -= Vec3f (0, 1, 0);
   
+  Vec3f dirDelta = Vec3f::zero();
+  if (camBitfield & 64) dirDelta += Vec3f (1, 0, 0);
+  if (camBitfield & 128) dirDelta -= Vec3f (1, 0, 0);
+  if (camBitfield & 256) dirDelta += Vec3f (0, 0, 1);
+  if (camBitfield & 512) dirDelta -= Vec3f (0, 0, 1);
+  if (camBitfield & 1024) dirDelta += Vec3f (0, 1, 0);
+  if (camBitfield & 2048) dirDelta -= Vec3f (0, 1, 0);
+  
   eyePos += delta * CAMERA_DELTA;
+  targetPos += dirDelta * CAMERA_DELTA;
   camera.lookAt( eyePos, targetPos, Vec3f( 0, 1, 0 ) );
 }
 
@@ -330,7 +373,10 @@ void VisualizerApp::draw()
     mVboMesh->unbindBuffers();
   }
   
-  gl::color(0, 1, 0, 0.6);
+  gl::color(0.8, 0.2, 0, 0.6);
+  gl::drawLine(targetPos - Vec3f(1, 0, 0), targetPos + Vec3f(1, 0, 0));
+  gl::drawLine(targetPos - Vec3f(0, 1, 0), targetPos + Vec3f(0, 1, 0));
+  gl::drawLine(targetPos - Vec3f(0, 0, 1), targetPos + Vec3f(0, 0, 1));
 
 }
 
