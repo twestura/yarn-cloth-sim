@@ -43,6 +43,7 @@ class VisualizerApp : public AppNative {
   
   bool globalRelativeColoring = false;
   bool compressedMode = false;
+  bool play = false;
   
   float radius = RADIUS;
   KdTree<Vec3f, 3, NeighborLookupProc> kdtree;
@@ -241,6 +242,11 @@ void VisualizerApp::keyDown( KeyEvent event )
       }
       break;
       
+    case event.KEY_SPACE:
+      if (compressedMode)
+        play = !play;
+      break;
+      
     case event.KEY_ESCAPE:
       exit(0);
       break;
@@ -366,6 +372,9 @@ void VisualizerApp::draw()
 	gl::clear( Color( 0, 0, 0 ) );
   // draw the scene
   if (compressedMode) {
+    if (play) {
+      decomp.changeFrame(Right);
+    }
     decomp.draw();
   } else {
     mVboMesh->bindAllData();
