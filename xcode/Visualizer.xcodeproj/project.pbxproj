@@ -68,8 +68,11 @@
 		715D60A218A95941008A9785 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		715D60A418A95941008A9785 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		715D60AB18A95941008A9785 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		715D60BE18A95CD3008A9785 /* Simulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Simulator.cpp; path = ../src/Simulator.cpp; sourceTree = "<group>"; };
-		715D60BF18A95CD3008A9785 /* Simulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Simulator.h; path = ../src/Simulator.h; sourceTree = "<group>"; };
+		715D60BE18A95CD3008A9785 /* Simulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Simulator.cpp; path = ../../src/Simulator.cpp; sourceTree = "<group>"; };
+		715D60BF18A95CD3008A9785 /* Simulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Simulator.h; path = ../../src/Simulator.h; sourceTree = "<group>"; };
+		715D60C818ABEABA008A9785 /* Segment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Segment.h; sourceTree = "<group>"; };
+		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Yarn.h; sourceTree = "<group>"; };
+		715D60CD18ABEE71008A9785 /* CtrlPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CtrlPoint.h; path = ../CtrlPoint.h; sourceTree = "<group>"; };
 		716A6BB3185F6E5100AB90DC /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Compressor.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		716A6BB4185F6E5100AB90DC /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compressor.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* BetterComp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BetterComp.cpp; sourceTree = "<group>"; };
@@ -127,7 +130,6 @@
 				716A6BB3185F6E5100AB90DC /* Compressor.cpp */,
 				7101FBBF18595AA9008553D8 /* PosFileConv.cpp */,
 				711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */,
-				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -184,7 +186,6 @@
 			isa = PBXGroup;
 			children = (
 				717DD767188EF95E00D3BFA2 /* BetterComp.h */,
-				715D60BF18A95CD3008A9785 /* Simulator.h */,
 				711E97E8183DE8DF00BAFB0B /* InfoPanel.h */,
 				716A6BB4185F6E5100AB90DC /* Compressor.h */,
 				7101FBC018595AA9008553D8 /* PosFileConv.h */,
@@ -221,6 +222,8 @@
 		715D609218A95941008A9785 /* Simulator */ = {
 			isa = PBXGroup;
 			children = (
+				715D60C218ABE9E2008A9785 /* Source */,
+				715D60C118ABE9D6008A9785 /* Headers */,
 				715D609E18A95941008A9785 /* AppDelegate.h */,
 				715D609F18A95941008A9785 /* AppDelegate.mm */,
 				715D60A118A95941008A9785 /* MainMenu.xib */,
@@ -240,6 +243,25 @@
 				715D609B18A95941008A9785 /* Credits.rtf */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		715D60C118ABE9D6008A9785 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,
+				715D60C818ABEABA008A9785 /* Segment.h */,
+				715D60BF18A95CD3008A9785 /* Simulator.h */,
+				715D60CB18ABEC77008A9785 /* Yarn.h */,
+			);
+			name = Headers;
+			sourceTree = "<group>";
+		};
+		715D60C218ABE9E2008A9785 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
+			);
+			name = Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

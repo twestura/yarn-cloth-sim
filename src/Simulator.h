@@ -10,64 +10,33 @@
 #define __Visualizer__Simulator__
 
 #include <iostream>
-#include "Eigen/Dense"
 #include <boost/thread/thread.hpp>
+#include "Yarn.h"
 
+//#define PARALLEL
 #define NUM_THREADS 4
+#define MAYBE_PARALLEL(f, threads, num, limit) if(num<limit){f(0,num);}else{for(int i=0;i<NUM_THREADS;i++){threads[i]=boost::thread(f,(i*num)/NUM_THREADS,((i+1)*num)/NUM_THREADS);}for(int i=0;i<NUM_THREADS;i++){threads[i].join();}}
 
-typedef Eigen::Vector3f Vec3f;
+typedef Eigen::Vector2f Vec2f;
 
-struct CtrlPoint
-{
-  /// Position of the control point in space.
-  Vec3f pos;
-  /// The accumulated force at this control point.
-  Vec3f force;
-};
-
-
-// TODO: move to separate class?
-class Segment
-{
-  /// Reference to the first control point that defines this segment.
-  const CtrlPoint& first;
-  /// Reference to the second control point that defines this segment.
-  const CtrlPoint& second;
-  /// The u vector of the twist-free reference (Bishop) frame.
-  Vec3f u;
-  /// The v vector of the twist-free reference (Bishop) frame.
-  Vec3f v;
-  /// Rotation in radians of the material frame.
-  float rot = 0;
-
+template <class T>
+class offVec {
+private:
+  std::vector<T> vec;
+  int offset;
 public:
-  /// Default Segment constructor
-  Segment(const CtrlPoint&, const CtrlPoint&);
-  /// Get the vector that represents this segment. Not necessarily unit length.
-  const Vec3f inline vec() const;
-  /// Length of the segment at rest.
-  float restLength;
-  
-  // TODO: Need Catmull-Rom interpolation for contact resolution.
-};
-
-
-// TODO: move to separate class?
-class Yarn
-{
-public:
-  /// Control points (n+1 total) that define the yarn's position.
-  std::vector<CtrlPoint> points;
-  /// Segments (n total) that define the yarn.
-  std::vector<Segment> segments;
-  /// Get the number of control points on the yarn.
-  const size_t inline numCPs() const;
-  /// Get the number of control points associated with 2 edges.
-  const size_t inline numIntCPs() const;
-  /// Get the number of segments in the yarn.
-  const size_t inline numSegs() const;
-  
-  // TODO: enforce vector size invariants
+  offVec<T>() { offset = -1; }
+  offVec<T>(int i) : offset(i) {}
+  void setOffset(int i) { offset = i; }
+  T& operator[]( const size_t index ) {
+    assert(index+offset>=0 && index+offset<vec.size());
+    return vec[index + offset];
+  }
+  const T& operator[]( const size_t index ) const { return vec[index + offset]; }
+  void push_back( T elt ) { vec.push_back(elt); }
+  const size_t size() const { return vec.size(); }
+  const size_t end() const { return vec.size() + offset; }
+  void clear() { vec.clear(); }
 };
 
 struct Workspace
@@ -77,14 +46,28 @@ struct Workspace
   boost::thread threads[NUM_THREADS];
   /// Curvature binormals for the centerline. Notice this is undefined for the first and final
   /// control points.
-  std::vector<Vec3f> curvatureBinormals;
+  offVec<Vec3f> curvatureBinormals;
+  
+  offVec<offVec<Vec3f>> gradCurveBinorm;
+  
 };
 
 class Simulator
 {
-  Yarn y;
+  /// The yarn at time 0.
+  Yarn restYarn;
+  
+  /// The yarn at time t-1.
+  Yarn* prevYarn;
+  /// The yarn at time t.
+  Yarn* curYarn;
+  /// The yarn at time t+1.
+  Yarn* nextYarn;
+  
+  /// Space for calculations to avoid repetitive, expensive allocation.
   Workspace ws;
   
+  /// Compute F(t+1).
   void computeForces();
 public:
   /// Entry point for simulator; called after the app has finished initializing
