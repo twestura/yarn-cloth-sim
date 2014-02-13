@@ -46,9 +46,8 @@ struct Workspace
   boost::thread threads[NUM_THREADS];
   /// Curvature binormals for the centerline. Notice this is undefined for the first and final
   /// control points.
-  offVec<Vec3f> curvatureBinormals;
   
-  offVec<offVec<Vec3f>> gradCurveBinorm;
+  offVec<offVec<Vec2f>> restMatCurvature;
   
 };
 
@@ -57,8 +56,6 @@ class Simulator
   /// The yarn at time 0.
   Yarn restYarn;
   
-  /// The yarn at time t-1.
-  Yarn* prevYarn;
   /// The yarn at time t.
   Yarn* curYarn;
   /// The yarn at time t+1.
