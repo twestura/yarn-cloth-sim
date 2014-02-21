@@ -7,6 +7,7 @@
 //
 
 #include "Simulator.h"
+#include "Constants.h"
 
 // Implementations for Simulator
 void Simulator::run() {
@@ -29,8 +30,9 @@ void Simulator::run() {
     ws.restMatCurvature.push_back(matCurvature);
   }
   
-  // TODO: init yarns
-  curYarn = new Yarn();
+  // init yarns
+  curYarn = new Yarn(restYarn);
+  nextYarn = new Yarn();
   
   /*
    * precompute omegaBar^i_j ((2) of Bergou)
@@ -49,12 +51,22 @@ void Simulator::run() {
 
   // MAIN SIMULATION LOOP
   while (!done) {
+    // Compute the forces on the centerline
     computeForces();
+    // Get unconstrained velocities
+    integrate(Backward);
+    
+    
+    // Switch yarns
+    Yarn* tempYarn = curYarn;
+    curYarn = nextYarn;
+    nextYarn = tempYarn;
     
     done = true;
   }
   
   delete curYarn;
+  delete nextYarn;
   
   std::cout << "Simulation completed successfully!\n";
   std::exit(0);
@@ -63,11 +75,6 @@ void Simulator::run() {
 
 
 void Simulator::computeForces() {
-  /*
-   * calculate bending energy
-   * calculate twisting energy
-   *
-   */
   
 #ifndef PARALLEL
   // NON-PARALLEL:
@@ -80,7 +87,7 @@ void Simulator::computeForces() {
       Vec3f ePrev = curYarn->segments[i-1].vec();
       Vec3f eNext = curYarn->segments[i].vec();
       float denominator = restYarn.segments[i-1].length()*restYarn.segments[i].length() +
-      ePrev.dot(eNext);
+        ePrev.dot(eNext);
       Vec3f curveBinorm = 2*ePrev.cross(eNext) / denominator;
       
       Eigen::Matrix3f bracketEprev;
@@ -91,7 +98,10 @@ void Simulator::computeForces() {
       Eigen::Matrix3f outerProductWithNext = curveBinorm*(eNext.transpose());
       Eigen::Matrix3f outerProductWithPrev = curveBinorm*(ePrev.transpose());
       
-      offVec<Eigen::Matrix3f> gradCurveBinorm(-i);
+      offVec<Eigen::Matrix3f> gradCurveBinorm(-(i-1));
+      for (int k=0; k<3; k++)
+        gradCurveBinorm.push_back(Eigen::Matrix3f());
+      
       gradCurveBinorm[i-1] = (2*bracketEnext+outerProductWithNext) / denominator;
       gradCurveBinorm[i+1] = (2*bracketEprev+outerProductWithPrev) / denominator;
       gradCurveBinorm[i] = -(gradCurveBinorm[i-1] + gradCurveBinorm[i+1]);
@@ -112,6 +122,8 @@ void Simulator::computeForces() {
         
           Vec2f matCurvature(curveBinorm.dot(m2), -(curveBinorm.dot(m1)));
           Vec2f& restMatCurvature = ws.restMatCurvature[k][j];
+          
+          // TODO: model yarn plasticity (deform restMatCurvature)
         
           forcePart += gradMatCurvature.transpose() * bendMatrix * (matCurvature-restMatCurvature);
         }
@@ -167,4 +179,22 @@ void Simulator::computeForces() {
    */
 #endif // ifndef PARALLEL
   
+}
+
+// TODO: implement this
+void Simulator::integrate(IntegrationType it)
+{
+  switch (it) {
+    case Forward:
+      break;
+      
+    case Backward:
+      break;
+      
+    case Symplectic:
+      break;
+      
+    default:
+      break;
+  }
 }

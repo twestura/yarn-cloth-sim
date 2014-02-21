@@ -14,7 +14,7 @@
 #include "Resources.h"
 #include "Common.h"
 #include "Decompressor.h"
-#include "BetterComp.h"
+#include "Compressor.h"
 
 using namespace ci;
 

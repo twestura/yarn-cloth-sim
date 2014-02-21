@@ -1,30 +1,49 @@
 //
-//  Compressor.h
+//  BetterComp.h
 //  Visualizer
 //
-//  Created by eschweickart on 12/16/13.
+//  Created by eschweickart on 1/21/14.
 //
 //
 
-#ifndef __Visualizer__Compressor__
-#define __Visualizer__Compressor__
+#ifndef __Visualizer__BetterComp__
+#define __Visualizer__BetterComp__
 
 #include <iostream>
+#include "Eigen/Dense"
 #include "Common.h"
+#include "cinder/KdTree.h"
 
-// A group of control points within an AABB.
-struct AAGroup {
-  ci::Vec3f aabb[2];
-  std::vector<uint32_t> indices;
-  bool ok = false;
+
+typedef unsigned char uchar;
+typedef Eigen::Matrix<float, 3, 4> Matrixf34;
+typedef Eigen::Matrix<double, 3, 3> Matrixd33;
+
+struct Vertex {
+  std::vector<int> proxyJoints;
+  std::vector<float> weights;
 };
 
-// Compress a range of frames. Create a .comp file if possible; otherwise create a .key file.
-void compress(AppData& ad);
+const int MaxProxyJoints = 150;
+const float ProxyJointInfluence = 1.5;
 
-// Decompress a given frame (.comp or .key) and load it into
-// the circular buffer.
-void decompressFrame(AppData& ad, const int frame);
+const std::string CompPath = "../../../../afghan/comp/";
 
-#endif /* defined(__Visualizer__Compressor__) */
+class Compressor {
+  void initialize();
+  std::vector<Matrixf34> ls(const int);
+  
+  AppData& ad;
+  KdTree<Vec3f, 3, NeighborLookupProc>& kdt;
+  bool initialzed = false;
+  std::vector<int> proxyJoints;
+  std::vector<Vertex> vertices;
+  
+public:
+  Compressor(AppData&, KdTree<Vec3f, 3, NeighborLookupProc>&);
+  
+  void compress(const int);
+};
 
+
+#endif /* defined(__Visualizer__BetterComp__) */

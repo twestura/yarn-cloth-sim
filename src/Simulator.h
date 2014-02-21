@@ -19,6 +19,12 @@
 
 typedef Eigen::Vector2f Vec2f;
 
+enum IntegrationType {
+  Forward,
+  Backward,
+  Symplectic
+};
+
 template <class T>
 class offVec {
 private:
@@ -44,9 +50,9 @@ struct Workspace
   /// "Thread pool" for parallel procedures. In quotes because, as far as I know, threads are
   /// re-initialized each time boost::thread(f) is called.
   boost::thread threads[NUM_THREADS];
-  /// Curvature binormals for the centerline. Notice this is undefined for the first and final
-  /// control points.
-  
+
+  /// Storage space for the material curvature at rest. This is defined at each internal control
+  /// point i for edges i-1 and i.
   offVec<offVec<Vec2f>> restMatCurvature;
   
 };
@@ -55,7 +61,6 @@ class Simulator
 {
   /// The yarn at time 0.
   Yarn restYarn;
-  
   /// The yarn at time t.
   Yarn* curYarn;
   /// The yarn at time t+1.
@@ -66,6 +71,8 @@ class Simulator
   
   /// Compute F(t+1).
   void computeForces();
+  /// Compute the unconstrained velocities for each control point.
+  void integrate(IntegrationType);
 public:
   /// Entry point for simulator; called after the app has finished initializing
   void run();

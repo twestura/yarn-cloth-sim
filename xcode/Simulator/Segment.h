@@ -27,13 +27,22 @@ class Segment
   
 public:
   /// Default Segment constructor
-  Segment(const CtrlPoint& a, const CtrlPoint& b) : first(a), second(b) {}
+  Segment(const CtrlPoint& a, const CtrlPoint& b, Vec3f f) : first(a), second(b), u(f) {}
   /// Calculate the vector that represents this segment. Not necessarily unit length.
   const Vec3f inline vec() const { return second.pos - first.pos; }
   /// Calculate the length of the segment.
   const float inline length() const { return vec().norm(); }
+  
+  // TODO: remove these?
+  const Vec3f inline getU() const { return u; }
+  void inline setU(const Vec3f newU) { u = newU; }
+  
   /// Calculate the reference (Bishop) frame vector v.
   const Vec3f inline v() const { return vec().cross(u).normalized(); }
+  /// Set the material frame rotation.
+  void inline setRot(const float f) { rot = f; }
+  /// Get the material frame rotation.
+  const float inline getRot() const { return rot; }
   /// Calculate the material frave vector m1.
   const Vec3f m1() const {
     Eigen::Quaternionf q = Eigen::Quaternionf(Eigen::AngleAxisf(rot, vec().normalized()));

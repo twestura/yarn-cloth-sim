@@ -10,7 +10,7 @@
 #include "cinder/Rand.h"
 
 #include "Common.h"
-#include "BetterComp.h"
+#include "Compressor.h"
 #include "PosFileConv.h"
 #include "Decompressor.h"
 

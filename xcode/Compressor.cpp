@@ -1,385 +1,212 @@
 //
-//  Compressor.cpp
+//  BetterComp.cpp
 //  Visualizer
 //
-//  Created by eschweickart on 12/16/13.
+//  Created by eschweickart on 1/21/14.
 //
-//
+
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "Compressor.h"
 #include "Common.h"
-#include <boost/smart_ptr.hpp>
 #include "Eigen/Dense"
+#include "Eigen/SparseCore"
+#include "Eigen/SparseQR"
+#include "cinder/KdTree.h"
 
-using namespace std;
 using namespace ci;
 
-#define COMP_PATH "../../../../afghan/comp/"
-#define DECOMP_PATH "../../../../afghan/comp/decomp/"
+Compressor::Compressor(AppData& inad, KdTree<Vec3f, 3, NeighborLookupProc>& inkdt) : ad(inad), kdt(inkdt) { }
 
-#define RESOLUTION (1E-7)
-#define MAX_STEPS 32767
-#define THRESHOLD (RESOLUTION*MAX_STEPS)
+void Compressor::compress(const int frame) {
+  if (!initialzed) {
+    initialize();
+    initialzed = true;
+  }
 
-vector<AAGroup> groupVec;
+  // compress
+  stringstream outFileName;
+  outFileName << CompPath << "afghan.comp"; // TODO: generalize
+  ofstream outFile(outFileName.str(), ios::trunc | ios::binary);
+  if (!outFile) {
+    cerr << "Unable to create outfile: " << outFileName.str() << "\n";
+  }
+  
+  // write header
+  cout << "Compressing header...\n";
+  int numPoints = ad.frames[0].size();
+  writeBinary(&numPoints, sizeof(int), outFile);
+  int numPJs = proxyJoints.size();
+  writeBinary(&numPJs, sizeof(int), outFile);
+  for (int i=0; i<numPoints; i++) {
+    for (int j=0; j<3; j++)
+      writeBinary(&ad.frames[0][i][j], sizeof(float), outFile);
+    uchar numPJs = vertices[i].proxyJoints.size();
+    writeBinary(&numPJs, sizeof(uchar), outFile);
+    for (int j=0; j<numPJs; j++) {
+      writeBinary(&vertices[i].proxyJoints[j], sizeof(int), outFile); // TODO: compress this int
+      writeBinary(&vertices[i].weights[j], sizeof(float), outFile);
+    }
+  }
+  
+  int numFrames = frame+1;
+  writeBinary(&numFrames, sizeof(int), outFile);
+  // write compframe
+  for (int f=0; f<=frame; f++) {
+    loadFramesIfNecessary(ad, Direction::Right, f);
+    cout << "Compressing frame " << f << "...\n";
+    vector<Matrixf34> trans = ls(f);
+    
+    for (Matrixf34 m : trans) {
+      for (int i=0; i<12; i++) {
+        writeBinary(&m(i), sizeof(float), outFile);
+      }
+    }
+  }
 
-// Set the bounding box of a AAGroup.
-bool getBoundingBox(const AppData& ad, AAGroup* group)
-{
-  if (group->indices.empty()) return false;
-  group->aabb[0] = Vec3f(ad.frames[ad.currentFrame][group->indices[0]]); //min
-  group->aabb[1] = Vec3f(ad.frames[ad.currentFrame][group->indices[0]]); //max
-  for (int i=1; i<group->indices.size(); i++) {
+  cout << "Compression completed successfully!\n";
+  outFile.close();
+}
+
+// TODO: clean up min/max calculations
+void Compressor::initialize() {
+  cout << "Initializing compressor...";
+  
+  // Distribute proxy-joints greedily
+  proxyJoints.clear();
+  proxyJoints.push_back(0);
+  for (int i=1; i<MaxProxyJoints; i++) {
+    float maxDist = 0;
+    int bestCenter;
+    for (int i=1; i<ad.frames[0].size(); i++) {
+      float myMaxDist = 0;
+      for (int pjIndex : proxyJoints) {
+        float dist = (ad.frames[0][i] - ad.frames[0][pjIndex]).length();
+        if (dist > myMaxDist)
+          myMaxDist = dist;
+      }
+      if (myMaxDist > maxDist) {
+        maxDist = myMaxDist;
+        bestCenter = i;
+      }
+    }
+    assert(maxDist > 0);
+    proxyJoints.push_back(bestCenter);
+  }
+  
+  // Assign vertex weights
+  
+  float maxDist = 0;
+  for (int i=1; i<ad.frames[0].size(); i++) {
+    for (int pjIndex : proxyJoints) {
+      float dist = (ad.frames[0][i] - ad.frames[0][pjIndex]).length();
+      if (dist > maxDist)
+        maxDist = dist;
+    }
+  }
+  
+  const float influence = maxDist * ProxyJointInfluence;
+  
+  vertices.clear();
+  for (int i=0; i<ad.frames[0].size(); i++) {
+    vertices.push_back(Vertex());
+  }
+  
+  for (int i=0; i<proxyJoints.size(); i++) {
+    int pjIndex = proxyJoints[i];
+    NeighborLookupProc nlp;
+    kdt.lookup(ad.frames[0][pjIndex], nlp, influence);
+    for (int vIndex : nlp.neighbors) {
+      float weight = 1 - ((ad.frames[0][vIndex] - ad.frames[0][pjIndex]).length() / influence);
+      if (vertices[vIndex].proxyJoints.size() < 4) {
+        vertices[vIndex].proxyJoints.push_back(i);
+        vertices[vIndex].weights.push_back(weight);
+      } else {
+        float min = INFINITY;
+        int minIndex;
+        for (int j=0; j<4; j++) {
+          if (vertices[vIndex].weights[j] < min) {
+            min = vertices[vIndex].weights[j];
+            minIndex = j;
+          }
+        }
+        if (min < weight) {
+          vertices[vIndex].proxyJoints[minIndex] = i;
+          vertices[vIndex].weights[minIndex] = weight;
+        }
+      }
+    }
+  }
+  
+  // Normalize weights
+  for (Vertex v : vertices) {
+    float sum = 0;
+    for (float w : v.weights)
+      sum += w;
+    for (int i=0; i<v.weights.size(); i++)
+      v.weights[i] /= sum;
+  }
+  
+  cout << "Done!\n";
+}
+
+vector<Matrixf34> Compressor::ls(const int frame) {
+  using namespace Eigen;
+  vector<Triplet<double>> v;
+  v.reserve(12*ad.frames[0].size()); // TODO: how much do we reserve?
+  for (int i=0; i<vertices.size(); i++) {
+    Vertex& vertex = vertices[i];
+    for (int j=0; j<vertex.proxyJoints.size(); j++) {
+      v.push_back(Triplet<double>(3*i, 12*vertex.proxyJoints[j], vertex.weights[j]*ad.frames[0][i][0]));
+      v.push_back(Triplet<double>(3*i, 12*vertex.proxyJoints[j]+1, vertex.weights[j]*ad.frames[0][i][1]));
+      v.push_back(Triplet<double>(3*i, 12*vertex.proxyJoints[j]+2, vertex.weights[j]*ad.frames[0][i][2]));
+      v.push_back(Triplet<double>(3*i, 12*vertex.proxyJoints[j]+3, vertex.weights[j]));
+      v.push_back(Triplet<double>(3*i+1, 12*vertex.proxyJoints[j]+4, vertex.weights[j]*ad.frames[0][i][0]));
+      v.push_back(Triplet<double>(3*i+1, 12*vertex.proxyJoints[j]+5, vertex.weights[j]*ad.frames[0][i][1]));
+      v.push_back(Triplet<double>(3*i+1, 12*vertex.proxyJoints[j]+6, vertex.weights[j]*ad.frames[0][i][2]));
+      v.push_back(Triplet<double>(3*i+1, 12*vertex.proxyJoints[j]+7, vertex.weights[j]));
+      v.push_back(Triplet<double>(3*i+2, 12*vertex.proxyJoints[j]+8, vertex.weights[j]*ad.frames[0][i][0]));
+      v.push_back(Triplet<double>(3*i+2, 12*vertex.proxyJoints[j]+9, vertex.weights[j]*ad.frames[0][i][1]));
+      v.push_back(Triplet<double>(3*i+2, 12*vertex.proxyJoints[j]+10, vertex.weights[j]*ad.frames[0][i][2]));
+      v.push_back(Triplet<double>(3*i+2, 12*vertex.proxyJoints[j]+11, vertex.weights[j]));
+    }
+  }
+  
+  SparseMatrix<double> A(3*ad.frames[0].size(), 12*proxyJoints.size());
+  A.setFromTriplets(v.begin(), v.end());
+  SparseMatrix<double> AtA = A.transpose() * A;
+  
+  Matrix<double, Dynamic, 1> b(3*ad.frames[0].size(), 1);
+  for (int i=0; i<ad.frames[0].size(); i++) {
     for (int j=0; j<3; j++) {
-      if (ad.frames[ad.currentFrame][group->indices[i]][j] < group->aabb[0][j]) {
-        group->aabb[0][j] = ad.frames[ad.currentFrame][group->indices[i]][j];
-      }
-      if (ad.frames[ad.currentFrame][group->indices[i]][j] > group->aabb[1][j]) {
-        group->aabb[1][j] = ad.frames[ad.currentFrame][group->indices[i]][j];
-      }
+      b(3*i+j) = ad.frames[frame][i][j];
     }
   }
+  VectorXd c = A.transpose() * b;
   
-  return true;
-}
-
-// Divide a group recursively.
-void divideGroup(const AppData& ad, const int index)
-{
-  float resid = getResidual(ad, groupVec[index].indices, ad.currentFrame, ad.currentFrame+1, true);
-  
-  if (resid < THRESHOLD && groupVec[index].indices.size() <= UCHAR_MAX) {
-    groupVec[index].ok = true;
-    return;
+  SparseQR<SparseMatrix<double>, COLAMDOrdering<int>> solver;
+  solver.compute(AtA);
+  if(solver.info()!=Success) {
+    cerr << "LS: A decomposition failed.\n";
+    exit(1);
   }
-  
-  assert(groupVec[index].indices.size() > 1);
-  
-  // Get widest dimension
-  int dim = (groupVec[index].aabb[1][0] - groupVec[index].aabb[0][0] > groupVec[index].aabb[1][1] - groupVec[index].aabb[0][1] ? 0 : 1);
-  dim = (groupVec[index].aabb[1][2] - groupVec[index].aabb[0][2] > groupVec[index].aabb[1][dim] - groupVec[index].aabb[0][dim] ? 2 : dim);
-  
-  // Split the volume in half.
-  float split = (groupVec[index].aabb[0][dim] + groupVec[index].aabb[1][dim])/2;
-  
-  groupVec.push_back(AAGroup());
-  int sibling = groupVec.size()-1;
-  assert(groupVec[sibling].indices.empty());
-  vector<uint32_t> newIndices;
-  for (uint32_t index : groupVec[index].indices) {
-    if (ad.frames[ad.currentFrame][index][dim] < split) {
-      newIndices.push_back(index);
-    } else {
-      groupVec[sibling].indices.push_back(index);
-    }
-  }
-  groupVec[index].indices = newIndices;
-  
-  getBoundingBox(ad, &groupVec[index]);
-  getBoundingBox(ad, &groupVec[sibling]);
-  
-}
-
-// Write a .key file.
-int writeKeyframeFile(const AppData& ad)
-{
-  if (groupVec.empty()) {
-    cerr << "Tried to write keyframe with empty group\n";
+  VectorXd x = solver.solve(c);
+  if(solver.info()!=Success) {
+    cerr << "LS: solving failed.\n";
     exit(1);
   }
   
-  stringstream outFileName;
-  outFileName << COMP_PATH << ad.currentFrame << ".key";
-  ofstream outFile(outFileName.str(), ios::trunc | ios::binary);
+  vector<Matrixf34> a;
   
-  if (!outFile) {
-    cerr << "Unable to create outfile: " << outFileName.str() << "\n";
+  for (int i=0; i<proxyJoints.size(); i++) {
+    Matrixf34 c;
+    c << x(12*i), x(12*i+1), x(12*i+2), x(12*i+3),
+    x(12*i+4), x(12*i+5), x(12*i+6), x(12*i+7),
+    x(12*i+8), x(12*i+9), x(12*i+10), x(12*i+11);
+    a.push_back(c);
   }
   
-  int bytesWritten = 0;
-  
-  for (AAGroup group : groupVec) {
-    assert(group.indices.size() <= UCHAR_MAX);
-    outFile << (unsigned char)group.indices.size();
-    bytesWritten++;
-    for (uint32_t index : group.indices) {
-      for (int i=0; i<3; i++) {
-        writeBinary(&(ad.frames[ad.currentFrame][index][i]), sizeof(float), outFile);
-        bytesWritten += sizeof(float);
-      }
-    }
-  }
-  
-  outFile.close();
-  return bytesWritten;
-}
-
-// Write a .comp compressed file.
-int writeCompressedFrame(const AppData& ad)
-{
-  using namespace Eigen;
-  
-  stringstream outFileName;
-  outFileName << COMP_PATH << ad.currentFrame << ".comp";
-  ofstream outFile(outFileName.str(), ios::trunc | ios::binary );
-  
-  if (!outFile) {
-    cerr << "Unable to create outfile: " << outFileName.str() << "\n";
-  }
-  
-  int numbad = 0;
-  int bytesWritten = 0;
-  for (AAGroup group : groupVec) {
-    // get transformation
-    Vec3f avgPrev;
-    Vec3f avg;
-    for (uint32_t index : group.indices) {
-      avgPrev += ad.frames[ad.currentFrame-1][index];
-      avg += ad.frames[ad.currentFrame][index];
-    }
-    avg /= group.indices.size();
-    avgPrev /= group.indices.size();
-    Matrix<double, 3, 3> M;
-    if (group.indices.size() == 1) {
-      M.Identity();
-    } else {
-      
-      Matrix<double, 3, 3> A = Array33d::Zero();
-      Matrix<double, 3, 3> B = Array33d::Zero();
-      
-      for (uint32_t index : group.indices) {
-        for (int i=0; i<3; i++) {
-          for (int j=0; j<3; j++) {
-            Vec3f pPrev = ad.frames[ad.currentFrame-1][index] - avgPrev;
-            A(i,j) += pPrev[i]*pPrev[j];
-            Vec3f p = ad.frames[ad.currentFrame][index] - avg;
-            B(i,j) += pPrev[i]*p[j];
-          }
-        }
-      }
-      
-      M = (A.fullPivHouseholderQr().solve(B)).transpose();
-    }
-    Matrix<float, 3, 3> Mf;
-    
-    // write transformation
-    for (int i=0; i<9; i++) {
-      Mf(i) = M(i);
-      
-      writeBinary(&(Mf(i)), sizeof(float), outFile);
-      bytesWritten += sizeof(float);
-    }
-    for (int i=0; i<3; i++) {
-      writeBinary(&(avg[i]), sizeof(float), outFile);
-      bytesWritten += sizeof(float);
-    }
-    
-    // transform points, get number of bad transformations
-    vector<int> badIndices;
-    vector<int16_t> corrections;
-    vector<float> badPos;
-    Vector3f p;
-    Vector3f q;
-    for (int i=0; i<group.indices.size(); i++) {
-      for (int j=0; j<3; j++) {
-        p(j) = ad.frames[ad.currentFrame-1][group.indices[i]][j] - avgPrev[j];
-      }
-      q = Mf * p;
-      for (int j=0; j<3; j++) {
-        float qNew = q[j] + avg[j];
-        float actual = ad.frames[ad.currentFrame][group.indices[i]][j];
-        if (abs(qNew - actual) > THRESHOLD) {
-          numbad++;
-          badIndices.push_back(3*i+j);
-          badPos.push_back(actual);
-        } else {
-          int steps = round(((((double)actual)-qNew)/RESOLUTION));
-          assert(abs(steps) <= MAX_STEPS);
-          corrections.push_back((int16_t)steps);
-        }
-      }
-    }
-    
-    if(badIndices.size() > UCHAR_MAX) {
-      outFile.close();
-      return INT32_MAX;
-    }
-    outFile << (unsigned char)badIndices.size();
-    bytesWritten++;
-    for (int index : badIndices) {
-      if(index >= UCHAR_MAX) {
-        outFile.close();
-        return INT32_MAX;
-      }
-      outFile << (unsigned char)index;
-      bytesWritten++;
-    }
-    
-    auto correctionsIter = corrections.begin();
-    auto badPosIter = badPos.begin();
-    for (int i=0; i<corrections.size() + badPos.size(); i++) {
-      if(std::binary_search(badIndices.begin(), badIndices.end(), i)) {
-        writeBinary(&(*badPosIter), sizeof(float), outFile);
-        bytesWritten += sizeof(float);
-        ++badPosIter;
-      } else {
-        writeBinary(&(*correctionsIter), sizeof(int16_t), outFile);
-        bytesWritten += sizeof(int16_t);
-        ++correctionsIter;
-      }
-    }
-  }
-  cout << "bad: " << numbad <<"\n";
-  outFile.close();
-  return bytesWritten;
-}
-
-// Compress a range of frames. Create a .comp file if possible; otherwise create a .key file.
-void compress(AppData& ad)
-{
-  while (ad.currentFrame <= END_FRAME) {
-    if (ad.frames.left_buffer_size(ad.currentFrame) < 1) {
-      for (int i=1; i<NUM_FRAMES-2 && ad.currentFrame + i <= END_FRAME; i++) {
-        loadFrame(ad, ad.currentFrame + i, true);
-      }
-    }
-    int size;
-    if (ad.currentFrame != START_FRAME) {
-      cout << "Compressing frame " << ad.currentFrame << "...\n";
-      size = writeCompressedFrame(ad);
-    }
-    if (ad.currentFrame == START_FRAME || size > ad.frames[0].size()*3*sizeof(float)) {
-      cout << "Compression failed. Making keyframe...";
-      stringstream s;
-      s << COMP_PATH << ad.currentFrame << ".comp";
-      remove(s.str().c_str());
-      
-      groupVec.clear();
-      groupVec.push_back(AAGroup());
-      for (int i=0; i<ad.frames[0].size(); i++) {
-        groupVec[0].indices.push_back(i);
-      }
-      getBoundingBox(ad, &(groupVec[0]));
-      bool done = false;
-      while (!done) {
-        done = true;
-        for (int i=0; i<groupVec.size(); i++) {
-          if (!groupVec[i].ok) {
-            done = false;
-            divideGroup(ad, i);
-          }
-        }
-      }
-      cout << "num nodes: " << groupVec.size() << "\n";
-      writeKeyframeFile(ad);
-    }
-    ad.currentFrame++;
-  }
-  
-  
-}
-
-// TODO: don't load this in; just convert it to a .pos file
-// Decompress a given frame (.comp or .key) and load it into
-// the circular buffer.
-void decompressFrame(AppData& ad, const int frame)
-{
-  cout << "Decompress frame " << frame << "\n";
-  stringstream posFilename;
-  posFilename << COMP_PATH << frame << ".key";
-  ifstream posFile(posFilename.str(), ios::binary);
-  
-  if (posFile) { // Decompress keyframe
-    groupVec.clear();
-    vector<Vec3f> newPoints;
-    
-    posFile.seekg(0, posFile.end);
-    int length = posFile.tellg();
-    posFile.seekg(0, posFile.beg);
-    
-    int counter = 0;
-    int bytesRead = 0;
-    while (bytesRead < length) {
-      char in[3*sizeof(float)];
-      posFile.read(in, sizeof(char));
-      bytesRead++;
-      unsigned char numPoints = in[0];
-      groupVec.push_back(AAGroup());
-      for (int i=0; i<numPoints; i++) {
-        posFile.read(in, 3*sizeof(float));
-        bytesRead += 3*sizeof(float);
-        newPoints.push_back(Vec3f(*(float*)(&in[0]), *(float*)(&in[sizeof(float)]), *(float*)(&in[2*sizeof(float)])));
-        groupVec[groupVec.size()-1].indices.push_back(counter);
-        counter++;
-      }
-    }
-    
-    Frame f = Frame(newPoints);
-    ad.frames.push_back(f);
-    
-    posFile.close();
-    return;
-  }
-  
-  posFilename = stringstream();
-  posFilename << COMP_PATH << frame << ".comp";
-  posFile = ifstream(posFilename.str(), ios::binary);
-  
-  if (posFile) { // Decompress compressed file
-    vector<Vec3f> newPoints;
-    
-    for (AAGroup group : groupVec) {
-      Matrix33f T;
-      char in[12*sizeof(float)];
-      posFile.read(in, 12*sizeof(float));
-      for (int i=0; i<9; i++) {
-        T[i] = *(float*)(&in[i*sizeof(float)]);
-      }
-      Vec3f avg = Vec3f(*(float*)(&in[9*sizeof(float)]), *(float*)(&in[10*sizeof(float)]), *(float*)(&in[11*sizeof(float)]));
-      
-      Vec3f avgPrev;
-      for (int index : group.indices) {
-        avgPrev += ad.frames[frame-1][index];
-      }
-      avgPrev /= group.indices.size();
-      
-      posFile.read(in, sizeof(char));
-      unsigned char numBad = in[0];
-      vector<uint> badIndices;
-      for (int i=0; i<numBad; i++) {
-        posFile.read(in, sizeof(char));
-        unsigned char badIndex = in[0];
-        badIndices.push_back(badIndex);
-      }
-      
-      int counter = 0;
-      for (int index : group.indices) {
-        Vec3f newPoint = ad.frames[frame-1][index] - avgPrev;
-        newPoint = T * newPoint;
-        newPoint += avg;
-        
-        for (int i=0; i<3; i++) {
-          if (binary_search(badIndices.begin(), badIndices.end(), counter)) {
-            posFile.read(in, sizeof(float));
-            newPoint[i] = *(float*)in;
-          } else {
-            posFile.read(in, sizeof(int16_t));
-            int16_t correction = *(int16_t*)in;
-            newPoint[i] += correction*RESOLUTION;
-          }
-          counter++;
-        }
-        newPoints.push_back(newPoint);
-      }
-    }
-    
-    Frame f = Frame(newPoints);
-    ad.frames.push_back(f);
-    
-    posFile.close();
-  } else {
-    cerr << "Error: no compressed frame found: " << posFilename.str() << "\n";
-  }
+  return a;
 }
