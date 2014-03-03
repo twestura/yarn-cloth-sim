@@ -10,7 +10,7 @@
 #define Visualizer_Constants_h
 
 /// Timestep of the simulation in seconds.
-const float h = (1.0/24000.0);
+const float INITIAL_TIMESTEP = (1.0/24000.0);
 
 /// Determines centerline plasticity due to bending forces on the yarn.
 const float pPlastic = 0.01;

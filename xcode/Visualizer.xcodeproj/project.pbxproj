@@ -26,6 +26,7 @@
 		715D60A518A95941008A9785 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 715D60A418A95941008A9785 /* Images.xcassets */; };
 		715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D60BE18A95CD3008A9785 /* Simulator.cpp */; };
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
+		719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
 		71AAF9E31898425100710A16 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
@@ -75,6 +76,11 @@
 		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Compressor.cpp; sourceTree = "<group>"; };
 		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compressor.h; sourceTree = "<group>"; };
+		719B0C4F18BBDD7100FB1633 /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Integrator.h; sourceTree = "<group>"; };
+		719B0C5018BBDDC000FB1633 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
+		719B0C5118BBE9F200FB1633 /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
+		719B0C5318BBEB9400FB1633 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Util.h; path = ../Util.h; sourceTree = "<group>"; };
+		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = ../autodiff.h; sourceTree = "<group>"; };
 		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Decompressor.cpp; sourceTree = "<group>"; };
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = frag.glsl; path = ../resources/frag.glsl; sourceTree = "<group>"; };
@@ -243,8 +249,12 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				719B0C5718BD51CB00FB1633 /* autodiff.h */,
+				719B0C5318BBEB9400FB1633 /* Util.h */,
 				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,
 				715D60C818ABEABA008A9785 /* Segment.h */,
+				719B0C4F18BBDD7100FB1633 /* Integrator.h */,
+				719B0C5018BBDDC000FB1633 /* Clock.h */,
 				715D60BF18A95CD3008A9785 /* Simulator.h */,
 				715D60CB18ABEC77008A9785 /* Yarn.h */,
 				715D60CE18AD553C008A9785 /* Constants.h */,
@@ -256,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
+				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -368,6 +379,7 @@
 			files = (
 				715D60A018A95941008A9785 /* AppDelegate.mm in Sources */,
 				715D609918A95941008A9785 /* main.m in Sources */,
+				719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */,
 				715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -562,7 +574,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CINDER_PATH = ../../../6650/cinder/cinder_master;
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -579,7 +591,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CINDER_PATH = ../../../6650/cinder/cinder_master;
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;

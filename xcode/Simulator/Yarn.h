@@ -10,6 +10,7 @@
 #define __Visualizer__Yarn__
 
 #include "Segment.h"
+#include <vector>
 
 class Yarn
 {
@@ -21,7 +22,7 @@ public:
   /// Get the number of control points on the yarn.
   const size_t inline numCPs() const { return points.size(); }
   /// Get the number of control points associated with 2 edges.
-  const size_t inline numIntCPs() const { return fmax(points.size()-2, 0); }
+  const size_t inline numIntCPs() const { return std::max((int)points.size()-2, 0); }
   /// Get the number of segments in the yarn.
   const size_t inline numSegs() const { return segments.size(); }
   
