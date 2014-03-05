@@ -174,10 +174,10 @@
 		29B97314FDCFA39411CA2CEA /* Visualizer */ = {
 			isa = PBXGroup;
 			children = (
+				715D609218A95941008A9785 /* Simulator */,
 				719B0C4E18B7DE4A00FB1633 /* Visualizer */,
 				01B97315FEAEA392516A2CEA /* Blocks */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
-				715D609218A95941008A9785 /* Simulator */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
