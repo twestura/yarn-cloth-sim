@@ -30,6 +30,19 @@
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
 		71AAF9E31898425100710A16 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
+		71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
+		71CAE63818C78B7A002C9FD3 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
+		71CAE63918C78B7A002C9FD3 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
+		71CAE64218C78B7A002C9FD3 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		71CAE64318C78B7A002C9FD3 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0091D8F80E81B9330029341E /* OpenGL.framework */; };
+		71CAE64418C78B7A002C9FD3 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
+		71CAE64518C78B7A002C9FD3 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
+		71CAE64618C78B7A002C9FD3 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784AF0FF439BC000DE1D7 /* Accelerate.framework */; };
+		71CAE64718C78B7A002C9FD3 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B00FF439BC000DE1D7 /* AudioToolbox.framework */; };
+		71CAE64818C78B7A002C9FD3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B10FF439BC000DE1D7 /* AudioUnit.framework */; };
+		71CAE64918C78B7A002C9FD3 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
+		71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */; };
+		71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
 		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
@@ -85,6 +98,11 @@
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = frag.glsl; path = ../resources/frag.glsl; sourceTree = "<group>"; };
 		71AAF9E11898425100710A16 /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = vert.glsl; path = ../resources/vert.glsl; sourceTree = "<group>"; };
+		71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Visualizer copy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Visualizer copy-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/xcode/Visualizer copy-Info.plist"; sourceTree = "<absolute>"; };
+		71CAE65218C78CB7002C9FD3 /* Thread-Test_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Thread-Test_Prefix.pch"; sourceTree = "<group>"; };
+		71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ThreadTestApp.cpp; sourceTree = "<group>"; };
+		71CAE65418C78D7E002C9FD3 /* ThreadTestApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadTestApp.h; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -96,6 +114,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				715D609018A95941008A9785 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71CAE64118C78B7A002C9FD3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71CAE64218C78B7A002C9FD3 /* Cocoa.framework in Frameworks */,
+				71CAE64318C78B7A002C9FD3 /* OpenGL.framework in Frameworks */,
+				71CAE64418C78B7A002C9FD3 /* CoreVideo.framework in Frameworks */,
+				71CAE64518C78B7A002C9FD3 /* QTKit.framework in Frameworks */,
+				71CAE64618C78B7A002C9FD3 /* Accelerate.framework in Frameworks */,
+				71CAE64718C78B7A002C9FD3 /* AudioToolbox.framework in Frameworks */,
+				71CAE64818C78B7A002C9FD3 /* AudioUnit.framework in Frameworks */,
+				71CAE64918C78B7A002C9FD3 /* CoreAudio.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -167,6 +200,7 @@
 			children = (
 				8D1107320486CEB800E47090 /* Visualizer.app */,
 				715D608E18A95941008A9785 /* Simulator.app */,
+				71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -174,12 +208,14 @@
 		29B97314FDCFA39411CA2CEA /* Visualizer */ = {
 			isa = PBXGroup;
 			children = (
+				71CAE64F18C78BB7002C9FD3 /* Thread-Test */,
 				715D609218A95941008A9785 /* Simulator */,
 				719B0C4E18B7DE4A00FB1633 /* Visualizer */,
 				01B97315FEAEA392516A2CEA /* Blocks */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
+				71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */,
 			);
 			name = Visualizer;
 			sourceTree = "<group>";
@@ -280,6 +316,32 @@
 			name = Visualizer;
 			sourceTree = "<group>";
 		};
+		71CAE64F18C78BB7002C9FD3 /* Thread-Test */ = {
+			isa = PBXGroup;
+			children = (
+				71CAE65118C78BF0002C9FD3 /* Headers */,
+				71CAE65018C78BDD002C9FD3 /* Source */,
+			);
+			name = "Thread-Test";
+			sourceTree = "<group>";
+		};
+		71CAE65018C78BDD002C9FD3 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */,
+				71CAE65418C78D7E002C9FD3 /* ThreadTestApp.h */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		71CAE65118C78BF0002C9FD3 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				71CAE65218C78CB7002C9FD3 /* Thread-Test_Prefix.pch */,
+			);
+			name = Headers;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -298,6 +360,24 @@
 			name = Simulator;
 			productName = Simulator;
 			productReference = 715D608E18A95941008A9785 /* Simulator.app */;
+			productType = "com.apple.product-type.application";
+		};
+		71CAE63518C78B7A002C9FD3 /* Thread-Test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Thread-Test" */;
+			buildPhases = (
+				71CAE63618C78B7A002C9FD3 /* Resources */,
+				71CAE63A18C78B7A002C9FD3 /* Sources */,
+				71CAE64118C78B7A002C9FD3 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Thread-Test";
+			productInstallPath = "$(HOME)/Applications";
+			productName = Visualizer;
+			productReference = 71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */;
 			productType = "com.apple.product-type.application";
 		};
 		8D1107260486CEB800E47090 /* Visualizer */ = {
@@ -344,6 +424,7 @@
 			targets = (
 				8D1107260486CEB800E47090 /* Visualizer */,
 				715D608D18A95941008A9785 /* Simulator */,
+				71CAE63518C78B7A002C9FD3 /* Thread-Test */,
 			);
 		};
 /* End PBXProject section */
@@ -357,6 +438,16 @@
 				715D60A518A95941008A9785 /* Images.xcassets in Resources */,
 				715D609D18A95941008A9785 /* Credits.rtf in Resources */,
 				715D60A318A95941008A9785 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71CAE63618C78B7A002C9FD3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */,
+				71CAE63818C78B7A002C9FD3 /* vert.glsl in Resources */,
+				71CAE63918C78B7A002C9FD3 /* frag.glsl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,6 +472,15 @@
 				715D609918A95941008A9785 /* main.m in Sources */,
 				719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */,
 				715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71CAE63A18C78B7A002C9FD3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
+				71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -518,6 +618,72 @@
 			};
 			name = Release;
 		};
+		71CAE64B18C78B7A002C9FD3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LIBRARY = "libc++";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Thread-Test_Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INFOPLIST_FILE = "Visualizer copy-Info.plist";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				OTHER_LDFLAGS = (
+					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
+					"\"$(CINDER_PATH)/lib/libcinder_d.a\"",
+				);
+				PRODUCT_NAME = "Visualizer copy";
+				SYMROOT = ./build;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		71CAE64C18C78B7A002C9FD3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LIBRARY = "libc++";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_FAST_MATH = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Thread-Test_Prefix.pch";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INFOPLIST_FILE = "Visualizer copy-Info.plist";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				OTHER_LDFLAGS = (
+					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
+					"\"$(CINDER_PATH)/lib/libcinder.a\"",
+				);
+				PRODUCT_NAME = "Visualizer copy";
+				STRIP_INSTALLED_PRODUCT = YES;
+				SYMROOT = ./build;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -612,6 +778,15 @@
 			buildConfigurations = (
 				715D60B918A95941008A9785 /* Debug */,
 				715D60BA18A95941008A9785 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Thread-Test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71CAE64B18C78B7A002C9FD3 /* Debug */,
+				71CAE64C18C78B7A002C9FD3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

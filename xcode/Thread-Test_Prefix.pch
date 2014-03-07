@@ -1,0 +1,32 @@
+//
+//  Thread-Test_Prefix.pch
+//  Visualizer
+//
+//  Created by eschweickart on 3/5/14.
+//
+//
+
+#ifndef Visualizer_Thread_Test_Prefix_pch
+#define Visualizer_Thread_Test_Prefix_pch
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+#ifdef __OBJC__
+#import <Cocoa/Cocoa.h>
+#endif
+
+#if defined( __cplusplus )
+#include "cinder/Cinder.h"
+
+#include "cinder/app/AppBasic.h"
+
+#include "cinder/gl/gl.h"
+
+#include "cinder/CinderMath.h"
+#include "cinder/Matrix.h"
+#include "cinder/Vector.h"
+#include "cinder/Quaternion.h"
+#endif
+
+#endif

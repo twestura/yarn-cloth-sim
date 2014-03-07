@@ -26,6 +26,13 @@
    for(int i=0; i<NUM_THREADS ;i++) { threads[i].join(); } \
  }
 
+#define ENABLE_CHECK_NAN
+
+#ifdef ENABLE_CHECK_NAN
+#define CHECK_NAN(f) if(isnan(f)) assert(false && "NaN Detected.")
+#else
+#define CHECK_NAN(f)
+#endif
 /// A vector-like class that allows an offset to indices. That is, if the only elements stored are
 /// in indices 5, 6, and 7, this class allows you to specify an offse (-5 in this case) such that
 /// only 3 elements are stored in memory, but they are accessed via indices 5, 6, and 7.

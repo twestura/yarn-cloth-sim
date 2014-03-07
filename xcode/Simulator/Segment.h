@@ -44,13 +44,13 @@ public:
   /// Get the material frame rotation.
   const float inline getRot() const { return rot; }
   /// Calculate the material frave vector m1.
-  const Vec3f m1() const {
-    Eigen::Quaternionf q = Eigen::Quaternionf(Eigen::AngleAxisf(rot, vec().normalized()));
+  const Vec3f inline m1() const {
+    Eigen::Quaternionf q(Eigen::AngleAxisf(rot, vec().normalized()));
     return q * u;
   }
   /// Calculate the material frave vector m2.
-  const Vec3f m2() const {
-    Eigen::Quaternionf q = Eigen::Quaternionf(Eigen::AngleAxisf(rot, vec().normalized()));
+  const Vec3f inline m2() const {
+    Eigen::Quaternionf q(Eigen::AngleAxisf(rot, vec().normalized()));
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
@@ -68,7 +68,7 @@ public:
     // If the angle is too small, cross becomes inaccurate. In order to prevent error propagation,
     // it's better to pretend the angle is 0.
     if (refTwist > .00001) {
-      Eigen::Quaternionf q = Eigen::Quaternionf(Eigen::AngleAxisf(refTwist, cross));
+      Eigen::Quaternionf q(Eigen::AngleAxisf(refTwist, cross));
       u = q * u;
     }
   }

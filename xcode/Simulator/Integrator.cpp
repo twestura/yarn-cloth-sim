@@ -19,14 +19,15 @@ typedef Eigen::Triplet<float> Triplet;
 
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 
-void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Workspace& ws, Clock& c) {
+void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Workspace& ws, Clock& c, Vec3f mousePos) {
+  
   float h = c.timestep();
   const size_t NumEqs = curYarn.numCPs() * 3;
   DiffScalarBase::setVariableCount(NUM_VARS);
   
-  Eigen::VectorXf Fx(NumEqs);
-  Eigen::VectorXf dqdot(NumEqs);
-  Eigen::VectorXf sol(NumEqs);
+  Eigen::VectorXf Fx    = Eigen::VectorXf::Zero(NumEqs);
+  Eigen::VectorXf dqdot = Eigen::VectorXf::Zero(NumEqs);
+  Eigen::VectorXf sol   = Eigen::VectorXf::Zero(NumEqs);
   Eigen::SparseMatrix<float> GradFx(NumEqs, NumEqs);
   std::vector<Triplet> triplets;
   
@@ -38,6 +39,10 @@ void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Worksp
   int iterations = 0;
   
   for (int i=0; i<curYarn.numCPs(); i++) {
+#ifdef ENABLE_CHECK_NAN
+    assert(curYarn.points[i].pos.allFinite());
+    assert(curYarn.points[i].vel.allFinite());
+#endif
     nextYarn.points[i].pos = curYarn.points[i].pos;
     nextYarn.points[i].vel = curYarn.points[i].vel;
   }
@@ -46,6 +51,7 @@ void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Worksp
   while (!converge) {
     if (iterations != 0) {
       triplets.clear();
+      Fx.setZero();
     }
     
     triplets.reserve(numTriplets);
@@ -64,28 +70,34 @@ void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Worksp
         Segment&   prevSeg   = curYarn.segments[i-1];
         Segment&   nextSeg   = curYarn.segments[i];
         
-        typedef Eigen::Matrix<DScalar, 3, 1> DVector3;
-        typedef Eigen::Matrix<DScalar, 2, 1> DVector2;
+        typedef DScalar::DVector3 DVector3;
+        typedef DScalar::DVector2 DVector2;
         
         // Redefine NUM_VARS if you change these
-        DVector3 dPrevPoint, dCurPoint, dNextPoint;
-        dPrevPoint << DScalar(0, prevPoint.pos.x() + h*dqdot(3*(i-1))   + h*prevPoint.vel.x()),
+        DVector3 dPrevPoint(
+                      DScalar(0, prevPoint.pos.x() + h*dqdot(3*(i-1))   + h*prevPoint.vel.x()),
                       DScalar(1, prevPoint.pos.y() + h*dqdot(3*(i-1)+1) + h*prevPoint.vel.y()),
-                      DScalar(2, prevPoint.pos.z() + h*dqdot(3*(i-1)+2) + h*prevPoint.vel.z());
+                      DScalar(2, prevPoint.pos.z() + h*dqdot(3*(i-1)+2) + h*prevPoint.vel.z()));
         
-        dCurPoint << DScalar(3, curPoint.pos.x() + h*dqdot(3*i)   + h*curPoint.vel.x()),
-                     DScalar(4, curPoint.pos.y() + h*dqdot(3*i+1) + h*curPoint.vel.y()),
-                     DScalar(5, curPoint.pos.z() + h*dqdot(3*i+2) + h*curPoint.vel.z());
+        DVector3 dCurPoint(
+                      DScalar(3, curPoint.pos.x() + h*dqdot(3*i)   + h*curPoint.vel.x()),
+                      DScalar(4, curPoint.pos.y() + h*dqdot(3*i+1) + h*curPoint.vel.y()),
+                      DScalar(5, curPoint.pos.z() + h*dqdot(3*i+2) + h*curPoint.vel.z()));
         
-        dNextPoint << DScalar(6, nextPoint.pos.x() + h*dqdot(3*(i+1))   + h*nextPoint.vel.x()),
+        DVector3 dNextPoint(
+                      DScalar(6, nextPoint.pos.x() + h*dqdot(3*(i+1))   + h*nextPoint.vel.x()),
                       DScalar(7, nextPoint.pos.y() + h*dqdot(3*(i+1)+1) + h*nextPoint.vel.y()),
-                      DScalar(8, nextPoint.pos.z() + h*dqdot(3*(i+1)+2) + h*nextPoint.vel.z());
+                      DScalar(8, nextPoint.pos.z() + h*dqdot(3*(i+1)+2) + h*nextPoint.vel.z()));
         
         DVector3 dPrevSeg = dCurPoint - dPrevPoint;
         DVector3 dNextSeg = dNextPoint - dCurPoint;
+        assert(dPrevSeg.norm() != 0 && dNextSeg.norm() != 0 && "Edge length is 0");
+        DVector3 dPrevSegN = dPrevSeg.normalized();
+        DVector3 dNextSegN = dNextSeg.normalized();
+        DScalar dotProd = dPrevSegN.dot(dNextSegN);
+        assert(dotProd != -1 && "Segments are pointing in exactly opposite directions");
         
-        DVector3 curveBinorm = (DScalar(2)*dPrevSeg.normalized().cross(dNextSeg.normalized())) /
-           (1+dPrevSeg.normalized().dot(dNextSeg.normalized()));
+        DVector3 curveBinorm = (DScalar(2)*dPrevSegN.cross(dNextSegN))/(1+dotProd);
         
         DVector3 d1prev, d1next, d2prev, d2next;
         
@@ -129,11 +141,24 @@ void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Worksp
         
         for (int j=0; j<NUM_VARS; j++) {
           // TODO: mass matrix may not be I
-          Fx(3*(i-1)+j) += dqdot(3*(i-1)+j) -h*grad(j); // Add external forces here
+          Fx(3*(i-1)+j) -= h*grad(j);
           for (int k=0; k<NUM_VARS; k++) {
-            triplets.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, (j==k ? 1 : 0)-h*h*hess(j, k)));
+            float val = -h*h*hess(j,k);
+            CHECK_NAN(val);
+            if (val != 0) {
+              triplets.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, val));
+            }
           }
         }
+      }
+      
+      if (i > 1) {
+        Fx(3*i+1) += 10*h; // gravity hack
+      }
+      
+      if (i+1 == curYarn.numCPs()) {
+        Fx(3*(i-1)+1) -= h * (mousePos.y() - curYarn.points[i].pos.y());
+        Fx(3*(i-1)+2) -= h * (mousePos.z() - curYarn.points[i].pos.z());
       }
     }
 #else
@@ -143,30 +168,45 @@ void Integrator::integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Worksp
     assert(triplets.size() == numTriplets);
 #endif // ifndef PARALLEL
     
+    // TODO: Mass matrix may not be I
+    for (int i=0; i<NumEqs; i++) {
+      Fx(i) += dqdot(i);
+      triplets.push_back(Triplet(i, i, 1));
+    }
+    
     // Solve equations for updates to changes in position and velocity using Conjugate Gradient
     GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
+    
+#ifdef ENABLE_CHECK_NANS
+    assert(Fx.allFinite());
+#endif
+    
     Eigen::ConjugateGradient<Eigen::SparseMatrix<float>> cg;
     cg.compute(GradFx);
-    sol = cg.solveWithGuess(Fx, sol); // Aliasing problems???
+    Eigen::VectorXf temp = sol;
+    sol = cg.solveWithGuess(Fx, temp);
     
     if (cg.info() == Eigen::NoConvergence) {
-      throw std::runtime_error("Error: Conjugate Gradient solver in integrator did not converge.");
+      std::cerr << "No convergence!! Newton iterate: " << iterations << "\n";
+      assert(false);
+    } else {
+      std::cout << "CG iters: " << cg.iterations() << "\n";
     }
     
-    // Update changes to position and velocity
     dqdot -= sol;
-    for (int i=0; i<curYarn.numCPs(); i++) {
-      Vec3f curdqdot = dqdot.block<3, 1>(3*i, 1);
-      nextYarn.points[i].pos += h*nextYarn.points[i].vel + h*curdqdot;
-      nextYarn.points[i].vel += curdqdot;
-    }
-    
     
     if (sol.maxCoeff() < ConvergenceThreshold) {
       converge = true;
-    } else if (iterations > 50) {
-      std::cerr << "Too many newton iterations; we likely diverged.";
+    } else if (iterations > 5) {
+      std::cerr << "Too many newton iterations, breaking.\n";
       break;
     }
+  }
+  
+  // Update changes to position and velocity
+  for (int i=0; i<curYarn.numCPs(); i++) {
+    Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
+    nextYarn.points[i].pos += h*nextYarn.points[i].vel + h*curdqdot;
+    nextYarn.points[i].vel += curdqdot;
   }
 }

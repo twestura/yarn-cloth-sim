@@ -29,6 +29,8 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "Util.h"
+
 /**
  * \brief Base class of all automatic differentiation types
  *
@@ -430,10 +432,12 @@ public:
 	explicit DScalar2(Scalar value = (Scalar) 0) : value(value) {
 		size_t variableCount = getVariableCount();
     
-		grad.resize(Eigen::NoChange_t(), variableCount);
+		grad.resize(variableCount, Eigen::NoChange_t()); ///
 		grad.setZero();
 		hess.resize(variableCount, variableCount);
 		hess.setZero();
+    
+    CHECK_NAN(value);
 	}
   
 	/// Construct a new scalar with the specified value and one first derivative set to 1
@@ -441,11 +445,13 @@ public:
   : value(value) {
 		size_t variableCount = getVariableCount();
     
-		grad.resize(Eigen::NoChange_t(), variableCount);
+		grad.resize(variableCount, Eigen::NoChange_t()); ///
 		grad.setZero();
 		grad(index) = 1;
 		hess.resize(variableCount, variableCount);
 		hess.setZero();
+    
+    CHECK_NAN(value);
 	}
   
 	/// Construct a scalar associated with the given gradient and Hessian

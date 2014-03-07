@@ -21,8 +21,8 @@
 
 class Integrator
 {
-  
-  void integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Workspace& ws, Clock& c);
+  public:
+  static void integrate(Yarn& curYarn, Yarn& nextYarn, Yarn& restYarn, Workspace& ws, Clock& c, Vec3f mousePos);
   
 };
 
