@@ -103,6 +103,7 @@
 		71CAE65218C78CB7002C9FD3 /* Thread-Test_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Thread-Test_Prefix.pch"; sourceTree = "<group>"; };
 		71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ThreadTestApp.cpp; sourceTree = "<group>"; };
 		71CAE65418C78D7E002C9FD3 /* ThreadTestApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadTestApp.h; sourceTree = "<group>"; };
+		71F2BF0218CA58DD001AA0D4 /* Energy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Energy.h; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -285,6 +286,7 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
 				719B0C5718BD51CB00FB1633 /* autodiff.h */,
 				719B0C5318BBEB9400FB1633 /* Util.h */,
 				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,

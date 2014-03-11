@@ -49,11 +49,11 @@ class ThreadTestApp : public AppNative {
   ci::Vec3f eyePos = ci::Vec3f( 50, 0, 0 );
   ci::Vec3f targetPos = ci::Vec3f( 0, 0, 0 );
   
-  Yarn restYarn;
-  Yarn* curYarn;
-  Yarn* nextYarn;
-  Workspace ws;
+  Yarn* y;
   Clock c;
+  Integrator* integrator;
+  std::vector<YarnEnergy*> energies;
+  MouseSpring* mouseSpring;
 
   float twist = 0;
   
@@ -69,45 +69,29 @@ void ThreadTestApp::setup()
 {
   // Setup scene
   cam.setOrtho(cameraBounds[0], cameraBounds[1], cameraBounds[2], cameraBounds[3], 1, 100);
-  cam.lookAt( eyePos, targetPos, ci::Vec3f( 0, 1, 0 ) );
+  cam.lookAt(eyePos, targetPos, ci::Vec3f( 0, 1, 0 ));
   
+  std::vector<Eigen::Vector3f> yarnPoints;
   // Define Yarn
-  for( int i = 0; i < NUM_VERTICES; i++ ) {
-    CtrlPoint p;
-    p.pos.x() = 0;
-    p.pos.y() = (NUM_VERTICES-i)*20.0f/NUM_VERTICES-10;
-    p.pos.z() = 0;
-    p.vel.setZero();
-    p.force.setZero();
-    restYarn.points.push_back(p);
+  for(int i=0; i < NUM_VERTICES; i++) {
+    Eigen::Vector3f p(0, (NUM_VERTICES-i)*20.0f/NUM_VERTICES-10, 0);
+    yarnPoints.push_back(p);
   }
   
-  curYarn = new Yarn(restYarn);
-  nextYarn = new Yarn(restYarn);
+  y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
   
-  for(int i=0; i<NUM_EDGES; i++) {
-    Segment rest(restYarn.points[i], restYarn.points[i+1], Eigen::Vector3f(0, 0, 1));
-    restYarn.segments.push_back(rest);
-    
-    Segment cur(curYarn->points[i], curYarn->points[i+1], Eigen::Vector3f(0, 0, 1));
-    curYarn->segments.push_back(cur);
-    
-    Segment next(nextYarn->points[i], nextYarn->points[i+1], Eigen::Vector3f(0, 0, 1));
-    nextYarn->segments.push_back(next);
-  }
+  // Create Yarn Energies
+  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
+  energies.push_back(gravity);
   
-  for (int i=1; i<=restYarn.numIntCPs(); i++) {
-    Segment& ePrev = restYarn.segments[i-1];
-    Segment& eNext = restYarn.segments[i];
-    
-    Eigen::Vector3f curveBinorm = 2*ePrev.vec().cross(eNext.vec()) /
-    (ePrev.length()*eNext.length() + ePrev.vec().dot(eNext.vec()));
-    
-    offVec<Eigen::Vector2f> matCurvature(-(i-1));
-    matCurvature.push_back(Eigen::Vector2f(curveBinorm.dot(ePrev.m2()), -(curveBinorm.dot(ePrev.m1()))));
-    matCurvature.push_back(Eigen::Vector2f(curveBinorm.dot(eNext.m2()), -(curveBinorm.dot(eNext.m1()))));
-    ws.restMatCurvature.push_back(matCurvature);
-  }
+  mouseSpring = new MouseSpring(*y, Explicit, NUM_VERTICES-1);
+  energies.push_back(mouseSpring);
+  
+  YarnEnergy* bending = new Bending(*y, Implicit);
+  energies.push_back(bending);
+  
+  // Create integrator
+  integrator = new Integrator(energies);
   
 }
 
@@ -157,18 +141,19 @@ void ThreadTestApp::keyDown( KeyEvent event )
 void ThreadTestApp::update()
 {
   if (!running) return;
-  
-  /// 1. Compute forces on centerline
-  
+
+  // TODO: adaptive timesteps
   c.suggestTimestep(1.0f/30.0f);
+  
   Eigen::Vector3f mp;
   if (isMouseDown) {
     mp << mousePosition.x, mousePosition.y, mousePosition.z;
   } else {
-    mp = curYarn->points[curYarn->numCPs()-1].pos;
+    mp = y->cur().points[y->numCPs()-1].pos;
   }
-  Integrator::integrate(*curYarn, *nextYarn, restYarn, ws, c, mp);
+  mouseSpring->setMouse(mp, isMouseDown);
   
+  integrator->integrate(*y, c);
   
   /// 3. Enforce inextensibility/clamped edge as a velocity filter
   
@@ -179,8 +164,8 @@ void ThreadTestApp::update()
   
   
   for(int i=0; i<NUM_EDGES; i++){
-    Segment& si = nextYarn->segments[i];
-    Segment& restsi = restYarn.segments[i];
+    Segment& si = y->next().segments[i];
+    const Segment& restsi = y->rest().segments[i];
     float restLength = restsi.length();
     Eigen::Vector3f siv = si.vec();
     
@@ -198,10 +183,10 @@ void ThreadTestApp::update()
   }
   
   // Boundary edge constraints
-  Eigen::Vector3f p0 = nextYarn->points[0].pos;
-  Eigen::Vector3f p1 = nextYarn->points[1].pos;
-  Eigen::Vector3f p0rest = restYarn.points[0].pos;
-  Eigen::Vector3f p1rest = restYarn.points[1].pos;
+  Eigen::Vector3f& p0 = y->next().points[0].pos;
+  Eigen::Vector3f& p1 = y->next().points[1].pos;
+  const Eigen::Vector3f& p0rest = y->rest().points[0].pos;
+  const Eigen::Vector3f& p1rest = y->rest().points[1].pos;
   
   C(NUM_CONSTRAINTS-6) = p0rest.x() - p0.x();
   C(NUM_CONSTRAINTS-5) = p0rest.y() - p0.y();
@@ -233,9 +218,9 @@ void ThreadTestApp::update()
     
     // Update where are control points should be
     for(int i=0; i<NUM_VERTICES; i++) {
-      nextYarn->points[i].pos.x() += delta(3*i);
-      nextYarn->points[i].pos.y() += delta(3*i+1);
-      nextYarn->points[i].pos.z() += delta(3*i+2);
+      y->next().points[i].pos.x() += delta(3*i);
+      y->next().points[i].pos.y() += delta(3*i+1);
+      y->next().points[i].pos.z() += delta(3*i+2);
     }
     
     
@@ -244,8 +229,8 @@ void ThreadTestApp::update()
     Cgrad.setZero();
     
     for(int i=0; i<NUM_EDGES; i++){
-      Segment& si = nextYarn->segments[i];
-      Segment& restsi = restYarn.segments[i];
+      Segment& si = y->next().segments[i];
+      const Segment& restsi = y->rest().segments[i];
       float restLength = restsi.length();
       Eigen::Vector3f siv = si.vec();
       
@@ -263,10 +248,10 @@ void ThreadTestApp::update()
     }
     
     // Boundary edge constraints
-    Eigen::Vector3f& p0 = nextYarn->points[0].pos;
-    Eigen::Vector3f& p1 = nextYarn->points[1].pos;
-    Eigen::Vector3f& p0rest = restYarn.points[0].pos;
-    Eigen::Vector3f& p1rest = restYarn.points[1].pos;
+    Eigen::Vector3f& p0 = y->next().points[0].pos;
+    Eigen::Vector3f& p1 = y->next().points[1].pos;
+    const Eigen::Vector3f& p0rest = y->rest().points[0].pos;
+    const Eigen::Vector3f& p1rest = y->rest().points[1].pos;
     
     C(NUM_CONSTRAINTS-6) = p0rest.x() - p0.x();
     C(NUM_CONSTRAINTS-5) = p0rest.y() - p0.y();
@@ -291,19 +276,15 @@ void ThreadTestApp::update()
   
   for(int i=0; i<NUM_VERTICES; i++) {
     // Update velocities once we've converged
-    nextYarn->points[i].vel = (nextYarn->points[i].pos - curYarn->points[i].pos) / c.timestep();
+    y->next().points[i].vel = (y->next().points[i].pos - y->cur().points[i].pos) / c.timestep();
   }
-  
-  // Clamp top edge
-  nextYarn->points[0].vel.setZero();
-  nextYarn->points[1].vel.setZero();
   
   /// 4. (Collision detection and response would go here)
   
   /// 5. Update Bishop frame
   for(int i=1; i<NUM_EDGES; i++) {
-    Segment& prevSeg = curYarn->segments[i];
-    Segment& seg = nextYarn->segments[i];
+    Segment& prevSeg = y->cur().segments[i];
+    Segment& seg = y->next().segments[i];
     
     seg.parallelTransport(prevSeg);
   }
@@ -314,14 +295,12 @@ void ThreadTestApp::update()
   }
   
   float delta = twist/(N); // Twist is constant and instant
-  for(int i=1; i<nextYarn->numSegs(); i++) {
-    nextYarn->segments[i].setRot(nextYarn->segments[i-1].getRot() + delta);
+  for(int i=1; i<y->numSegs(); i++) {
+    y->next().segments[i].setRot(y->next().segments[i-1].getRot() + delta);
   }
   
   // Swap Yarns
-  Yarn* temp = curYarn;
-  curYarn = nextYarn;
-  nextYarn = temp;
+  y->swapYarns();
 
   c.increment();
 }
@@ -342,21 +321,21 @@ void ThreadTestApp::draw()
   
   // Draw the rod and the normal of the bishop frame
   for(int i=1; i<NUM_EDGES; i++) {
-    gl::color( 0.4, -cos(curYarn->segments[i].getRot()), cos(curYarn->segments[i].getRot()) );
+    gl::color( 0.4, -cos(y->cur().segments[i].getRot()), cos(y->cur().segments[i].getRot()) );
     gl::lineWidth(2);
-    ci::Vec3f p0(curYarn->points[i].pos.x(), curYarn->points[i].pos.y(), curYarn->points[i].pos.z());
-    ci::Vec3f p1(curYarn->points[i+1].pos.x(), curYarn->points[i+1].pos.y(), curYarn->points[i+1].pos.z());
+    ci::Vec3f p0(y->cur().points[i].pos.x(), y->cur().points[i].pos.y(), y->cur().points[i].pos.z());
+    ci::Vec3f p1(y->cur().points[i+1].pos.x(), y->cur().points[i+1].pos.y(), y->cur().points[i+1].pos.z());
     gl::drawLine(p0, p1);
     gl::color(1, 1, 0);
     gl::lineWidth(1);
-    Eigen::Vector3f eu = curYarn->segments[i].getU();
+    Eigen::Vector3f eu = y->cur().segments[i].getU();
     ci::Vec3f u(eu.x(), eu.y(), eu.z());
     gl::drawLine((p0+p1)/2, (p0+p1)/2+u);
   }
   
   if (isMouseDown) {
     gl::color(1, 0, 0);
-    ci::Vec3f p(curYarn->points[NUM_VERTICES-1].pos.x(), curYarn->points[NUM_VERTICES-1].pos.y(), curYarn->points[NUM_VERTICES-1].pos.z());
+    ci::Vec3f p(y->cur().points[NUM_VERTICES-1].pos.x(), y->cur().points[NUM_VERTICES-1].pos.y(), y->cur().points[NUM_VERTICES-1].pos.z());
     gl::drawLine(p, mousePosition);
   }
   
