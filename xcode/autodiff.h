@@ -414,8 +414,8 @@ std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, VecType> &s) 
  * \sa DScalar1
  * \author Wenzel Jakob
  */
-template <typename _Scalar, typename _Gradient = Eigen::Matrix<_Scalar, Eigen::Dynamic, 1>,
-typename _Hessian = Eigen::Matrix<_Scalar, Eigen::Dynamic, Eigen::Dynamic> >
+template <typename _Scalar, size_t variableCount, typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1>,
+typename _Hessian = Eigen::Matrix<_Scalar, variableCount, variableCount> >
 struct DScalar2 : public DiffScalarBase {
 public:
 	typedef _Scalar                                         Scalar;
@@ -430,11 +430,11 @@ public:
   
 	/// Create a new constant automatic differentiation scalar
 	explicit DScalar2(Scalar value = (Scalar) 0) : value(value) {
-		size_t variableCount = getVariableCount();
+//		size_t variableCount = getVariableCount();
     
-		grad.resize(variableCount, Eigen::NoChange_t()); ///
+//		grad.resize(variableCount, Eigen::NoChange_t()); ///
 		grad.setZero();
-		hess.resize(variableCount, variableCount);
+//		hess.resize(variableCount, variableCount);
 		hess.setZero();
     
     CHECK_NAN(value);
@@ -443,12 +443,12 @@ public:
 	/// Construct a new scalar with the specified value and one first derivative set to 1
 	DScalar2(size_t index, const Scalar &value)
   : value(value) {
-		size_t variableCount = getVariableCount();
+//		size_t variableCount = getVariableCount();
     
-		grad.resize(variableCount, Eigen::NoChange_t()); ///
+//		grad.resize(variableCount, Eigen::NoChange_t()); ///
 		grad.setZero();
 		grad(index) = 1;
-		hess.resize(variableCount, variableCount);
+//		hess.resize(variableCount, variableCount);
 		hess.setZero();
     
     CHECK_NAN(value);
@@ -839,8 +839,8 @@ protected:
 	Hessian hess;
 };
 
-template <typename Scalar, typename VecType, typename MatType>
-std::ostream &operator<<(std::ostream &out, const DScalar2<Scalar, VecType, MatType> &s) {
+template <typename Scalar, size_t variableCount, typename VecType, typename MatType>
+std::ostream &operator<<(std::ostream &out, const DScalar2<Scalar, variableCount, VecType, MatType> &s) {
 	out << "[" << s.getValue()
   << ", grad=" << s.getGradient().format(Eigen::IOFormat(4, 1, ", ", "; ", "", "", "[", "]"))
   << ", hess=" << s.getHessian().format(Eigen::IOFormat(4, 0, ", ", "; ", "", "", "[", "]"))

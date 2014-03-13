@@ -21,7 +21,7 @@ using namespace ci;
 using namespace ci::app;
 using namespace Eigen;
 
-#define N 20
+#define N 40
 #define NUM_EDGES (N+1)
 #define NUM_VERTICES (N+2)
 #define H 0.01f // Timestep.
@@ -84,11 +84,21 @@ void ThreadTestApp::setup()
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
   energies.push_back(gravity);
   
-  mouseSpring = new MouseSpring(*y, Explicit, NUM_VERTICES-1);
+  mouseSpring = new MouseSpring(*y, Explicit, NUM_VERTICES-1, 10);
   energies.push_back(mouseSpring);
   
   YarnEnergy* bending = new Bending(*y, Implicit);
   energies.push_back(bending);
+  
+  Spring* clamp1 = new Spring(*y, Explicit, 0, 1000);
+  clamp1->setClamp(y->rest().points[0].pos);
+  Spring* clamp2 = new Spring(*y, Explicit, 1, 1000);
+  clamp2->setClamp(y->rest().points[1].pos);
+  energies.push_back(clamp1);
+  energies.push_back(clamp2);
+  
+  YarnEnergy* stretch = new Stretching(*y, Implicit);
+  energies.push_back(stretch);
   
   // Create integrator
   integrator = new Integrator(energies);
@@ -156,6 +166,7 @@ void ThreadTestApp::update()
   integrator->integrate(*y, c);
   
   /// 3. Enforce inextensibility/clamped edge as a velocity filter
+#ifdef MANIFOLD_PROJECTION
   
   Matrix<float, NUM_CONSTRAINTS, 3*NUM_VERTICES> Cgrad
     = Matrix<float, NUM_CONSTRAINTS, 3*NUM_VERTICES>::Zero();
@@ -278,6 +289,8 @@ void ThreadTestApp::update()
     // Update velocities once we've converged
     y->next().points[i].vel = (y->next().points[i].pos - y->cur().points[i].pos) / c.timestep();
   }
+  
+#endif // ifdef MANIFOLD_PROJECTION
   
   /// 4. (Collision detection and response would go here)
   

@@ -12,6 +12,8 @@
 #include "Eigen/Sparse"
 #include "autodiff.h"
 #include "Yarn.h"
+#include "Constants.h"
+#include <boost/timer.hpp>
 
 typedef Eigen::Triplet<float> Triplet;
 typedef Eigen::VectorXf VecXf;
@@ -38,7 +40,7 @@ public:
   Gravity(const Yarn& y, EvalType et, Vec3f dir) : YarnEnergy(y, et), dir(dir) {}
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
     assert(et == Explicit && "Unsupported EvalType");
-    for (int i=2; i<y.numCPs(); i++) { // TODO: that "2" should not be hard-coded
+    for (int i=0; i<y.numCPs(); i++) {
       Fx(i*3)   -= dir.x() * c.timestep();
       Fx(i*3+1) -= dir.y() * c.timestep();
       Fx(i*3+2) -= dir.z() * c.timestep();
@@ -50,15 +52,17 @@ class Spring : public YarnEnergy {
 protected:
   Vec3f clamp;
   size_t index;
+  float stiffness;
 public:
-  Spring(const Yarn& y, EvalType et, size_t index) : YarnEnergy(y, et), index(index) {}
+  Spring(const Yarn& y, EvalType et, size_t index, float stiffness) :
+    YarnEnergy(y, et), index(index), stiffness(stiffness) {}
   
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
     assert(et == Explicit && "Unsupported EvalType");
     size_t i = 3*index;
-    Fx(i)   -= c.timestep() * (clamp.x() - y.cur().points[index].pos.x());
-    Fx(i+1) -= c.timestep() * (clamp.y() - y.cur().points[index].pos.y());
-    Fx(i+2) -= c.timestep() * (clamp.z() - y.cur().points[index].pos.z());
+    Fx(i)   -= c.timestep() * stiffness * (clamp.x() - y.cur().points[index].pos.x());
+    Fx(i+1) -= c.timestep() * stiffness * (clamp.y() - y.cur().points[index].pos.y());
+    Fx(i+2) -= c.timestep() * stiffness * (clamp.z() - y.cur().points[index].pos.z());
   }
   
   void setClamp(Vec3f newClamp) { clamp = newClamp; }
@@ -70,17 +74,19 @@ private:
   bool mouseSet = false;
   Vec3f mouse;
   size_t index;
+  float stiffness;
 public:
-  MouseSpring(const Yarn& y, EvalType et, size_t index) : YarnEnergy(y, et), index(index) {}
+  MouseSpring(const Yarn& y, EvalType et, size_t index, float stiffness) :
+    YarnEnergy(y, et), index(index), stiffness(stiffness) {}
   
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
     if (!mouseDown) return;
     assert(et == Explicit && "Unsupported EvalType");
     assert(mouseSet && "Set the mouse position each time you call eval()!");
     size_t i = 3*index;
-    Fx(i)   -= c.timestep() * (mouse.x() - y.cur().points[index].pos.x());
-    Fx(i+1) -= c.timestep() * (mouse.y() - y.cur().points[index].pos.y());
-    Fx(i+2) -= c.timestep() * (mouse.z() - y.cur().points[index].pos.z());
+    Fx(i)   -= c.timestep() * stiffness * (mouse.x() - y.cur().points[index].pos.x());
+    Fx(i+1) -= c.timestep() * stiffness * (mouse.y() - y.cur().points[index].pos.y());
+    Fx(i+2) -= c.timestep() * stiffness * (mouse.z() - y.cur().points[index].pos.z());
   }
   
   void setMouse(Vec3f newMouse, bool newDown) {
@@ -96,12 +102,13 @@ private:
 #define NUM_VARS 9
   typedef Eigen::Matrix<float, NUM_VARS, 1> Gradient;
   typedef Eigen::Matrix<float, NUM_VARS, NUM_VARS> Hessian;
-  typedef DScalar2<float, Gradient, Hessian> DScalar;
+  typedef DScalar2<float, NUM_VARS, Gradient, Hessian> DScalar;
   typedef DScalar::DVector3 DVector3;
   typedef DScalar::DVector2 DVector2;
   
   std::vector<Vec2f> restCurve;
   bool init = false;
+  
 public:
   Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
     // Init rest curve
@@ -132,17 +139,17 @@ public:
       const Segment&   nextSeg   = y.cur().segments[i];
       
       // Redefine NUM_VARS if you change these
-      DVector3 dPrevPoint(DScalar(0, prevPoint.pos.x() + h*dqdot(3*(i-1))   + h*prevPoint.vel.x()),
-                          DScalar(1, prevPoint.pos.y() + h*dqdot(3*(i-1)+1) + h*prevPoint.vel.y()),
-                          DScalar(2, prevPoint.pos.z() + h*dqdot(3*(i-1)+2) + h*prevPoint.vel.z()));
+      DVector3 dPrevPoint(DScalar(0, prevPoint.pos.x() + h*(dqdot(3*(i-1))   + prevPoint.vel.x())),
+                          DScalar(1, prevPoint.pos.y() + h*(dqdot(3*(i-1)+1) + prevPoint.vel.y())),
+                          DScalar(2, prevPoint.pos.z() + h*(dqdot(3*(i-1)+2) + prevPoint.vel.z())));
       
-      DVector3 dCurPoint(DScalar(3, curPoint.pos.x() + h*dqdot(3*i)   + h*curPoint.vel.x()),
-                         DScalar(4, curPoint.pos.y() + h*dqdot(3*i+1) + h*curPoint.vel.y()),
-                         DScalar(5, curPoint.pos.z() + h*dqdot(3*i+2) + h*curPoint.vel.z()));
+      DVector3 dCurPoint(DScalar(3, curPoint.pos.x() + h*(dqdot(3*i)   + curPoint.vel.x())),
+                         DScalar(4, curPoint.pos.y() + h*(dqdot(3*i+1) + curPoint.vel.y())),
+                         DScalar(5, curPoint.pos.z() + h*(dqdot(3*i+2) + curPoint.vel.z())));
       
-      DVector3 dNextPoint(DScalar(6, nextPoint.pos.x() + h*dqdot(3*(i+1))   + h*nextPoint.vel.x()),
-                          DScalar(7, nextPoint.pos.y() + h*dqdot(3*(i+1)+1) + h*nextPoint.vel.y()),
-                          DScalar(8, nextPoint.pos.z() + h*dqdot(3*(i+1)+2) + h*nextPoint.vel.z()));
+      DVector3 dNextPoint(DScalar(6, nextPoint.pos.x() + h*(dqdot(3*(i+1))   + nextPoint.vel.x())),
+                          DScalar(7, nextPoint.pos.y() + h*(dqdot(3*(i+1)+1) + nextPoint.vel.y())),
+                          DScalar(8, nextPoint.pos.z() + h*(dqdot(3*(i+1)+2) + nextPoint.vel.z())));
       
       DVector3 dPrevSeg = dCurPoint - dPrevPoint;
       DVector3 dNextSeg = dNextPoint - dCurPoint;
@@ -154,21 +161,15 @@ public:
       
       DVector3 curveBinorm = (DScalar(2)*dPrevSegN.cross(dNextSegN))/(1+dotProd);
       
-      DVector3 d1prev(DScalar(prevSeg.m1().x()),
-                      DScalar(prevSeg.m1().y()),
-                      DScalar(prevSeg.m1().z()));
+      Vec3f prevm1 = prevSeg.m1();
+      Vec3f prevm2 = prevSeg.m2();
+      Vec3f nextm1 = nextSeg.m1();
+      Vec3f nextm2 = nextSeg.m2();
       
-      DVector3 d2prev(DScalar(prevSeg.m2().x()),
-                      DScalar(prevSeg.m2().y()),
-                      DScalar(prevSeg.m2().z()));
-      
-      DVector3 d1next(DScalar(nextSeg.m1().x()),
-                      DScalar(nextSeg.m1().y()),
-                      DScalar(nextSeg.m1().z()));
-      
-      DVector3 d2next(DScalar(nextSeg.m2().x()),
-                      DScalar(nextSeg.m2().y()),
-                      DScalar(nextSeg.m2().z()));
+      DVector3 d1prev(DScalar(prevm1.x()), DScalar(prevm1.y()), DScalar(prevm1.z()));
+      DVector3 d2prev(DScalar(prevm2.x()), DScalar(prevm2.y()), DScalar(prevm2.z()));
+      DVector3 d1next(DScalar(nextm1.x()), DScalar(nextm1.y()), DScalar(nextm1.z()));
+      DVector3 d2next(DScalar(nextm2.x()), DScalar(nextm2.y()), DScalar(nextm2.z()));
       
       DVector2 matCurvePrev(curveBinorm.dot(d2prev), -curveBinorm.dot(d1prev));
       DVector2 matCurveNext(curveBinorm.dot(d2next), -curveBinorm.dot(d1next));
@@ -179,9 +180,9 @@ public:
       // TODO: bending matrix may not be I
       
       DScalar voronoiCell = 0.5*(dPrevSeg.norm()+dNextSeg.norm());
+      DVector2 curveDiff = matCurve - restMatCurve;
       
-      DScalar bendEnergy = 0.5*(1/voronoiCell)*
-      (matCurve - restMatCurve).dot(matCurve - restMatCurve);
+      DScalar bendEnergy = 0.5*(1/voronoiCell)*curveDiff.dot(curveDiff);
       
       Gradient grad = bendEnergy.getGradient();
       Hessian hess = bendEnergy.getHessian();
@@ -189,9 +190,9 @@ public:
       assert(et == Implicit && "Unsupported EvalType");
       for (int j=0; j<NUM_VARS; j++) {
         // TODO: mass matrix may not be I
-        Fx(3*(i-1)+j) -= h*grad(j);
+        Fx(3*(i-1)+j) += h*grad(j);
         for (int k=0; k<NUM_VARS; k++) {
-          float val = -h*h*hess(j,k);
+          float val = h*h*hess(j,k);
           CHECK_NAN(val);
           if (val != 0) {
             GradFx.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, val));
@@ -199,14 +200,66 @@ public:
         }
       }
     }
+    
   }
+#undef NUM_VARS
 };
 
 class Stretching : public YarnEnergy {
+private:
+#define NUM_VARS 6
+  typedef Eigen::Matrix<float, NUM_VARS, 1> Gradient;
+  typedef Eigen::Matrix<float, NUM_VARS, NUM_VARS> Hessian;
+  typedef DScalar2<float, NUM_VARS, Gradient, Hessian> DScalar;
+  typedef DScalar::DVector3 DVector3;
+  
+  // TODO: find a good value for this
+  float youngsModulus = 1e7;
+  float xArea = constants::pi * constants::radius * constants::radius;
+  float stretchScalar = xArea * youngsModulus;
+  
 public:
+  Stretching(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
-    // TODO
+    DiffScalarBase::setVariableCount(NUM_VARS);
+    float h = c.timestep();
+    
+    for (int i=0; i<y.numSegs(); i++) {
+      const Segment& seg = y.cur().segments[i];
+      float restSegLength = y.rest().segments[i].length();
+      const CtrlPoint& prevPoint = seg.getFirst();
+      const CtrlPoint& nextPoint = seg.getSecond();
+      
+      // Redefine NUM_VARS if you change these
+      DVector3 dPrevPoint(DScalar(0, prevPoint.pos.x() + h*(dqdot(3*i)   + prevPoint.vel.x())),
+                          DScalar(1, prevPoint.pos.y() + h*(dqdot(3*i+1) + prevPoint.vel.y())),
+                          DScalar(2, prevPoint.pos.z() + h*(dqdot(3*i+2) + prevPoint.vel.z())));
+      
+      DVector3 dNextPoint(DScalar(3, nextPoint.pos.x() + h*(dqdot(3*(i+1))   + nextPoint.vel.x())),
+                          DScalar(4, nextPoint.pos.y() + h*(dqdot(3*(i+1)+1) + nextPoint.vel.y())),
+                          DScalar(5, nextPoint.pos.z() + h*(dqdot(3*(i+1)+2) + nextPoint.vel.z())));
+      
+      DScalar axialStrain = (dNextPoint - dPrevPoint).norm()/restSegLength - 1;
+      
+      DScalar stretchEnergy = (0.5 * stretchScalar * restSegLength) * axialStrain * axialStrain;
+      
+      Gradient grad = stretchEnergy.getGradient();
+      Hessian hess = stretchEnergy.getHessian();
+      
+      assert(et == Implicit && "Unsuported EvalType");
+      for (int j=0; j<NUM_VARS; j++) {
+        Fx(3*i+j) += h*grad(j);
+        for (int k=0; k<NUM_VARS; k++) {
+          float val = h*h*hess(j,k);
+          if (val != 0) {
+            GradFx.push_back(Triplet(3*i+j, 3*i+k, val));
+          }
+        }
+      }
+      
+    }
   }
+#undef NUM_VARS
 };
 
 #endif

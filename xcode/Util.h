@@ -26,7 +26,7 @@
    for(int i=0; i<NUM_THREADS ;i++) { threads[i].join(); } \
  }
 
-#define ENABLE_CHECK_NAN
+// #define ENABLE_CHECK_NAN
 
 #ifdef ENABLE_CHECK_NAN
 #define CHECK_NAN(f) if(isnan(f)) assert(false && "NaN Detected.")

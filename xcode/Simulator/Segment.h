@@ -28,6 +28,11 @@ class Segment
 public:
   /// Default Segment constructor
   Segment(const CtrlPoint& a, const CtrlPoint& b, Vec3f f) : first(a), second(b), u(f) {}
+  /// Get the first Control Point of this Segment.
+  const CtrlPoint& getFirst() const { return first; }
+  /// Get the second Control Point of this Segment.
+  const CtrlPoint& getSecond() const { return second; }
+  
   /// Calculate the vector that represents this segment. Not necessarily unit length.
   const Vec3f inline vec() const { return second.pos - first.pos; }
   /// Calculate the length of the segment.

@@ -17,7 +17,7 @@ private:
   /// Current time of the simulation.
   float t = 0;
   /// Timestep of the model for the next step.
-  float h = INITIAL_TIMESTEP;
+  float h = constants::INITIAL_TIMESTEP;
   
 public:
   /// Get the current time of the simulation.
@@ -37,7 +37,7 @@ void inline Clock::suggestTimestep(float s) { h = fmin(h, s); }
 void inline Clock::increment() {
   if (h <= 0) throw;
   t += h;
-  h = INITIAL_TIMESTEP; // TODO: might increase this as simulation runs
+  h = constants::INITIAL_TIMESTEP; // TODO: might increase this as simulation runs
 }
 
 

@@ -7,6 +7,7 @@
 //
 
 #include "Integrator.h"
+#include <boost/timer.hpp>
 
 const float ConvergenceThreshold = 0.001;
 
