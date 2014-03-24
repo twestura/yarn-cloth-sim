@@ -10,6 +10,7 @@
 #define Visualizer_Util_h
 
 #include <boost/thread/thread.hpp>
+#include <boost/timer.hpp>
 
 //#define PARALLEL
 #define NUM_THREADS 4
@@ -33,33 +34,6 @@
 #else
 #define CHECK_NAN(f)
 #endif
-/// A vector-like class that allows an offset to indices. That is, if the only elements stored are
-/// in indices 5, 6, and 7, this class allows you to specify an offse (-5 in this case) such that
-/// only 3 elements are stored in memory, but they are accessed via indices 5, 6, and 7.
-template <class T>
-class offVec {
-private:
-  std::vector<T> vec;
-  int offset;
-public:
-  offVec<T>() { offset = -1; }
-  offVec<T>(int i) : offset(i) {}
-  void setOffset(int i) { offset = i; }
-  T& operator[]( const size_t index ) {
-    assert(index+offset>=0 && index+offset<vec.size());
-    return vec[index + offset];
-  }
-  const T& operator[]( const size_t index ) const {
-    assert(index+offset>=0 && index+offset<vec.size());
-    return vec[index + offset];
-  }
-  void push_back( T elt ) { vec.push_back(elt); }
-  const size_t size() const { return vec.size(); }
-  const size_t end() const { return vec.size() + offset; }
-  void clear() { vec.clear(); }
-};
-
-typedef Eigen::Vector2f Vec2f;
 
 /// A space to keep common data. Currently in flux.
 struct Workspace
@@ -68,10 +42,71 @@ struct Workspace
   /// re-initialized each time boost::thread(f) is called.
   boost::thread threads[NUM_THREADS];
   
-  /// Storage space for the material curvature at rest. This is defined at each internal control
-  /// point i for edges i-1 and i.
-  offVec<offVec<Vec2f>> restMatCurvature;
-  
 };
+
+class Profiler {
+  struct Stopwatch {
+    boost::timer t;
+    double e = 0;
+    bool running = true;
+  };
+  
+public:
+  typedef std::map<std::string, Stopwatch> TimerMap;
+  static TimerMap map;
+  
+  void static start(std::string name) {
+    TimerMap::iterator it = map.find(name);
+    if (it == map.end()) {
+      map.insert(std::pair<std::string, Stopwatch>(name, Stopwatch{}));
+    } else {
+      assert(!it->second.running && "Timer was already running!");
+      it->second.t.restart();
+      it->second.running = true;
+    }
+  }
+  
+  void static stop(std::string name) {
+    TimerMap::iterator it = map.find(name);
+    assert(it != map.end() && "Timer doesn't exist!");
+    assert(it->second.running && "Timer was already stopped!");
+    it->second.e += it->second.t.elapsed();
+    it->second.running = false;
+  }
+  
+  void static reset(std::string name) {
+    TimerMap::iterator it = map.find(name);
+    assert(it != map.end() && "Timer doesn't exist!");
+    it->second.t.restart();
+    it->second.e = 0;
+  }
+  
+  double static elapsed(std::string name) {
+    TimerMap::iterator it = map.find(name);
+    assert(it != map.end() && "Timer doesn't exist!");
+    if (it->second.running) {
+      return it->second.e + it->second.t.elapsed();
+    }
+    return it->second.e;
+  }
+  
+  void static resetAll() {
+    TimerMap::iterator it = map.begin();
+    while (it != map.end()) {
+      reset(it->first);
+      ++it;
+    }
+  }
+  
+  void static printElapsed() {
+    TimerMap::iterator it = map.begin();
+    while (it != map.end()) {
+      std::cout << it->first << ": " << elapsed(it->first) << "\n";
+      ++it;
+    }
+  }
+};
+
+#define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
 
 #endif

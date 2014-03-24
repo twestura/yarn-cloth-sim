@@ -10,6 +10,7 @@
 #define __Visualizer__Segment__
 
 #include "Eigen/Geometry"
+#include "Constants.h"
 #include "CtrlPoint.h"
 
 class Segment
@@ -47,34 +48,51 @@ public:
   /// Set the material frame rotation.
   void inline setRot(const float f) { rot = f; }
   /// Get the material frame rotation.
-  const float inline getRot() const { return rot; }
+  const float inline getRot() const { return rot + refTwist; }
   /// Calculate the material frave vector m1.
   const Vec3f inline m1() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(rot, vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * u;
   }
   /// Calculate the material frave vector m2.
   const Vec3f inline m2() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(rot, vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
-  const float getRefTwist() {
-    return refTwist;
-  }
-  /// Set the reference frame by parallel transporting through time.
+  const float getRefTwist() const { return refTwist; }
+  
+  /// Set the reference frame by parallel transporting via the given vector. No reference twist is
+  /// assumed to occur.
   void parallelTransport(Segment& prevSeg) {
     Vec3f vprev = prevSeg.vec();
     Vec3f vcur  = vec();
     Vec3f cross = vprev.cross(vcur);
     cross.normalize();
-    refTwist = acos(vcur.dot(vprev)/(vcur.norm()*vprev.norm()));
+    float twist = acos(vcur.dot(vprev)/(vcur.norm()*vprev.norm()));
     u = prevSeg.u;
     // If the angle is too small, cross becomes inaccurate. In order to prevent error propagation,
-    // it's better to pretend the angle is 0.
-    if (refTwist > .00001) {
-      Eigen::Quaternionf q(Eigen::AngleAxisf(refTwist, cross));
+    // it's better to pretend the angle is 0. Also guards against NaNs from acos.
+    if (twist > .00001) {
+      Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
       u = q * u;
+    }
+  }
+  
+  /// Set the reference frame by parallel transporting via prevSeg, then update refSeg with the
+  /// amount of twist accumulated by the transport.
+  /// WARNING: does not account for twists greater than pi correctly.
+  void parallelTransport(Segment& prevSeg, Segment& refSeg) {
+    parallelTransport(prevSeg);
+    Vec3f ucur = getU().normalized();
+    Vec3f uref = refSeg.getU().normalized();
+    float val = ucur.dot(uref);
+    if (val >= 1) { // Avoid values like 1.0000000012 that introduce NaNs
+      refSeg.refTwist = 0;
+    } else if (val <= -1) {
+      refSeg.refTwist = constants::pi;
+    } else {
+      refSeg.refTwist = acos(val);
     }
   }
 };

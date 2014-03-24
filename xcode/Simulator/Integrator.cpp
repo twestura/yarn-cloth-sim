@@ -12,8 +12,11 @@
 const float ConvergenceThreshold = 0.001;
 
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
+DECLARE_PROFILER();
 
 void Integrator::integrate(Yarn& y, Clock& c) {
+  
+  Profiler::start("Total");
   
   const size_t NumEqs = y.numCPs() * 3;
   
@@ -67,13 +70,16 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     assert(Fx.allFinite());
 #endif
     
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<float>> cg;
+    Profiler::start("CG Solver");
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<float>, Eigen::Lower, Eigen::IncompleteLUT<float>> cg;
     cg.compute(GradFx);
     Eigen::VectorXf temp = sol;
     sol = cg.solveWithGuess(Fx, temp);
     
     if (cg.info() == Eigen::NoConvergence) {
       std::cerr << "No convergence!! Newton iterate: " << iterations << "\n";
+      std::cerr << "Fx all finite: " << Fx.allFinite() << "\n";
+      std::cerr << "GradFx all finite: " << GradFx.toDense().allFinite() << "\n";
       std::cerr << "Fx max coeff: " << Fx.maxCoeff() << "\n";
       std::cerr << "GradFx max coeff: " << GradFx.toDense().maxCoeff() << "\n";
       assert(false);
@@ -82,6 +88,9 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     }
     
     dqdot -= sol;
+    
+    Profiler::stop("CG Solver");
+    
     
     if (sol.maxCoeff() < ConvergenceThreshold) {
       converge = true;
@@ -97,4 +106,9 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     y.next().points[i].vel += curdqdot;
     y.next().points[i].pos += c.timestep()*y.next().points[i].vel;
   }
+  
+  Profiler::stop("Total");
+//  Profiler::printElapsed();
+  Profiler::resetAll();
+//  std::cout << "\n";
 }

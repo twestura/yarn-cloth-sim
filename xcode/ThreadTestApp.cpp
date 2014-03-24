@@ -62,6 +62,8 @@ class ThreadTestApp : public AppNative {
   ci::Vec3f mousePosition = ci::Vec3f(0, 0, 0);
   bool isRotate = false;
   
+  Eigen::Vector3f p0 = Eigen::Vector3f(0, 0, -10);
+  
 };
 
 
@@ -89,6 +91,9 @@ void ThreadTestApp::setup()
   
   YarnEnergy* bending = new Bending(*y, Implicit);
   energies.push_back(bending);
+  
+  YarnEnergy* twisting = new Twisting(*y, Explicit);
+  energies.push_back(twisting);
   
   Spring* clamp1 = new Spring(*y, Explicit, 0, 1000);
   clamp1->setClamp(y->rest().points[0].pos);
@@ -144,6 +149,14 @@ void ThreadTestApp::keyDown( KeyEvent event )
     case 'p':
     running = !running;
     break;
+      
+      case 'w':
+      p0.y() += 1;
+      break;
+      case 's':
+      p0.y() -= 1;
+      break;
+      
     default:;
   }
 }
@@ -299,7 +312,12 @@ void ThreadTestApp::update()
     Segment& prevSeg = y->cur().segments[i];
     Segment& seg = y->next().segments[i];
     
-    seg.parallelTransport(prevSeg);
+    if (i < NUM_EDGES-1) {
+      Segment& refSeg = y->next().segments[i+1];
+      seg.parallelTransport(prevSeg, refSeg);
+    } else {
+      seg.parallelTransport(prevSeg);
+    }
   }
   
   /// 6. Update material frame rotation
@@ -351,6 +369,38 @@ void ThreadTestApp::draw()
     ci::Vec3f p(y->cur().points[NUM_VERTICES-1].pos.x(), y->cur().points[NUM_VERTICES-1].pos.y(), y->cur().points[NUM_VERTICES-1].pos.z());
     gl::drawLine(p, mousePosition);
   }
+  
+  
+  
+  gl::lineWidth(5);
+  gl::color(1, 0, 0);
+  CtrlPoint splinepts[4];
+  splinepts[0].pos = p0;
+  splinepts[1].pos = Eigen::Vector3f(0, 10, -8);
+  splinepts[2].pos = Eigen::Vector3f(0, 8, 0);
+  splinepts[3].pos = Eigen::Vector3f(0, -2, 4);
+  
+  for (int i=0; i<4; i++) {
+    ci::Vec3f p(splinepts[i].pos.x(), splinepts[i].pos.y(), splinepts[i].pos.z());
+    gl::drawLine(p, p + ci::Vec3f(0, 0.1, 0));
+  }
+  
+  Spline s(splinepts[0], splinepts[1], splinepts[2], splinepts[3]);
+  std::vector<ci::Vec3f> pl;
+  for (int i=0; i<=12; i++) {
+    float t = (((float) i) / 12);
+    Eigen::Vector3f p = s.eval(t);
+    ci::Vec3f v(p.x(), p.y(), p.z());
+    pl.push_back(v);
+  }
+  gl::lineWidth(1);
+  gl::color(0, 1, 0);
+
+  for (int i=0; i<pl.size()-1; i++) {
+    gl::drawLine(pl[i], pl[i+1]);
+  }
+   
+  
   
 }
 

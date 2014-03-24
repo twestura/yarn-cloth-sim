@@ -96,4 +96,34 @@ public:
   }
 };
 
+class Spline {
+  const Vec3f& p0;
+  const Vec3f& p1;
+  const Vec3f& p2;
+  const Vec3f& p3;
+  float ti[4] = {0, 0, 0, 0};
+  
+public:
+  Spline(const CtrlPoint& cp0, const CtrlPoint& cp1, const CtrlPoint& cp2, const  CtrlPoint& cp3) :
+  p0(cp0.pos), p1(cp1.pos), p2(cp2.pos), p3(cp3.pos) {
+    ti[1] = powf((p1-p0).norm(), 0.5);
+    ti[2] = powf((p2-p1).norm(), 0.5) + ti[1];
+    ti[3] = powf((p3-p2).norm(), 0.5) + ti[2];
+  }
+  
+  Vec3f eval(float t) {
+    t = (1-t)*ti[1] + t*ti[2];
+    
+    Vec3f l01  = ((ti[1] - t)*p0 + (t - ti[0])*p1) / (ti[1] - ti[0]);
+    Vec3f l12  = ((ti[2] - t)*p1 + (t - ti[1])*p2) / (ti[2] - ti[1]);
+    Vec3f l23  = ((ti[3] - t)*p2 + (t - ti[2])*p3) / (ti[3] - ti[2]);
+    Vec3f l012 = ((ti[2] - t)*l01 + (t - ti[0])*l12) / (ti[2] - ti[0]);
+    Vec3f l123 = ((ti[3] - t)*l12 + (t - ti[1])*l23) / (ti[3] - ti[1]);
+    Vec3f c12  = ((ti[2] - t)*l012 + (t - ti[1])*l123) / (ti[2] - ti[1]);
+    return c12;
+  }
+  
+  
+};
+
 #endif /* defined(__Visualizer__Yarn__) */
