@@ -94,7 +94,7 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     
     if (sol.maxCoeff() < ConvergenceThreshold) {
       converge = true;
-    } else if (iterations > 5) {
+    } else if (iterations > 10) {
       std::cerr << "Too many newton iterations, breaking.\n";
       break;
     }

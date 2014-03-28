@@ -14,7 +14,7 @@
 #include "Yarn.h"
 #include "Constants.h"
 
-//#define ENABLE_AUTODIFF
+#define ENABLE_AUTODIFF
 
 typedef Eigen::Triplet<float> Triplet;
 typedef Eigen::VectorXf VecXf;
@@ -42,9 +42,7 @@ public:
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
     assert(et == Explicit && "Unsupported EvalType");
     for (int i=0; i<y.numCPs(); i++) {
-      Fx(i*3)   -= dir.x() * c.timestep();
-      Fx(i*3+1) -= dir.y() * c.timestep();
-      Fx(i*3+2) -= dir.z() * c.timestep();
+      Fx.block<3,1>(3*i, 0) -= dir * c.timestep();
     }
   }
 };
@@ -60,10 +58,7 @@ public:
   
   void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
     assert(et == Explicit && "Unsupported EvalType");
-    size_t i = 3*index;
-    Fx(i)   -= c.timestep() * stiffness * (clamp.x() - y.cur().points[index].pos.x());
-    Fx(i+1) -= c.timestep() * stiffness * (clamp.y() - y.cur().points[index].pos.y());
-    Fx(i+2) -= c.timestep() * stiffness * (clamp.z() - y.cur().points[index].pos.z());
+    Fx.block<3,1>(3*index, 0) -= (clamp - y.cur().points[index].pos) * stiffness * c.timestep();
   }
   
   void setClamp(Vec3f newClamp) { clamp = newClamp; }
@@ -84,10 +79,7 @@ public:
     if (!mouseDown) return;
     assert(et == Explicit && "Unsupported EvalType");
     assert(mouseSet && "Set the mouse position each time you call eval()!");
-    size_t i = 3*index;
-    Fx(i)   -= c.timestep() * stiffness * (mouse.x() - y.cur().points[index].pos.x());
-    Fx(i+1) -= c.timestep() * stiffness * (mouse.y() - y.cur().points[index].pos.y());
-    Fx(i+2) -= c.timestep() * stiffness * (mouse.z() - y.cur().points[index].pos.z());
+    Fx.block<3,1>(3*index, 0) -= (mouse - y.cur().points[index].pos) * stiffness * c.timestep();
   }
   
   void setMouse(Vec3f newMouse, bool newDown) {
@@ -146,28 +138,28 @@ public:
       
 #ifdef ENABLE_AUTODIFF
       // Redefine NUM_VARS if you change these
-      DVector3 dPrevPoint(DScalar(0, prevPoint.pos.x() + h*(dqdot(3*(i-1))   + prevPoint.vel.x())),
-                          DScalar(1, prevPoint.pos.y() + h*(dqdot(3*(i-1)+1) + prevPoint.vel.y())),
-                          DScalar(2, prevPoint.pos.z() + h*(dqdot(3*(i-1)+2) + prevPoint.vel.z())));
+      DVector3 dvPrevPoint(DScalar(0, prevPoint.pos.x() + h*(dqdot(3*(i-1))   + prevPoint.vel.x())),
+                           DScalar(1, prevPoint.pos.y() + h*(dqdot(3*(i-1)+1) + prevPoint.vel.y())),
+                           DScalar(2, prevPoint.pos.z() + h*(dqdot(3*(i-1)+2) + prevPoint.vel.z())));
       
-      DVector3 dCurPoint(DScalar(3, curPoint.pos.x() + h*(dqdot(3*i)   + curPoint.vel.x())),
-                         DScalar(4, curPoint.pos.y() + h*(dqdot(3*i+1) + curPoint.vel.y())),
-                         DScalar(5, curPoint.pos.z() + h*(dqdot(3*i+2) + curPoint.vel.z())));
+      DVector3 dvCurPoint(DScalar(3, curPoint.pos.x() + h*(dqdot(3*i)   + curPoint.vel.x())),
+                          DScalar(4, curPoint.pos.y() + h*(dqdot(3*i+1) + curPoint.vel.y())),
+                          DScalar(5, curPoint.pos.z() + h*(dqdot(3*i+2) + curPoint.vel.z())));
       
-      DVector3 dNextPoint(DScalar(6, nextPoint.pos.x() + h*(dqdot(3*(i+1))   + nextPoint.vel.x())),
-                          DScalar(7, nextPoint.pos.y() + h*(dqdot(3*(i+1)+1) + nextPoint.vel.y())),
-                          DScalar(8, nextPoint.pos.z() + h*(dqdot(3*(i+1)+2) + nextPoint.vel.z())));
+      DVector3 dvNextPoint(DScalar(6, nextPoint.pos.x() + h*(dqdot(3*(i+1))   + nextPoint.vel.x())),
+                           DScalar(7, nextPoint.pos.y() + h*(dqdot(3*(i+1)+1) + nextPoint.vel.y())),
+                           DScalar(8, nextPoint.pos.z() + h*(dqdot(3*(i+1)+2) + nextPoint.vel.z())));
             
-      DVector3 dPrevSeg = dCurPoint - dPrevPoint;
-      DVector3 dNextSeg = dNextPoint - dCurPoint;
-      assert(dPrevSeg.norm() != 0 && dNextSeg.norm() != 0 && "Edge length is 0");
+      DVector3 dvPrevSeg = dvCurPoint - dvPrevPoint;
+      DVector3 dvNextSeg = dvNextPoint - dvCurPoint;
+      assert(dvPrevSeg.norm() != 0 && dvNextSeg.norm() != 0 && "Edge length is 0");
       
-      DVector3 dPrevSegN = dPrevSeg.normalized();
-      DVector3 dNextSegN = dNextSeg.normalized();
-      DScalar dotProd = dPrevSegN.dot(dNextSegN);
+      DVector3 dvPrevSegN = dvPrevSeg.normalized();
+      DVector3 dvNextSegN = dvNextSeg.normalized();
+      DScalar dotProd = dvPrevSegN.dot(dvNextSegN);
       assert(dotProd != -1 && "Segments are pointing in exactly opposite directions");
       
-      DVector3 curveBinorm = (DScalar(2)*dPrevSegN.cross(dNextSegN))/(1+dotProd);
+      DVector3 dvcurveBinorm = (DScalar(2)*dvPrevSegN.cross(dvNextSegN))/(1+dotProd);
       
       Vec3f prevm1 = prevSeg.m1();
       Vec3f prevm2 = prevSeg.m2();
@@ -179,22 +171,22 @@ public:
       DVector3 d1next(DScalar(nextm1.x()), DScalar(nextm1.y()), DScalar(nextm1.z()));
       DVector3 d2next(DScalar(nextm2.x()), DScalar(nextm2.y()), DScalar(nextm2.z()));
       
-      DVector2 matCurvePrev(curveBinorm.dot(d2prev), -curveBinorm.dot(d1prev));
-      DVector2 matCurveNext(curveBinorm.dot(d2next), -curveBinorm.dot(d1next));
-      DVector2 matCurve = DScalar(0.5)*(matCurvePrev + matCurveNext);
+      DVector2 matCurvePrev(dvcurveBinorm.dot(d2prev), -dvcurveBinorm.dot(d1prev));
+      DVector2 matCurveNext(dvcurveBinorm.dot(d2next), -dvcurveBinorm.dot(d1next));
+      DVector2 dvmatCurve = DScalar(0.5)*(matCurvePrev + matCurveNext);
       
       DVector2 restMatCurve(DScalar(restCurve[i-1].x()), DScalar(restCurve[i-1].y()));
       
       // TODO: bending matrix may not be I
       
-      DScalar voronoiCell = 0.5*(dPrevSeg.norm()+dNextSeg.norm());
-      DVector2 curveDiff = matCurve - restMatCurve;
+      DVector2 curveDiff = dvmatCurve - restMatCurve;
       
-      DScalar bendEnergy = 0.5*(1/voronoiCell)*curveDiff.dot(curveDiff);
+      DScalar bendEnergy = (0.5/voronoiCell[i-1])*curveDiff.dot(curveDiff);
       
       Gradient grad = bendEnergy.getGradient();
       Hessian hess = bendEnergy.getHessian();
-      
+
+
       assert(et == Implicit && "Unsupported EvalType");
       for (int j=0; j<NUM_VARS; j++) {
         // TODO: mass matrix may not be I
@@ -207,6 +199,14 @@ public:
           }
         }
       }
+
+      
+      /*
+      if (i == y.numCPs()-2) {
+        std::cout << hess << "\n\n";
+      }
+       */
+      
 #else // ifdef ENABLE_AUTODIFF
     
       Vec3f dPrevPoint = prevPoint.pos + h*(dqdot.block<3, 1>(3*(i-1), 0) + prevPoint.vel);
@@ -228,11 +228,11 @@ public:
       Vec3f d2tilde = d2/chi;
       Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi;
       Vec2f matCurve = 0.5*Vec2f(d2.dot(curveBinorm), -d1.dot(curveBinorm));
-    
+      
       Vec3f gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / dPrevSeg.norm();
+      Vec3f gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / dNextSeg.norm();
       Vec3f gradK2ePrev = (-matCurve.y()*tTilde + tNext.cross(d1tilde)) / dPrevSeg.norm();
-      Vec3f gradK1eNext = (-matCurve.x()*tTilde + tPrev.cross(d2tilde)) / dNextSeg.norm();
-      Vec3f gradK2eNext = (-matCurve.y()*tTilde + tPrev.cross(d1tilde)) / dNextSeg.norm();
+      Vec3f gradK2eNext = (-matCurve.y()*tTilde - tPrev.cross(d1tilde)) / dNextSeg.norm();
       
       // WARNING: assumes that the bending matrix is the identity.
       
@@ -241,7 +241,7 @@ public:
       float k1coeff = 2*(matCurve.x()-dRestCurve.x());
       // b22*2*(k2-restk2) + (b21+b12)(k1-restk1)
       float k2coeff = 2*(matCurve.y()-dRestCurve.y());
-      float totalcoeff = 1/(2*voronoiCell[i-1]);
+      float totalcoeff = 0.5/voronoiCell[i-1];
       
       Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff);
       Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff);
@@ -264,45 +264,46 @@ public:
                       -d1tilde.y(), d1tilde.x(), 0;
       
       Mat3f hessK1ePrev2 = 2*matCurve.x()*tTilde2-tNextxd2TildextTilde-tNextxd2TildextTilde.transpose();
-      hessK1ePrev2 += (matCurve.x()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
+      hessK1ePrev2 -= (matCurve.x()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
       hessK1ePrev2 += 0.25*(curveBinorm*prevSeg.m2().transpose()+prevSeg.m2()*curveBinorm.transpose());
       hessK1ePrev2 /= dPrevSeg.dot(dPrevSeg);
       
       Mat3f hessK2ePrev2 = 2*matCurve.y()*tTilde2-tNextxd1TildextTilde-tNextxd1TildextTilde.transpose();
-      hessK2ePrev2 += (matCurve.y()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
+      hessK2ePrev2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
       hessK2ePrev2 += 0.25*(curveBinorm*prevSeg.m1().transpose()+prevSeg.m1()*curveBinorm.transpose());
       hessK2ePrev2 /= dPrevSeg.dot(dPrevSeg);
       
       Mat3f hessK1eNext2 = 2*matCurve.x()*tTilde2+tPrevxd2TildextTilde+tPrevxd2TildextTilde.transpose();
-      hessK1eNext2 += (matCurve.x()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
+      hessK1eNext2 -= (matCurve.x()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
       hessK1eNext2 += 0.25*(curveBinorm*nextSeg.m2().transpose()+nextSeg.m2()*curveBinorm.transpose());
       hessK1eNext2 /= dNextSeg.dot(dNextSeg);
       
       Mat3f hessK2eNext2 = 2*matCurve.y()*tTilde2+tPrevxd1TildextTilde+tPrevxd1TildextTilde.transpose();
-      hessK2eNext2 += (matCurve.y()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
+      hessK2eNext2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
       hessK2eNext2 += 0.25*(curveBinorm*nextSeg.m1().transpose()+nextSeg.m1()*curveBinorm.transpose());
       hessK2eNext2 /= dNextSeg.dot(dNextSeg);
       
       Mat3f hessK1ePreveNext = (-matCurve.x()/chi)*(Mat3f::Identity() + (tPrev * tNext.transpose()));
-      hessK1ePreveNext += (2*matCurve.x()*tTilde2) - tNextxd2TildextTilde -tPrevxd2TildextTilde.transpose();
+      hessK1ePreveNext += (2*matCurve.x()*tTilde2) - tNextxd2TildextTilde + tPrevxd2TildextTilde.transpose();
       hessK1ePreveNext -= d2TildeCross;
       hessK1ePreveNext /= (dNextSeg.norm() * dPrevSeg.norm());
       
       Mat3f hessK2ePreveNext = (-matCurve.y()/chi)*(Mat3f::Identity() + (tPrev * tNext.transpose()));
-      hessK2ePreveNext += (2*matCurve.y()*tTilde2) - tNextxd1TildextTilde -tPrevxd1TildextTilde.transpose();
+      hessK2ePreveNext += (2*matCurve.y()*tTilde2) - tNextxd1TildextTilde + tPrevxd1TildextTilde.transpose();
       hessK2ePreveNext -= d1TildeCross;
       hessK2ePreveNext /= (dNextSeg.norm() * dPrevSeg.norm());
       
-      Mat3f hessePrev2 = 4*gradK1ePrev*gradK1ePrev.transpose() + k1coeff * hessK1ePrev2;
-      hessePrev2 += 4*gradK2ePrev*gradK2ePrev.transpose() + k2coeff * hessK2ePrev2;
+      
+      Mat3f hessePrev2 = 2*gradK1ePrev*gradK1ePrev.transpose() + k1coeff * hessK1ePrev2;
+      hessePrev2 += 2*gradK2ePrev*gradK2ePrev.transpose() + k2coeff * hessK2ePrev2;
       hessePrev2 *= totalcoeff*h*h;
       
-      Mat3f hesseNext2 = 4*gradK1eNext*gradK1eNext.transpose() + k1coeff * hessK1eNext2;
-      hesseNext2 += 4*gradK2eNext*gradK2eNext.transpose() + k2coeff * hessK2eNext2;
+      Mat3f hesseNext2 = 2*gradK1eNext*gradK1eNext.transpose() + k1coeff * hessK1eNext2;
+      hesseNext2 += 2*gradK2eNext*gradK2eNext.transpose() + k2coeff * hessK2eNext2;
       hesseNext2 *= totalcoeff*h*h;
       
-      Mat3f  hessePreveNext = 4*gradK1ePrev*gradK1eNext.transpose() + k1coeff * hessK1ePreveNext;
-      hessePreveNext += 4*gradK2ePrev*gradK2eNext.transpose() + k2coeff * hessK2ePreveNext;
+      Mat3f  hessePreveNext = 2*gradK1ePrev*gradK1eNext.transpose() + k1coeff * hessK1ePreveNext;
+      hessePreveNext += 2*gradK2ePrev*gradK2eNext.transpose() + k2coeff * hessK2ePreveNext;
       hessePreveNext *= totalcoeff*h*h;
       
       Fx.block<3,1>(3*(i-1), 0) += h*gradePrev;
@@ -312,14 +313,36 @@ public:
       for(int j=0; j<3; j++) {
         for(int k=0; k<3; k++) {
           GradFx.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, hessePrev2(j, k)));
-          GradFx.push_back(Triplet(3*i+j,     3*(i-1)+k, hessePreveNext(k, j)));
-          GradFx.push_back(Triplet(3*(i-1)+j, 3*i+k,     hessePreveNext(j, k)));
-          GradFx.push_back(Triplet(3*i+j,     3*i+k,     hessePrev2(j, k) + hesseNext2(j, k)));
-          GradFx.push_back(Triplet(3*(i+1)+j, 3*i+k,     hessePreveNext(k, j)));
-          GradFx.push_back(Triplet(3*i+j,     3*(i+1)+k, hessePreveNext(j, k)));
+          GradFx.push_back(Triplet(3*i+j,     3*(i-1)+k, hessePreveNext(k, j) - hessePrev2(k, j)));
+          GradFx.push_back(Triplet(3*(i-1)+j, 3*i+k,     hessePreveNext(j, k) - hessePrev2(j, k)));
+          GradFx.push_back(Triplet(3*i+j,     3*i+k,     hessePrev2(j, k) + hesseNext2(j, k) - hessePreveNext(j, k) - hessePreveNext(k, j)));
+          GradFx.push_back(Triplet(3*(i+1)+j, 3*i+k,     hessePreveNext(k, j) - hesseNext2(k, j)));
+          GradFx.push_back(Triplet(3*i+j,     3*(i+1)+k, hessePreveNext(j, k) - hesseNext2(j, k)));
           GradFx.push_back(Triplet(3*(i+1)+j, 3*(i+1)+k, hesseNext2(j, k)));
+          
+          GradFx.push_back(Triplet(3*(i-1)+j, 3*(i+1)+k, -hessePreveNext(j, k)));
+          GradFx.push_back(Triplet(3*(i+1)+j, 3*(i-1)+k, -hessePreveNext(k, j)));
         }
       }
+      
+/*
+      Eigen::Matrix<float, 9, 9> hess;
+      hess.block<3,3>(0, 0) = hessePrev2;
+      hess.block<3,3>(3, 0) = hessePreveNext.transpose() - hessePrev2;
+      hess.block<3,3>(0, 3) = hessePreveNext - hessePrev2;
+      hess.block<3,3>(3, 3) = hessePrev2 + hesseNext2 - hessePreveNext - hessePreveNext.transpose();
+      hess.block<3,3>(6, 3) = hessePreveNext.transpose() - hesseNext2;
+      hess.block<3,3>(3, 6) = hessePreveNext - hesseNext2;
+      hess.block<3,3>(6, 6) = hesseNext2;
+      
+      hess.block<3,3>(0, 6) = -hessePreveNext;
+      hess.block<3,3>(6, 0) = -hessePreveNext.transpose();
+      if (i == y.numCPs()-2) {
+        std::cout << hess << "\n\n";
+      }
+ */
+      
+      
 #endif //ifdef ENABLE_AUTODIFF
       
     }
@@ -340,7 +363,7 @@ private:
   typedef DScalar::DVector3 DVector3;
   
   // TODO: find a good value for this
-  float youngsModulus = 1e7;
+  float youngsModulus = 2e7;
   float xArea = constants::pi * constants::radius * constants::radius;
   float stretchScalar = xArea * youngsModulus;
   
@@ -425,6 +448,91 @@ public:
       Fx.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * dxi;
     }
 
+  }
+};
+
+class IntContact : public YarnEnergy {
+private:
+  inline float f(float d) {
+    return 1/d/d + d*d - 2;
+  }
+  
+  inline float df(float d) {
+    return -2/d/d/d + 2*d;
+  }
+  
+  const float contactMod = 1e-3;
+
+public:
+  IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
+  
+  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+    for (int i=0; i<y.numSegs(); i++) {
+      for (int j=0; j<y.numSegs(); j++) {
+        if (i-j <= 1 && j-i <= 1) continue; // Don't evaluate adjacent edges.
+        float h = c.timestep();
+        const Segment& e1 = y.cur().segments[i];
+        const Segment& e2 = y.cur().segments[j];
+        
+        Vec3f e1p1 = e1.getFirst().pos;  // + h*(dqdot.block<3,1>(3*i, 0) + e1.getFirst().vel);
+        Vec3f e1p2 = e1.getSecond().pos; // + h*(dqdot.block<3,1>(3*i, 0) + e1.getSecond().vel);
+        Vec3f e2p1 = e2.getFirst().pos;  // + h*(dqdot.block<3,1>(3*j, 0) + e2.getFirst().vel);
+        Vec3f e2p2 = e2.getSecond().pos; // + h*(dqdot.block<3,1>(3*j, 0) + e2.getSecond().vel);
+        
+        Vec3f e1mid = (e1p1 + e1p2) / 2;
+        Vec3f e2mid = (e2p1 + e2p2) / 2;
+        
+        if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())/2) continue;
+        
+        // Splines are close, evaluate them.
+        
+        // FIXME: evaluate ends!!!
+        if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue;
+        
+        /*
+        if  (i == 1) {
+          const Segment& e1next = y.cur().segments[i+1];
+          s1(e1.getFirst(), e1.getSecond(), e1next.getSecond(), false);
+        } else if (i == y.numSegs()-1) {
+          const Segment& e1prev = y.cur().segments[i-1];
+          s1(e1prev.getFirst(), e1.getFirst(), e1.getSecond(), true);
+        } else {
+          const Segment& e1prev = y.cur().segments[i-1];
+          const Segment& e1next = y.cur().segments[i+1];
+          s1(e1prev.getFirst(), e1.getFirst(), e1.getSecond(), e1next.getSecond());
+        }
+        */
+        
+        const Segment& e1prev = y.cur().segments[i-1];
+        const Segment& e1next = y.cur().segments[i+1];
+        Spline s1(e1prev.getFirst(), e1.getFirst(), e1.getSecond(), e1next.getSecond());
+
+        const Segment& e2prev = y.cur().segments[j-1];
+        const Segment& e2next = y.cur().segments[j+1];
+        Spline s2(e2prev.getFirst(), e2.getFirst(), e2.getSecond(), e2next.getSecond());
+        
+        // FIXME: hack to get an estimate of spline length.
+        float l1 = e1.length();
+        float l2 = e2.length();
+        
+        for (int n=0; n<=12; n++) { // TODO: remove hardcoded 12
+          for (int m=0; m<=12; m++) {
+            float t1 = ((float) n) / 12;
+            float t2 = ((float) m) / 12;
+            Vec3f p1 = s1.eval(t1, false);
+            Vec3f p2 = s2.eval(t2, false);
+            float dist = (p1 - p2).norm();
+            float coeff = contactMod*l1*l2*df(dist / 2 / constants::radius)/2/constants::radius;
+            
+            for (int k=0; k<4; k++) {
+              Fx.block<3,1>(3*(i-1+k), 0) += h*coeff*s1.distGrad(k, t1, p2);
+              Fx.block<3,1>(3*(j-1+k), 0) += h*coeff*s2.distGrad(k, t2, p1);
+            }
+          }
+        }
+        
+      }
+    }
   }
 };
 

@@ -95,6 +95,9 @@ void ThreadTestApp::setup()
   YarnEnergy* twisting = new Twisting(*y, Explicit);
   energies.push_back(twisting);
   
+  YarnEnergy* intContact = new IntContact(*y, Explicit);
+  energies.push_back(intContact);
+  
   Spring* clamp1 = new Spring(*y, Explicit, 0, 1000);
   clamp1->setClamp(y->rest().points[0].pos);
   Spring* clamp2 = new Spring(*y, Explicit, 1, 1000);
@@ -352,7 +355,9 @@ void ThreadTestApp::draw()
   
   // Draw the rod and the normal of the bishop frame
   for(int i=1; i<NUM_EDGES; i++) {
-    gl::color( 0.4, -cos(y->cur().segments[i].getRot()), cos(y->cur().segments[i].getRot()) );
+    ci::Color c(0.4, -cos(y->cur().segments[i].getRot()), cos(y->cur().segments[i].getRot()));
+    c *= (y->cur().segments[i].getFirst().pos.z() + 5) / 10;
+    gl::color(c);
     gl::lineWidth(2);
     ci::Vec3f p0(y->cur().points[i].pos.x(), y->cur().points[i].pos.y(), y->cur().points[i].pos.z());
     ci::Vec3f p1(y->cur().points[i+1].pos.x(), y->cur().points[i+1].pos.y(), y->cur().points[i+1].pos.z());
@@ -370,7 +375,7 @@ void ThreadTestApp::draw()
     gl::drawLine(p, mousePosition);
   }
   
-  
+  /*
   
   gl::lineWidth(5);
   gl::color(1, 0, 0);
@@ -387,20 +392,27 @@ void ThreadTestApp::draw()
   
   Spline s(splinepts[0], splinepts[1], splinepts[2], splinepts[3]);
   std::vector<ci::Vec3f> pl;
+  std::vector<ci::Vec3f> plTest;
   for (int i=0; i<=12; i++) {
     float t = (((float) i) / 12);
-    Eigen::Vector3f p = s.eval(t);
+    Eigen::Vector3f p = s.eval(t, false);
     ci::Vec3f v(p.x(), p.y(), p.z());
     pl.push_back(v);
+    p = s.eval(t, true);
+    ci::Vec3f v1(p.x(), p.y(), p.z());
+    plTest.push_back(v1);
   }
   gl::lineWidth(1);
-  gl::color(0, 1, 0);
+  
 
   for (int i=0; i<pl.size()-1; i++) {
+    gl::color(0, 1, 0);
     gl::drawLine(pl[i], pl[i+1]);
+    gl::color(0, 1, 1);
+    gl::drawLine(plTest[i], plTest[i+1]);
   }
    
-  
+   */
   
 }
 

@@ -25,6 +25,8 @@ class Segment
   float rot = 0;
   /// Twist in radians from reference frame parallel transport through time.
   float refTwist = 0;
+  /// The number of full (2*pi) twists in the reference frame.
+  int numTwists = 0;
   
 public:
   /// Default Segment constructor
@@ -48,19 +50,19 @@ public:
   /// Set the material frame rotation.
   void inline setRot(const float f) { rot = f; }
   /// Get the material frame rotation.
-  const float inline getRot() const { return rot + refTwist; }
+  const float inline getRot() const { return rot; }
   /// Calculate the material frave vector m1.
   const Vec3f inline m1() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot()-getRefTwist(), vec().normalized()));
     return q * u;
   }
   /// Calculate the material frave vector m2.
   const Vec3f inline m2() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot()-getRefTwist(), vec().normalized()));
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
-  const float getRefTwist() const { return refTwist; }
+  const float getRefTwist() const { return refTwist + 2*constants::pi*numTwists; }
   
   /// Set the reference frame by parallel transporting via the given vector. No reference twist is
   /// assumed to occur.
@@ -85,14 +87,28 @@ public:
   void parallelTransport(Segment& prevSeg, Segment& refSeg) {
     parallelTransport(prevSeg);
     Vec3f ucur = getU().normalized();
+    Vec3f vcur = v().normalized();
     Vec3f uref = refSeg.getU().normalized();
     float val = ucur.dot(uref);
+    float sign = vcur.dot(uref);
+    float oldTwist = refSeg.refTwist;
     if (val >= 1) { // Avoid values like 1.0000000012 that introduce NaNs
       refSeg.refTwist = 0;
     } else if (val <= -1) {
       refSeg.refTwist = constants::pi;
     } else {
       refSeg.refTwist = acos(val);
+    }
+    if (sign < 0) { // check if we need to switch sign
+      refSeg.refTwist *= -1;
+    }
+    
+    // Account for twists >pi. Assumes that twists are not greater than pi between each transport.
+    float diff = refSeg.refTwist - oldTwist;
+    if (diff < -constants::pi) {
+      refSeg.numTwists -= 1;
+    } else if (diff > constants::pi) {
+      refSeg.numTwists += 1;
     }
   }
 };
