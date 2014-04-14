@@ -17,6 +17,8 @@
 		7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7101FBBF18595AA9008553D8 /* PosFileConv.cpp */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
+		715D32B618FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
+		715D32B718FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		715D609018A95941008A9785 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 715D608F18A95941008A9785 /* Cocoa.framework */; };
 		715D609718A95941008A9785 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 715D609518A95941008A9785 /* InfoPlist.strings */; };
 		715D609918A95941008A9785 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 715D609818A95941008A9785 /* main.m */; };
@@ -68,6 +70,7 @@
 		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
 		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		715D32B518FC60490061154E /* Energy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Energy.cpp; sourceTree = "<group>"; };
 		715D608E18A95941008A9785 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		715D608F18A95941008A9785 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		715D609118A95941008A9785 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -305,6 +308,7 @@
 			children = (
 				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
+				715D32B518FC60490061154E /* Energy.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -474,6 +478,7 @@
 				715D609918A95941008A9785 /* main.m in Sources */,
 				719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */,
 				715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */,
+				715D32B618FC60490061154E /* Energy.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -482,6 +487,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
+				715D32B718FC60490061154E /* Energy.cpp in Sources */,
 				71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

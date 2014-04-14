@@ -43,7 +43,7 @@ public:
       CtrlPoint cp;
       cp.pos = p;
       cp.vel.setZero();
-      cp.force.setZero();
+      cp.accel.setZero();
       restYS.points.push_back(cp);
     }
     curYS  = new YarnStr(restYS);

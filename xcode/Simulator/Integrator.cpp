@@ -21,6 +21,7 @@ void Integrator::integrate(Yarn& y, Clock& c) {
   const size_t NumEqs = y.numCPs() * 3;
   
   Eigen::VectorXf Fx    = Eigen::VectorXf::Zero(NumEqs);
+  Eigen::VectorXf FxEx  = Eigen::VectorXf::Zero(NumEqs);
   Eigen::VectorXf dqdot = Eigen::VectorXf::Zero(NumEqs);
   Eigen::VectorXf sol   = Eigen::VectorXf::Zero(NumEqs);
   Eigen::SparseMatrix<float> GradFx(NumEqs, NumEqs);
@@ -42,6 +43,21 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     y.next().points[i].vel = y.cur().points[i].vel;
   }
   
+  // Compute timestep
+  /*
+  for (YarnEnergy* e : energies) {
+    e->suggestTimestep(c);
+  }
+  */
+  
+  // Calculate Fx contribution from Explicit energies
+  // (these do not change between Newton iterations)
+  for (YarnEnergy* e : energies) {
+    if (e->evalType() == Explicit) {
+      e->eval(FxEx, triplets, dqdot, c); // Ignores triplets and dqdot
+    }
+  }
+  
   // Perform Newton iteration to solve IMEX equations
   while (!converge) {
     if (iterations != 0) {
@@ -54,12 +70,14 @@ void Integrator::integrate(Yarn& y, Clock& c) {
   
     // Add up energies
     for (YarnEnergy* e : energies) {
-      e->eval(Fx, triplets, dqdot, c);
+      if (e->evalType() == Implicit) {
+        e->eval(Fx, triplets, dqdot, c);
+      }
     }
     
     // TODO: Mass matrix may not be I
     for (int i=0; i<NumEqs; i++) {
-      Fx(i) += dqdot(i);
+      Fx(i) += dqdot(i) + FxEx(i);
       triplets.push_back(Triplet(i, i, 1));
     }
     
@@ -94,11 +112,28 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     
     if (sol.maxCoeff() < ConvergenceThreshold) {
       converge = true;
-    } else if (iterations > 10) {
+    } else if (iterations > 3) {
       std::cerr << "Too many newton iterations, breaking.\n";
       break;
     }
   }
+  
+//#define NEWMARK_BETA
+#ifdef NEWMARK_BETA
+  
+  // Newmark-Beta update
+  const float gamma = 0.5;
+  const float beta = 0.25;
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
+    y.next().points[i].vel = y.cur().points[i].vel + (1-gamma)*y.cur().points[i].accel + gamma*curdqdot;
+    y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*(y.cur().points[i].vel +
+                                                                   (1-2*beta)/2*y.cur().points[i].accel +
+                                                                   beta*curdqdot);
+    y.next().points[i].accel = curdqdot;
+  }
+  
+#else // ifdef NEWMARK_BETA
   
   // Update changes to position and velocity
   for (int i=0; i<y.numCPs(); i++) {
@@ -106,6 +141,8 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     y.next().points[i].vel += curdqdot;
     y.next().points[i].pos += c.timestep()*y.next().points[i].vel;
   }
+  
+#endif // ifdef NEWMARK_BETA
   
   Profiler::stop("Total");
 //  Profiler::printElapsed();

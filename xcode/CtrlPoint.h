@@ -19,8 +19,8 @@ struct CtrlPoint
   Vec3f pos;
   /// Velocity of the control point.
   Vec3f vel;
-  /// The accumulated force at this control point.
-  Vec3f force;
+  /// Acceleration of the control point.
+  Vec3f accel;
 };
 
 #endif

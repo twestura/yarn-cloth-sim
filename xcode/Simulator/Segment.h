@@ -103,7 +103,7 @@ public:
       refSeg.refTwist *= -1;
     }
     
-    // Account for twists >pi. Assumes that twists are not greater than pi between each transport.
+    // Account for twists >|pi|. Assumes that twists are not greater than pi between each transport.
     float diff = refSeg.refTwist - oldTwist;
     if (diff < -constants::pi) {
       refSeg.numTwists -= 1;

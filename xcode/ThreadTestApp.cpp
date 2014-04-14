@@ -10,7 +10,7 @@
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Camera.h"
-#include "Eigen/Dense"
+#include <fstream>
 
 #include "Util.h"
 #include "Yarn.h"
@@ -21,13 +21,7 @@ using namespace ci;
 using namespace ci::app;
 using namespace Eigen;
 
-#define N 40
-#define NUM_EDGES (N+1)
-#define NUM_VERTICES (N+2)
-#define H 0.01f // Timestep.
-#define GRAVITY ci::Vec3f(0, -40, 0) // The direction/intensity of gravity.
 #define ANG_VEL (10*3.14159) // Constant angular velocity of the material frame.
-#define NUM_CONSTRAINTS (NUM_EDGES + 6) // Number of constraints to solve
 
 class ThreadTestApp : public AppNative {
   public:
@@ -40,6 +34,9 @@ class ThreadTestApp : public AppNative {
 	void draw();
   void setMaterialFrame();
   
+  void loadYarnFile(std::string filename);
+  void loadDefaultYarn(int numPoints);
+  
   // Set to false to pause the simulation
   bool running = true;
   
@@ -49,12 +46,17 @@ class ThreadTestApp : public AppNative {
   ci::Vec3f eyePos = ci::Vec3f( 50, 0, 0 );
   ci::Vec3f targetPos = ci::Vec3f( 0, 0, 0 );
   
-  Yarn* y;
+  Yarn* y = 0;
   Clock c;
   Integrator* integrator;
   std::vector<YarnEnergy*> energies;
   MouseSpring* mouseSpring;
-
+  
+  Spring* testSpring1;
+  Spring* testSpring2;
+  Eigen::Vector3f testSpring1Clamp = Eigen::Vector3f(10, 5, 5);
+  Eigen::Vector3f testSpring2Clamp = Eigen::Vector3f(-10, 5, 5);
+  
   float twist = 0;
   
   // Interactive stuff
@@ -73,30 +75,23 @@ void ThreadTestApp::setup()
   cam.setOrtho(cameraBounds[0], cameraBounds[1], cameraBounds[2], cameraBounds[3], 1, 100);
   cam.lookAt(eyePos, targetPos, ci::Vec3f( 0, 1, 0 ));
   
-  std::vector<Eigen::Vector3f> yarnPoints;
-  // Define Yarn
-  for(int i=0; i < NUM_VERTICES; i++) {
-    Eigen::Vector3f p(0, (NUM_VERTICES-i)*20.0f/NUM_VERTICES-10, 0);
-    yarnPoints.push_back(p);
-  }
-  
-  y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
+  loadDefaultYarn(42);
   
   // Create Yarn Energies
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
   energies.push_back(gravity);
   
-  mouseSpring = new MouseSpring(*y, Explicit, NUM_VERTICES-1, 10);
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10);
   energies.push_back(mouseSpring);
   
   YarnEnergy* bending = new Bending(*y, Implicit);
   energies.push_back(bending);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
-  energies.push_back(twisting);
+//  energies.push_back(twisting);
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
-  energies.push_back(intContact);
+//  energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*y, Explicit, 0, 1000);
   clamp1->setClamp(y->rest().points[0].pos);
@@ -104,6 +99,13 @@ void ThreadTestApp::setup()
   clamp2->setClamp(y->rest().points[1].pos);
   energies.push_back(clamp1);
   energies.push_back(clamp2);
+  
+  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50);
+  testSpring1->setClamp(testSpring1Clamp);
+  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50);
+  testSpring2->setClamp(testSpring2Clamp);
+//  energies.push_back(testSpring1);
+//  energies.push_back(testSpring2);
   
   YarnEnergy* stretch = new Stretching(*y, Implicit);
   energies.push_back(stretch);
@@ -154,10 +156,18 @@ void ThreadTestApp::keyDown( KeyEvent event )
     break;
       
       case 'w':
-      p0.y() += 1;
+      //p0.y() += 1;
+      testSpring1Clamp.z() += 1;
+      testSpring2Clamp.z() += 1;
+      testSpring1->setClamp(testSpring1Clamp);
+      testSpring2->setClamp(testSpring2Clamp);
       break;
       case 's':
-      p0.y() -= 1;
+      //p0.y() -= 1;
+      testSpring1Clamp.z() -= 1;
+      testSpring2Clamp.z() -= 1;
+      testSpring1->setClamp(testSpring1Clamp);
+      testSpring2->setClamp(testSpring2Clamp);
       break;
       
     default:;
@@ -181,141 +191,12 @@ void ThreadTestApp::update()
   
   integrator->integrate(*y, c);
   
-  /// 3. Enforce inextensibility/clamped edge as a velocity filter
-#ifdef MANIFOLD_PROJECTION
-  
-  Matrix<float, NUM_CONSTRAINTS, 3*NUM_VERTICES> Cgrad
-    = Matrix<float, NUM_CONSTRAINTS, 3*NUM_VERTICES>::Zero();
-  Matrix<float, NUM_CONSTRAINTS, 1> C = Matrix<float, NUM_CONSTRAINTS, 1>::Zero();
-  float Cerror = 0;
-  
-  
-  for(int i=0; i<NUM_EDGES; i++){
-    Segment& si = y->next().segments[i];
-    const Segment& restsi = y->rest().segments[i];
-    float restLength = restsi.length();
-    Eigen::Vector3f siv = si.vec();
-    
-    // The Kirsch paper recommends this constraint, which is supposedly more rubust
-    // that the one proposed in the Bergou paper.
-    C(i) = (siv.dot(siv)/(2*restLength)) - (restLength / 2);
-    
-    Cgrad(i, 3*i) = -siv.x()/restLength;
-    Cgrad(i, 3*i+1) = -siv.y()/restLength;
-    Cgrad(i, 3*i+2) = -siv.z()/restLength;
-    Cgrad(i, 3*(i+1)) = siv.x()/restLength;
-    Cgrad(i, 3*(i+1)+1) = siv.y()/restLength;
-    Cgrad(i, 3*(i+1)+2) = siv.z()/restLength;
-    
-  }
-  
-  // Boundary edge constraints
-  Eigen::Vector3f& p0 = y->next().points[0].pos;
-  Eigen::Vector3f& p1 = y->next().points[1].pos;
-  const Eigen::Vector3f& p0rest = y->rest().points[0].pos;
-  const Eigen::Vector3f& p1rest = y->rest().points[1].pos;
-  
-  C(NUM_CONSTRAINTS-6) = p0rest.x() - p0.x();
-  C(NUM_CONSTRAINTS-5) = p0rest.y() - p0.y();
-  C(NUM_CONSTRAINTS-4) = p0rest.z() - p0.z();
-  C(NUM_CONSTRAINTS-3) = p1rest.x() - p1.x();
-  C(NUM_CONSTRAINTS-2) = p1rest.y() - p1.y();
-  C(NUM_CONSTRAINTS-1) = p1rest.z() - p1.z();
-  
-  for (int i=0; i<6; i++) {
-    Cgrad(NUM_CONSTRAINTS-6+i, i) = -1;
-  }
-  
-  Cerror = fmaxf(std::abs(C.minCoeff()), std::abs(C.maxCoeff()));
-  
-  int iter = 0;
-  while (Cerror > 0.0001) {
-    iter++;
-    
-    //Timer timer = Timer(true);
-    
-    // Solving delta = -M^-1 * G^T * [G * M^-1 * G^T]^-1 * lambda
-    // where G=Cgrad, M is the identity, and lambda is the vector of Lagrange multipliers
-    Matrix<float, 3*NUM_VERTICES, NUM_CONSTRAINTS> Cgradtrans = Cgrad.transpose();
-    Matrix<float, NUM_CONSTRAINTS, NUM_CONSTRAINTS> Cgradsym = Cgrad * Cgradtrans;
-    Matrix<float, NUM_CONSTRAINTS, 1> lambda = Cgradsym.ldlt().solve(-C);
-    Matrix<float, 3*NUM_VERTICES, 1> delta = Cgradtrans * lambda;
-    
-    //cout << timer.getSeconds() << "\n";
-    
-    // Update where are control points should be
-    for(int i=0; i<NUM_VERTICES; i++) {
-      y->next().points[i].pos.x() += delta(3*i);
-      y->next().points[i].pos.y() += delta(3*i+1);
-      y->next().points[i].pos.z() += delta(3*i+2);
-    }
-    
-    
-    // Did we fix it?
-    Cerror=0;
-    Cgrad.setZero();
-    
-    for(int i=0; i<NUM_EDGES; i++){
-      Segment& si = y->next().segments[i];
-      const Segment& restsi = y->rest().segments[i];
-      float restLength = restsi.length();
-      Eigen::Vector3f siv = si.vec();
-      
-      // The Kirsch paper recommends this constraint, which is supposedly more rubust
-      // that the one proposed in the Bergou paper.
-      C(i) = (siv.dot(siv)/(2*restLength)) - (restLength / 2);
-      
-      Cgrad(i, 3*i) = -siv.x()/restLength;
-      Cgrad(i, 3*i+1) = -siv.y()/restLength;
-      Cgrad(i, 3*i+2) = -siv.z()/restLength;
-      Cgrad(i, 3*(i+1)) = siv.x()/restLength;
-      Cgrad(i, 3*(i+1)+1) = siv.y()/restLength;
-      Cgrad(i, 3*(i+1)+2) = siv.z()/restLength;
-      
-    }
-    
-    // Boundary edge constraints
-    Eigen::Vector3f& p0 = y->next().points[0].pos;
-    Eigen::Vector3f& p1 = y->next().points[1].pos;
-    const Eigen::Vector3f& p0rest = y->rest().points[0].pos;
-    const Eigen::Vector3f& p1rest = y->rest().points[1].pos;
-    
-    C(NUM_CONSTRAINTS-6) = p0rest.x() - p0.x();
-    C(NUM_CONSTRAINTS-5) = p0rest.y() - p0.y();
-    C(NUM_CONSTRAINTS-4) = p0rest.z() - p0.z();
-    C(NUM_CONSTRAINTS-3) = p1rest.x() - p1.x();
-    C(NUM_CONSTRAINTS-2) = p1rest.y() - p1.y();
-    C(NUM_CONSTRAINTS-1) = p1rest.z() - p1.z();
-    
-    for (int i=0; i<6; i++) {
-      Cgrad(NUM_CONSTRAINTS-6+i, i) = -1;
-    }
-    
-    Cerror = fmaxf(std::abs(C.minCoeff()), std::abs(C.maxCoeff()));
-    
-    
-    if (iter >= 100) { // Things will probably just go downhill from here
-      std::cout << "Iterator failed to converge; aborting...\n";
-      running = false;
-      break;
-    }
-  }
-  
-  for(int i=0; i<NUM_VERTICES; i++) {
-    // Update velocities once we've converged
-    y->next().points[i].vel = (y->next().points[i].pos - y->cur().points[i].pos) / c.timestep();
-  }
-  
-#endif // ifdef MANIFOLD_PROJECTION
-  
-  /// 4. (Collision detection and response would go here)
-  
   /// 5. Update Bishop frame
-  for(int i=1; i<NUM_EDGES; i++) {
+  for(int i=1; i<y->numSegs(); i++) {
     Segment& prevSeg = y->cur().segments[i];
     Segment& seg = y->next().segments[i];
     
-    if (i < NUM_EDGES-1) {
+    if (i < y->numSegs()-1) {
       Segment& refSeg = y->next().segments[i+1];
       seg.parallelTransport(prevSeg, refSeg);
     } else {
@@ -325,10 +206,10 @@ void ThreadTestApp::update()
   
   /// 6. Update material frame rotation
   if (isRotate) {
-    twist += ANG_VEL*H;
+    twist += ANG_VEL*c.timestep();
   }
   
-  float delta = twist/(N); // Twist is constant and instant
+  float delta = twist/y->numCPs(); // Twist is constant and instant
   for(int i=1; i<y->numSegs(); i++) {
     y->next().segments[i].setRot(y->next().segments[i-1].getRot() + delta);
   }
@@ -354,9 +235,9 @@ void ThreadTestApp::draw()
   gl::setMatrices(cam);
   
   // Draw the rod and the normal of the bishop frame
-  for(int i=1; i<NUM_EDGES; i++) {
+  for(int i=1; i<y->numSegs(); i++) {
     ci::Color c(0.4, -cos(y->cur().segments[i].getRot()), cos(y->cur().segments[i].getRot()));
-    c *= (y->cur().segments[i].getFirst().pos.z() + 5) / 10;
+    c *= (y->cur().segments[i].getFirst().pos.x() + 5) / 10;
     gl::color(c);
     gl::lineWidth(2);
     ci::Vec3f p0(y->cur().points[i].pos.x(), y->cur().points[i].pos.y(), y->cur().points[i].pos.z());
@@ -371,7 +252,7 @@ void ThreadTestApp::draw()
   
   if (isMouseDown) {
     gl::color(1, 0, 0);
-    ci::Vec3f p(y->cur().points[NUM_VERTICES-1].pos.x(), y->cur().points[NUM_VERTICES-1].pos.y(), y->cur().points[NUM_VERTICES-1].pos.z());
+    ci::Vec3f p(y->cur().points[y->numCPs()-1].pos.x(), y->cur().points[y->numCPs()-1].pos.y(), y->cur().points[y->numCPs()-1].pos.z());
     gl::drawLine(p, mousePosition);
   }
   
@@ -413,6 +294,53 @@ void ThreadTestApp::draw()
   }
    
    */
+  
+}
+
+void ThreadTestApp::loadYarnFile(std::string filename) {
+  if (y != 0) delete y;
+  if (filename.empty()) filename = getOpenFilePath().string();
+  
+  std::ifstream yarnFile;
+
+  try {
+    yarnFile.open(filename);
+  } catch (Exception e) {
+    std::cerr << e.what() << "\n";
+    exit(1);
+  }
+  
+  if (!yarnFile.is_open()) {
+    std::cerr << filename << " failed to open!\n";
+    exit(1);
+  }
+  
+  std::vector<Eigen::Vector3f> yarnPoints;
+  while (!yarnFile.eof()) {
+    Eigen::Vector3f p;
+    for (int i=0; i<3; i++) {
+      std::string line;
+      std::getline(yarnFile, line);
+      if(!line.empty()) {
+        p(i) = std::stof(line);
+      }
+    }
+    yarnPoints.push_back(p);
+  }
+  
+  y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
+}
+
+void ThreadTestApp::loadDefaultYarn(int numPoints) {
+  if (y != 0) delete y;
+  
+  std::vector<Eigen::Vector3f> yarnPoints;
+  for(int i=0; i < numPoints; i++) {
+    Eigen::Vector3f p(0, (numPoints-i)*20.0f/numPoints-10, 0);
+    yarnPoints.push_back(p);
+  }
+  
+  y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
   
 }
 
