@@ -18,6 +18,8 @@ private:
   float t = 0;
   /// Timestep of the model for the next step.
   float h = constants::INITIAL_TIMESTEP;
+  /// The timestep will not decrease beyond this value.
+  const float minTimestep = 1e-5;
   
 public:
   /// Get the current time of the simulation.
@@ -26,19 +28,24 @@ public:
   const float inline timestep() const;
   /// Suggest the size of the next timestep.
   void inline suggestTimestep(float s);
-  /// increment the timer by its current timestep.
+  /// Increment the timer by its current timestep.
   void inline increment();
+  /// Returns true if the timestep can be made smaller.
+  bool inline canDecreaseTimestep() const;
 };
 
 const float inline Clock::time() const      { return t; }
 const float inline Clock::timestep() const  { return h; }
-void inline Clock::suggestTimestep(float s) { h = fmin(h, s); }
+void inline Clock::suggestTimestep(float s) { h = fmax(minTimestep, fmin(h, s)); }
 
 void inline Clock::increment() {
   if (h <= 0) throw;
   t += h;
-  h = constants::INITIAL_TIMESTEP; // TODO: might increase this as simulation runs
+  h = constants::INITIAL_TIMESTEP;
 }
+
+bool inline Clock::canDecreaseTimestep() const { return h > minTimestep; }
+
 
 
 

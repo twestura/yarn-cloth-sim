@@ -20,7 +20,7 @@ namespace constants {
   const float pPlasticMax = 2.5;
 
   /// Determines the radius of the yarn.
-  const float radius = 0.05;
+  const float radius = 0.15;
 
   /// Pi. You know the one.
   const float pi = 3.1415926535;

@@ -15,8 +15,6 @@
 #include "Constants.h"
 #include "Clock.h"
 
-#define ENABLE_AUTODIFF
-
 typedef Eigen::Triplet<float> Triplet;
 typedef Eigen::VectorXf VecXf;
 
@@ -32,8 +30,8 @@ protected:
   EvalType et;
 public:
   YarnEnergy(const Yarn& y, EvalType et) : y(y), et(et) { }
-  virtual void eval(VecXf&, std::vector<Triplet>&, const VecXf&, Clock&) =0;
-//  virtual void suggestTimestep(Clock&) =0;
+  virtual bool eval(VecXf&, std::vector<Triplet>&, const VecXf&, Clock&) =0;
+  virtual void suggestTimestep(Clock&) { }
   const EvalType inline evalType() const { return et; }
 };
 
@@ -42,7 +40,7 @@ protected:
   Vec3f dir;
 public:
   Gravity(const Yarn& y, EvalType et, Vec3f dir);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 
 class Spring : public YarnEnergy {
@@ -52,7 +50,7 @@ protected:
   float stiffness;
 public:
   Spring(const Yarn& y, EvalType et, size_t index, float stiffness);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
   void setClamp(Vec3f newClamp);
 };
 
@@ -65,7 +63,7 @@ private:
   float stiffness;
 public:
   MouseSpring(const Yarn& y, EvalType et, size_t index, float stiffness);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
   void setMouse(Vec3f newMouse, bool newDown);
 };
 
@@ -85,7 +83,7 @@ private:
   
 public:
   Bending(const Yarn& y, EvalType et);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 #undef NUM_VARS
 
@@ -104,7 +102,7 @@ private:
   
 public:
   Stretching(const Yarn& y, EvalType et);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 #undef NUM_VARS
 
@@ -119,7 +117,7 @@ private:
 
 public:
   Twisting(const Yarn& y, EvalType et);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 
 class IntContact : public YarnEnergy {
@@ -132,11 +130,11 @@ private:
     return d >= 1 ? 0 : -2/d/d/d + 2*d;
   }
   
-  const float contactMod = 1e-4;
+  const float contactMod = .02;
 
 public:
   IntContact(const Yarn& y, EvalType et);
-  void eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
+  bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 
  

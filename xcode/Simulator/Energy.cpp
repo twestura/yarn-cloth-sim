@@ -9,15 +9,22 @@
 #include "Energy.h"
 
 
+void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
+  if (value.value() != 0) {
+    GradFx.push_back(value);
+  }
+}
+
 // GRAVITY
 
 Gravity::Gravity(const Yarn& y, EvalType et, Vec3f dir) : YarnEnergy(y, et), dir(dir) {}
 
-void Gravity::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+bool Gravity::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   assert(et == Explicit && "Unsupported EvalType");
   for (int i=0; i<y.numCPs(); i++) {
     Fx.block<3,1>(3*i, 0) -= dir * c.timestep();
   }
+  return true;
 }
 
 
@@ -26,9 +33,21 @@ void Gravity::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
 Spring::Spring(const Yarn& y, EvalType et, size_t index, float stiffness) :
   YarnEnergy(y, et), index(index), stiffness(stiffness) {}
 
-void Spring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
-  assert(et == Explicit && "Unsupported EvalType");
-  Fx.block<3,1>(3*index, 0) -= (clamp - y.cur().points[index].pos) * stiffness * c.timestep();
+bool Spring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+  const float h = c.timestep();
+  if (et == Explicit) {
+    Fx.block<3,1>(3*index, 0) -= (clamp - y.cur().points[index].pos) * stiffness * h;
+  } else {
+    Fx.block<3,1>(3*index, 0) -= (clamp - (y.cur().points[index].pos +
+                                           h*(y.cur().points[index].vel
+                                              + dqdot.block<3,1>(3*index, 0)))) * stiffness * h;
+    
+    GradFx.push_back(Triplet(3*index,   3*index,   h*h*stiffness));
+    GradFx.push_back(Triplet(3*index+1, 3*index+1, h*h*stiffness));
+    GradFx.push_back(Triplet(3*index+2, 3*index+2, h*h*stiffness));
+  }
+  
+  return true;
 }
 
 void Spring::setClamp(Vec3f newClamp) { clamp = newClamp; }
@@ -39,11 +58,12 @@ void Spring::setClamp(Vec3f newClamp) { clamp = newClamp; }
 MouseSpring::MouseSpring(const Yarn& y, EvalType et, size_t index, float stiffness) :
   YarnEnergy(y, et), index(index), stiffness(stiffness) {}
 
-void MouseSpring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
-  if (!mouseDown) return;
+bool MouseSpring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+  if (!mouseDown) return true;
   assert(et == Explicit && "Unsupported EvalType");
   assert(mouseSet && "Set the mouse position each time you call eval()!");
   Fx.block<3,1>(3*index, 0) -= (mouse - y.cur().points[index].pos) * stiffness * c.timestep();
+  return true;
 }
 
 void MouseSpring::setMouse(Vec3f newMouse, bool newDown) {
@@ -74,12 +94,18 @@ Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
   }
 }
 
-#define ENABLE_AUTODIFF
+//#define ENABLE_AUTODIFF
 #define NUM_VARS 9
-void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+bool Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   Profiler::start("Bend Eval");
   DiffScalarBase::setVariableCount(NUM_VARS);
   float h = c.timestep();
+  
+  //VecXf test1 = VecXf::Zero(Fx.rows());
+  //VecXf test2 = VecXf::Zero(Fx.rows());
+  
+  std::vector<Triplet> test1;
+  std::vector<Triplet> test2;
   
   for (int i=1; i<y.numCPs()-1; i++) {
     const CtrlPoint& curPoint  = y.cur().points[i];
@@ -138,27 +164,31 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     Gradient grad = bendEnergy.getGradient();
     Hessian hess = bendEnergy.getHessian();
     
+    //test1.block<9,1>(3*(i-1), 0) += grad;
     
     assert(et == Implicit && "Unsupported EvalType");
     for (int j=0; j<NUM_VARS; j++) {
       // TODO: mass matrix may not be I
       Fx(3*(i-1)+j) += h*grad(j);
+      
       for (int k=0; k<NUM_VARS; k++) {
         float val = h*h*hess(j,k);
         CHECK_NAN(val);
         if (val != 0) {
           GradFx.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, val));
+//          test1.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, hess(j,k)));
         }
       }
     }
     
+    
     /*
-     
-     if (i == y.numCPs()-2) {
-     std::cout << hess << "\n\n";
-     }
-     
+    if (i == y.numCPs()-2) {
+      std::cout << hess << "\n\n";
+    }
      */
+     
+    
     
     
 #else // ifdef ENABLE_AUTODIFF
@@ -175,30 +205,32 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     Vec3f tPrev = dPrevSeg.normalized();
     Vec3f tNext = dNextSeg.normalized();
     float chi = 1 + (tPrev.dot(tNext));
+    assert(chi > 0 && "Segments are pointing in exactly opposite directions!");
     Vec3f tTilde = (tPrev + tNext)/chi;
     Vec3f d1 = prevSeg.m1() + nextSeg.m1();
     Vec3f d1tilde = d1/chi;
     Vec3f d2 = prevSeg.m2() + nextSeg.m2();
     Vec3f d2tilde = d2/chi;
-    Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi;
-    Vec2f matCurve = 0.5*Vec2f(d2.dot(curveBinorm), -d1.dot(curveBinorm));
+    Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi; // Verified
+    Vec2f matCurve = 0.5*Vec2f(d2.dot(curveBinorm), -d1.dot(curveBinorm)); // Verified
     
-    Vec3f gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / dPrevSeg.norm();
-    Vec3f gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / dNextSeg.norm();
-    Vec3f gradK2ePrev = (-matCurve.y()*tTilde + tNext.cross(d1tilde)) / dPrevSeg.norm();
-    Vec3f gradK2eNext = (-matCurve.y()*tTilde - tPrev.cross(d1tilde)) / dNextSeg.norm();
+    Vec3f gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / dPrevSeg.norm(); // Verified
+    Vec3f gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / dNextSeg.norm(); // Verified
+    Vec3f gradK2ePrev = (-matCurve.y()*tTilde - tNext.cross(d1tilde)) / dPrevSeg.norm(); // Verified
+    Vec3f gradK2eNext = (-matCurve.y()*tTilde + tPrev.cross(d1tilde)) / dNextSeg.norm(); // Verified
+    
     
     // WARNING: assumes that the bending matrix is the identity.
     
     Vec2f& dRestCurve = restCurve[i-1];
     // b11*2*(k1-restk1) + (b21+b12)(k2-restk2)
-    float k1coeff = 2*(matCurve.x()-dRestCurve.x());
+    float k1coeff = 2*(matCurve.x()-dRestCurve.x()); // Verified
     // b22*2*(k2-restk2) + (b21+b12)(k1-restk1)
-    float k2coeff = 2*(matCurve.y()-dRestCurve.y());
+    float k2coeff = 2*(matCurve.y()-dRestCurve.y()); // Verified
     float totalcoeff = 0.5/voronoiCell[i-1];
     
-    Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff);
-    Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff);
+    Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff); // Verified
+    Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff); // Verified
     
     typedef Eigen::Matrix3f Mat3f;
     
@@ -211,18 +243,18 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     
     Mat3f d2TildeCross, d1TildeCross;
     d2TildeCross << 0, -d2tilde.z(), d2tilde.y(),
-    d2tilde.z(), 0, -d2tilde.x(),
-    -d2tilde.y(), d2tilde.x(), 0;
+                    d2tilde.z(), 0, -d2tilde.x(),
+                    -d2tilde.y(), d2tilde.x(), 0;
     d1TildeCross << 0, -d1tilde.z(), d1tilde.y(),
-    d1tilde.z(), 0, -d1tilde.x(),
-    -d1tilde.y(), d1tilde.x(), 0;
+                    d1tilde.z(), 0, -d1tilde.x(),
+                    -d1tilde.y(), d1tilde.x(), 0;
     
     Mat3f hessK1ePrev2 = 2*matCurve.x()*tTilde2-tNextxd2TildextTilde-tNextxd2TildextTilde.transpose();
     hessK1ePrev2 -= (matCurve.x()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
     hessK1ePrev2 += 0.25*(curveBinorm*prevSeg.m2().transpose()+prevSeg.m2()*curveBinorm.transpose());
     hessK1ePrev2 /= dPrevSeg.dot(dPrevSeg);
     
-    Mat3f hessK2ePrev2 = 2*matCurve.y()*tTilde2-tNextxd1TildextTilde-tNextxd1TildextTilde.transpose();
+    Mat3f hessK2ePrev2 = 2*matCurve.y()*tTilde2+tNextxd1TildextTilde+tNextxd1TildextTilde.transpose();
     hessK2ePrev2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
     hessK2ePrev2 += 0.25*(curveBinorm*prevSeg.m1().transpose()+prevSeg.m1()*curveBinorm.transpose());
     hessK2ePrev2 /= dPrevSeg.dot(dPrevSeg);
@@ -232,7 +264,7 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     hessK1eNext2 += 0.25*(curveBinorm*nextSeg.m2().transpose()+nextSeg.m2()*curveBinorm.transpose());
     hessK1eNext2 /= dNextSeg.dot(dNextSeg);
     
-    Mat3f hessK2eNext2 = 2*matCurve.y()*tTilde2+tPrevxd1TildextTilde+tPrevxd1TildextTilde.transpose();
+    Mat3f hessK2eNext2 = 2*matCurve.y()*tTilde2-tPrevxd1TildextTilde-tPrevxd1TildextTilde.transpose();
     hessK2eNext2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
     hessK2eNext2 += 0.25*(curveBinorm*nextSeg.m1().transpose()+nextSeg.m1()*curveBinorm.transpose());
     hessK2eNext2 /= dNextSeg.dot(dNextSeg);
@@ -248,6 +280,31 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     hessK2ePreveNext /= (dNextSeg.norm() * dPrevSeg.norm());
     
     
+    /*
+    typedef DScalar2<float, 3, Vec3f, Mat3f> TDS;
+    typedef TDS::DVector3 TVec3;
+    typedef TDS::DVector2 TVec2;
+    
+    TVec3 teprev = TVec3(TDS(0, dPrevSeg.x()), TDS(1, dPrevSeg.y()), TDS(2, dPrevSeg.z()));
+//    TVec3 teprev = TVec3(TDS(dPrevSeg.x()), TDS(dPrevSeg.y()), TDS(dPrevSeg.z()));
+    TVec3 tenext = TVec3(TDS(dNextSeg.x()), TDS(dNextSeg.y()), TDS(dNextSeg.z()));
+//    TVec3 tenext = TVec3(TDS(0, dNextSeg.x()), TDS(1, dNextSeg.y()), TDS(3, dNextSeg.z()));
+    TVec3 ttprev = teprev.normalized();
+    TVec3 ttnext = tenext.normalized();
+    TDS tchi = ttprev.dot(ttnext) + 1;
+    TVec3 tkb = TDS(2)*(ttprev.cross(ttnext)) / tchi;
+    TDS tk1 = TDS(0.5)*TVec3(TDS(d2.x()), TDS(d2.y()), TDS(d2.z())).dot(tkb);
+    TDS tk2 = TDS(-.5)*TVec3(TDS(d1.x()), TDS(d1.y()), TDS(d1.z())).dot(tkb);
+    //    Eigen::Matrix<float, 3, 2> t;
+    //    t << tk2.getGradient(), gradK2eNext;
+    //    std::cout << t << "\n\n";
+    Mat3f tdiff = tk1.getHessian() - hessK1ePrev2;
+    if (tdiff.cwiseAbs().maxCoeff() >= 1)
+      std::cout << tdiff << "\n\n";
+    // std::cout << tdiff.norm() << " / " << tk1.getHessian().cwiseAbs().maxCoeff() << "\n";
+    */
+    
+    
     /// Populate the 3x3 block matrix:
     /// 0 1 2
     /// 3 4 5
@@ -258,126 +315,121 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     block[0] = k1coeff*hessK1ePrev2 + k2coeff*hessK2ePrev2 + 2*(gradK1ePrev*gradK1ePrev.transpose() + gradK2ePrev*gradK2ePrev.transpose());
     
     block[1] = k1coeff*(hessK1ePreveNext-hessK1ePrev2) + k2coeff*(hessK2ePreveNext-hessK2ePrev2)
-    + 2*(gradK1ePrev*(gradK1ePrev+gradK1eNext).transpose() + gradK2ePrev*(gradK2ePrev+gradK2eNext).transpose());
+    + 2*(-gradK1ePrev*(gradK1ePrev-gradK1eNext).transpose() + -gradK2ePrev*(gradK2ePrev-gradK2eNext).transpose());
     
-    block[2] = -k1coeff*hessK1ePreveNext - k2coeff*hessK2ePreveNext + 2*(gradK1ePrev*gradK1eNext.transpose() + gradK2ePrev*gradK2eNext.transpose());
+    block[2] = -k1coeff*hessK1ePreveNext - k2coeff*hessK2ePreveNext + 2*(-gradK1ePrev*gradK1eNext.transpose() + -gradK2ePrev*gradK2eNext.transpose());
     
-    block[3] = k1coeff*(hessK1ePreveNext.transpose() - hessK1ePrev2) + k2coeff*(hessK2ePreveNext.transpose() - hessK2ePrev2) + 2*((gradK1ePrev+gradK1eNext)*gradK1ePrev.transpose() + (gradK2ePrev+gradK2eNext)*gradK2ePrev.transpose());
+    block[3] = k1coeff*(hessK1ePreveNext.transpose() - hessK1ePrev2) + k2coeff*(hessK2ePreveNext.transpose() - hessK2ePrev2) + 2*((gradK1ePrev-gradK1eNext)*-gradK1ePrev.transpose() + (gradK2ePrev-gradK2eNext)*-gradK2ePrev.transpose());
     
     block[4] = k1coeff*(hessK1ePrev2 + hessK1eNext2 - hessK1ePreveNext - hessK1ePreveNext.transpose()) +
     k2coeff*(hessK2ePrev2 + hessK2eNext2 - hessK2ePreveNext - hessK2ePreveNext.transpose()) +
-    2*((gradK1ePrev+gradK1eNext)*(gradK1ePrev+gradK1eNext).transpose() + (gradK2ePrev+gradK2eNext)*(gradK2ePrev+gradK2eNext).transpose());
+    2*((gradK1ePrev-gradK1eNext)*(gradK1ePrev-gradK1eNext).transpose() + (gradK2ePrev-gradK2eNext)*(gradK2ePrev-gradK2eNext).transpose());
     
     block[5] = k1coeff*(hessK1ePreveNext - hessK1eNext2) + k2coeff*(hessK2ePreveNext - hessK2eNext2)
-    + 2*((gradK1ePrev+gradK1eNext)*gradK1eNext.transpose() + (gradK2ePrev+gradK2eNext)*gradK2eNext.transpose());
+    + 2*((gradK1ePrev-gradK1eNext)*gradK1eNext.transpose() + (gradK2ePrev-gradK2eNext)*gradK2eNext.transpose());
     
     block[6] = -k1coeff*hessK1ePreveNext.transpose() - k2coeff*hessK2ePreveNext.transpose()
-    + 2*(gradK1eNext*gradK1ePrev.transpose() + gradK2eNext*gradK2ePrev.transpose());
+    + 2*(gradK1eNext*-gradK1ePrev.transpose() + gradK2eNext*-gradK2ePrev.transpose());
     
-    block[7] = k1coeff*(hessK1ePreveNext.transpose()-hessK1eNext2) + k2coeff*(hessK2ePreveNext.transpose()-hessK2eNext2) + 2*(gradK1eNext*(gradK1ePrev+gradK1eNext).transpose() + gradK2eNext*(gradK2ePrev+gradK2eNext).transpose());
+    block[7] = k1coeff*(hessK1ePreveNext.transpose()-hessK1eNext2) + k2coeff*(hessK2ePreveNext.transpose()-hessK2eNext2) + 2*(gradK1eNext*(gradK1ePrev-gradK1eNext).transpose() + gradK2eNext*(gradK2ePrev-gradK2eNext).transpose());
     
     block[8] = k1coeff*hessK1eNext2 + k2coeff*hessK2eNext2 + 2*(gradK1eNext*gradK1eNext.transpose() + gradK2eNext*gradK2eNext.transpose());
     
+    
     for(int j=0; j<3; j++) {
       for(int k=0; k<3; k++) {
-        GradFx.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, totalcoeff*h*h*block[0](j, k)));
-        GradFx.push_back(Triplet(3*(i-1)+j, 3*i+k,     totalcoeff*h*h*block[1](j, k)));
-        GradFx.push_back(Triplet(3*(i-1)+j, 3*(i+1)+k, totalcoeff*h*h*block[2](j, k)));
         
-        GradFx.push_back(Triplet(3*i+j,     3*(i-1)+k, totalcoeff*h*h*block[3](j, k)));
-        GradFx.push_back(Triplet(3*i+j,     3*i+k,     totalcoeff*h*h*block[4](j, k)));
-        GradFx.push_back(Triplet(3*i+j,     3*(i+1)+k, totalcoeff*h*h*block[5](j, k)));
+        for(int l=0; l<9; l++) {
+          if (block[l](j, k)*totalcoeff*h*h >= 1 && c.canDecreaseTimestep()) {
+            Profiler::stop("Bend Eval");
+            c.suggestTimestep(h/2);
+            std::cerr << "Warning: Bending energy unstable. New timestep: " << c.timestep() << "\n";
+            return false;
+          }
+        }
         
-        GradFx.push_back(Triplet(3*(i+1)+j, 3*(i-1)+k, totalcoeff*h*h*block[6](j, k)));
-        GradFx.push_back(Triplet(3*(i+1)+j, 3*i+k,     totalcoeff*h*h*block[7](j, k)));
-        GradFx.push_back(Triplet(3*(i+1)+j, 3*(i+1)+k, totalcoeff*h*h*block[8](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, h*h*totalcoeff*block[0](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*(i-1)+j, 3*i+k,     h*h*totalcoeff*block[1](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*(i-1)+j, 3*(i+1)+k, h*h*totalcoeff*block[2](j, k)));
+        
+        pushBackIfNotZero(GradFx, Triplet(3*i+j,     3*(i-1)+k, h*h*totalcoeff*block[3](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*i+j,     3*i+k,     h*h*totalcoeff*block[4](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*i+j,     3*(i+1)+k, h*h*totalcoeff*block[5](j, k)));
+        
+        pushBackIfNotZero(GradFx, Triplet(3*(i+1)+j, 3*(i-1)+k, h*h*totalcoeff*block[6](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*(i+1)+j, 3*i+k,     h*h*totalcoeff*block[7](j, k)));
+        pushBackIfNotZero(GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, h*h*totalcoeff*block[8](j, k)));
+        
+        /*
+        test2.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, totalcoeff*block[0](j, k)));
+        test2.push_back(Triplet(3*(i-1)+j, 3*i+k,     totalcoeff*block[1](j, k)));
+        test2.push_back(Triplet(3*(i-1)+j, 3*(i+1)+k, totalcoeff*block[2](j, k)));
+        
+        test2.push_back(Triplet(3*i+j,     3*(i-1)+k, totalcoeff*block[3](j, k)));
+        test2.push_back(Triplet(3*i+j,     3*i+k,     totalcoeff*block[4](j, k)));
+        test2.push_back(Triplet(3*i+j,     3*(i+1)+k, totalcoeff*block[5](j, k)));
+        
+        test2.push_back(Triplet(3*(i+1)+j, 3*(i-1)+k, totalcoeff*block[6](j, k)));
+        test2.push_back(Triplet(3*(i+1)+j, 3*i+k,     totalcoeff*block[7](j, k)));
+        test2.push_back(Triplet(3*(i+1)+j, 3*(i+1)+k, totalcoeff*block[8](j, k)));
+        */
       }
     }
     
-    Fx.block<3,1>(3*(i-1), 0) += h*gradePrev;
-    Fx.block<3,1>(3*i,     0) += h*(gradePrev + gradeNext);
+    
+    Fx.block<3,1>(3*(i-1), 0) += h*-gradePrev;
+    Fx.block<3,1>(3*i,     0) += h*(gradePrev - gradeNext);
     Fx.block<3,1>(3*(i+1), 0) += h*gradeNext;
-    /*
-     
-     Eigen::Matrix<float, 9, 9> hess;
-     hess.block<3,3>(0, 0) = totalcoeff*block[0];
-     hess.block<3,3>(0, 3) = totalcoeff*block[1];
-     hess.block<3,3>(0, 6) = totalcoeff*block[2];
-     
-     hess.block<3,3>(3, 0) = totalcoeff*block[3];
-     hess.block<3,3>(3, 3) = totalcoeff*block[4];
-     hess.block<3,3>(3, 6) = totalcoeff*block[5];
-     
-     hess.block<3,3>(6, 0) = totalcoeff*block[6];
-     hess.block<3,3>(6, 3) = totalcoeff*block[7];
-     hess.block<3,3>(6, 6) = totalcoeff*block[8];
-     
-     if (i == y.numCPs()-2) {
-     std::cout << hess << "\n\n";
-     }
-     
-     */
     
-    ///
     
     /*
-     
-     Mat3f hessePrev2 = 2*gradK1ePrev*gradK1ePrev.transpose() + k1coeff * hessK1ePrev2;
-     hessePrev2 += 2*gradK2ePrev*gradK2ePrev.transpose() + k2coeff * hessK2ePrev2;
-     hessePrev2 *= totalcoeff*h*h;
-     
-     Mat3f hesseNext2 = 2*gradK1eNext*gradK1eNext.transpose() + k1coeff * hessK1eNext2;
-     hesseNext2 += 2*gradK2eNext*gradK2eNext.transpose() + k2coeff * hessK2eNext2;
-     hesseNext2 *= totalcoeff*h*h;
-     
-     Mat3f  hessePreveNext = 2*gradK1ePrev*gradK1eNext.transpose() + k1coeff * hessK1ePreveNext;
-     hessePreveNext += 2*gradK2ePrev*gradK2eNext.transpose() + k2coeff * hessK2ePreveNext;
-     hessePreveNext *= totalcoeff*h*h;
-     
-     Fx.block<3,1>(3*(i-1), 0) += h*gradePrev;
-     Fx.block<3,1>(3*i,     0) += h*(gradePrev + gradeNext);
-     Fx.block<3,1>(3*(i+1), 0) += h*gradeNext;
-     
-     for(int j=0; j<3; j++) {
-     for(int k=0; k<3; k++) {
-     GradFx.push_back(Triplet(3*(i-1)+j, 3*(i-1)+k, hessePrev2(j, k)));
-     GradFx.push_back(Triplet(3*i+j,     3*(i-1)+k, hessePreveNext(k, j) - hessePrev2(j, k)));
-     GradFx.push_back(Triplet(3*(i-1)+j, 3*i+k,     hessePreveNext(j, k) - hessePrev2(j, k)));
-     GradFx.push_back(Triplet(3*i+j,     3*i+k,     hessePrev2(j, k) + hesseNext2(j, k) - hessePreveNext(j, k) - hessePreveNext(k, j)));
-     GradFx.push_back(Triplet(3*(i+1)+j, 3*i+k,     hessePreveNext(k, j) - hesseNext2(j, k)));
-     GradFx.push_back(Triplet(3*i+j,     3*(i+1)+k, hessePreveNext(j, k) - hesseNext2(j, k)));
-     GradFx.push_back(Triplet(3*(i+1)+j, 3*(i+1)+k, hesseNext2(j, k)));
-     
-     GradFx.push_back(Triplet(3*(i-1)+j, 3*(i+1)+k, -hessePreveNext(j, k)));
-     GradFx.push_back(Triplet(3*(i+1)+j, 3*(i-1)+k, -hessePreveNext(k, j)));
-     }
-     }
-     
-     */
+    test2.block<3,1>(3*(i-1), 0) += -gradePrev;
+    test2.block<3,1>(3*i,     0) += (gradePrev - gradeNext);
+    test2.block<3,1>(3*(i+1), 0) += gradeNext;
+    */
     
     /*
-     Eigen::Matrix<float, 9, 9> hess;
-     hess.block<3,3>(0, 0) = hessePrev2;
-     hess.block<3,3>(3, 0) = hessePreveNext.transpose() - hessePrev2;
-     hess.block<3,3>(0, 3) = hessePreveNext - hessePrev2;
-     hess.block<3,3>(3, 3) = hessePrev2 + hesseNext2 - hessePreveNext - hessePreveNext.transpose();
-     hess.block<3,3>(6, 3) = hessePreveNext.transpose() - hesseNext2;
-     hess.block<3,3>(3, 6) = hessePreveNext - hesseNext2;
-     hess.block<3,3>(6, 6) = hesseNext2;
-     
-     hess.block<3,3>(0, 6) = -hessePreveNext;
-     hess.block<3,3>(6, 0) = -hessePreveNext.transpose();
-     if (i == y.numCPs()-2) {
-     std::cout << hess << "\n\n";
-     }
-     */
+    if (i == y.numCPs()-2) {
+      Eigen::Matrix<float, 9, 9> hess2;
+      
+      hess2.block<3,3>(0, 0) = totalcoeff*block[0];
+      hess2.block<3,3>(0, 3) = totalcoeff*block[1];
+      hess2.block<3,3>(0, 6) = totalcoeff*block[2];
+      
+      hess2.block<3,3>(3, 0) = totalcoeff*block[3];
+      hess2.block<3,3>(3, 3) = totalcoeff*block[4];
+      hess2.block<3,3>(3, 6) = totalcoeff*block[5];
+      
+      hess2.block<3,3>(6, 0) = totalcoeff*block[6];
+      hess2.block<3,3>(6, 3) = totalcoeff*block[7];
+      hess2.block<3,3>(6, 6) = totalcoeff*block[8];
+      
+      std::cout << (hess - hess2).cwiseAbs().maxCoeff() << " / " << hess.cwiseAbs().maxCoeff() << "\n";
+    }
+    */
+    
     
     
 #endif //ifdef ENABLE_AUTODIFF
     
   }
   
+  /*
+  Eigen::SparseMatrix<float> test1m(Fx.rows(), Fx.rows());
+  Eigen::SparseMatrix<float> test2m(Fx.rows(), Fx.rows());
+  test1m.setFromTriplets(test1.begin(), test1.end());
+  test2m.setFromTriplets(test2.begin(), test2.end());
+  
+  
+   std::cout << (test1m-test2m).norm() << "\n";
+   */
+  
+  //std::cout << test1.block<3, 1>(3*(y.numCPs()-2), 0) << "\n";
+  //std::cout << test2.block<3, 1>(3*(y.numCPs()-2), 0) << "\n\n";
+  
   Profiler::stop("Bend Eval");
+  
+  return true;
 }
 #undef NUM_VARS
 
@@ -386,7 +438,7 @@ void Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
 Stretching::Stretching(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 #define NUM_VARS 6
-void Stretching::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+bool Stretching::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   Profiler::start("Stretch Eval");
   DiffScalarBase::setVariableCount(NUM_VARS);
   float h = c.timestep();
@@ -407,6 +459,12 @@ void Stretching::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
                         DScalar(5, nextPoint.pos.z() + h*(dqdot(3*(i+1)+2) + nextPoint.vel.z())));
     
     DScalar axialStrain = (dNextPoint - dPrevPoint).norm()/restSegLength - 1;
+    if (axialStrain.getValue() >= 0.5 && c.canDecreaseTimestep()) { // Too much stretching happening here...
+      Profiler::stop("Stretch Eval");
+      c.suggestTimestep(h/2);
+      std::cerr << "Warning: Stretching energy unstable. New timestep: " << c.timestep() << "\n";
+      return false;
+    }
     
     DScalar stretchEnergy = (0.5 * stretchScalar * restSegLength) * axialStrain * axialStrain;
     
@@ -426,6 +484,8 @@ void Stretching::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
   }
   
   Profiler::stop("Stretch Eval");
+  
+  return true;
 }
 #undef NUM_VARS
 
@@ -440,7 +500,7 @@ Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
   }
 }
 
-void Twisting::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+bool Twisting::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   assert(et == Explicit && "EvalType unsupported");
   for (int i=1; i<y.numCPs()-1; i++) {
     const Segment& segPrev = y.cur().segments[i-1];
@@ -454,13 +514,17 @@ void Twisting::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot,
     Vec3f dxi = curveBinorm / y.rest().segments[i].length() - curveBinorm / y.rest().segments[i-1].length();
     Fx.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * dxi;
   }
+  return true;
 }
+
+// INTERNAL CONTACT
 
 IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
-void IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+1; j<y.numSegs(); j++) {
+      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends!!!
       if (i-j <= 2 && j-i <= 2) continue; // Don't evaluate adjacent edges. FIXME: should be 1
       float h = c.timestep();
       const Segment& e1 = y.cur().segments[i];
@@ -477,9 +541,6 @@ void IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
       if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())/2) continue;
       
       // Splines are close, evaluate them.
-      
-      // FIXME: evaluate ends!!!
-      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue;
       
       /*
        if  (i == 1) {
@@ -506,15 +567,16 @@ void IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
       // FIXME: hack to get an estimate of spline length.
       float l1 = e1.length();
       float l2 = e2.length();
+      int nb = 24;
       
-      for (int n=0; n<12; n++) { // TODO: remove hardcoded 12
-        for (int m=0; m<12; m++) {
-          float t1 = ((float) n) / 12;
-          float t2 = ((float) m) / 12;
+      for (int n=0; n<nb; n++) { // TODO: remove hardcoded 12
+        for (int m=0; m<nb; m++) {
+          float t1 = ((float) n) / nb;
+          float t2 = ((float) m) / nb;
           Vec3f p1 = s1.eval(t1, false);
           Vec3f p2 = s2.eval(t2, false);
           float dist = (p1 - p2).norm();
-          float coeff = contactMod*l1*l2*df(dist / 2 / constants::radius)/2/constants::radius;
+          float coeff = contactMod*l1*l2*df(dist / 2 / constants::radius) / 2 /constants::radius;
           
           for (int k=0; k<4; k++) {
             Fx.block<3,1>(3*(i-1+k), 0) += h*coeff*s1.distGrad(k, t1, p2);
@@ -525,6 +587,5 @@ void IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
       
     }
   }
+  return true;
 }
-
-

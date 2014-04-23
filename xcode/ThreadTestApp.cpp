@@ -88,14 +88,14 @@ void ThreadTestApp::setup()
   energies.push_back(bending);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
-//  energies.push_back(twisting);
+  energies.push_back(twisting);
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
-//  energies.push_back(intContact);
+  energies.push_back(intContact);
   
-  Spring* clamp1 = new Spring(*y, Explicit, 0, 1000);
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 1000);
   clamp1->setClamp(y->rest().points[0].pos);
-  Spring* clamp2 = new Spring(*y, Explicit, 1, 1000);
+  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000);
   clamp2->setClamp(y->rest().points[1].pos);
   energies.push_back(clamp1);
   energies.push_back(clamp2);
@@ -104,8 +104,8 @@ void ThreadTestApp::setup()
   testSpring1->setClamp(testSpring1Clamp);
   testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50);
   testSpring2->setClamp(testSpring2Clamp);
-//  energies.push_back(testSpring1);
-//  energies.push_back(testSpring2);
+  energies.push_back(testSpring1);
+  energies.push_back(testSpring2);
   
   YarnEnergy* stretch = new Stretching(*y, Implicit);
   energies.push_back(stretch);
@@ -156,14 +156,14 @@ void ThreadTestApp::keyDown( KeyEvent event )
     break;
       
       case 'w':
-      //p0.y() += 1;
+      // p0.y() += 1;
       testSpring1Clamp.z() += 1;
       testSpring2Clamp.z() += 1;
       testSpring1->setClamp(testSpring1Clamp);
       testSpring2->setClamp(testSpring2Clamp);
       break;
       case 's':
-      //p0.y() -= 1;
+      // p0.y() -= 1;
       testSpring1Clamp.z() -= 1;
       testSpring2Clamp.z() -= 1;
       testSpring1->setClamp(testSpring1Clamp);
@@ -177,13 +177,10 @@ void ThreadTestApp::keyDown( KeyEvent event )
 void ThreadTestApp::update()
 {
   if (!running) return;
-
-  // TODO: adaptive timesteps
-  c.suggestTimestep(1.0f/30.0f);
   
   Eigen::Vector3f mp;
   if (isMouseDown) {
-    mp << mousePosition.x, mousePosition.y, mousePosition.z;
+    mp << mousePosition.x+1, mousePosition.y, mousePosition.z;
   } else {
     mp = y->cur().points[y->numCPs()-1].pos;
   }
@@ -191,7 +188,7 @@ void ThreadTestApp::update()
   
   integrator->integrate(*y, c);
   
-  /// 5. Update Bishop frame
+  /// Update Bishop frame
   for(int i=1; i<y->numSegs(); i++) {
     Segment& prevSeg = y->cur().segments[i];
     Segment& seg = y->next().segments[i];
@@ -204,7 +201,7 @@ void ThreadTestApp::update()
     }
   }
   
-  /// 6. Update material frame rotation
+  /// Update material frame rotation
   if (isRotate) {
     twist += ANG_VEL*c.timestep();
   }
@@ -231,6 +228,12 @@ void ThreadTestApp::draw()
 	gl::enableDepthWrite( true );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
   
+  // Draw framerate counter
+  gl::setMatricesWindow(getWindowSize());
+  std::stringstream ss;
+  ss << getAverageFps();
+  gl::drawStringRight(ss.str(), ci::Vec2f(getWindowWidth() - toPixels(10), getWindowHeight()- toPixels(20)), Color(0, 0, 0), Font("Arial", toPixels(12)));
+  
   // Set projection/modelview matrices
   gl::setMatrices(cam);
   
@@ -255,9 +258,8 @@ void ThreadTestApp::draw()
     ci::Vec3f p(y->cur().points[y->numCPs()-1].pos.x(), y->cur().points[y->numCPs()-1].pos.y(), y->cur().points[y->numCPs()-1].pos.z());
     gl::drawLine(p, mousePosition);
   }
-  
+
   /*
-  
   gl::lineWidth(5);
   gl::color(1, 0, 0);
   CtrlPoint splinepts[4];
@@ -279,9 +281,11 @@ void ThreadTestApp::draw()
     Eigen::Vector3f p = s.eval(t, false);
     ci::Vec3f v(p.x(), p.y(), p.z());
     pl.push_back(v);
+    gl::drawSphere(v, .05);
     p = s.eval(t, true);
     ci::Vec3f v1(p.x(), p.y(), p.z());
     plTest.push_back(v1);
+    gl::drawSphere(v1, .05);
   }
   gl::lineWidth(1);
   
@@ -292,8 +296,7 @@ void ThreadTestApp::draw()
     gl::color(0, 1, 1);
     gl::drawLine(plTest[i], plTest[i+1]);
   }
-   
-   */
+  */
   
 }
 

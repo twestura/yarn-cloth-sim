@@ -53,12 +53,12 @@ public:
   const float inline getRot() const { return rot; }
   /// Calculate the material frave vector m1.
   const Vec3f inline m1() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot()-getRefTwist(), vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * u;
   }
   /// Calculate the material frave vector m2.
   const Vec3f inline m2() const {
-    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot()-getRefTwist(), vec().normalized()));
+    Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
