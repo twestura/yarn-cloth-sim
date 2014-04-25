@@ -108,6 +108,7 @@ void Integrator::integrate(Yarn& y, Clock& c) {
           Profiler::stop("CG Solver");
           c.suggestTimestep(c.timestep()/2);
           std::cout << "Warning: No convergence in CG solver. New timestep: " << c.timestep() << "\n";
+          std::cout << "GradFx max coeff: " << GradFx.toDense().maxCoeff() << "\n";
           success = false;
           break;
         }

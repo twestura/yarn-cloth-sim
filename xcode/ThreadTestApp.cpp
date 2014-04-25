@@ -42,7 +42,7 @@ class ThreadTestApp : public AppNative {
   
   // Camera for the scene, along with its position and orientation
   CameraOrtho cam = CameraOrtho();
-  Vec4f cameraBounds = Vec4f(-15, 15, -15, 15);
+  ci::Vec4f cameraBounds = ci::Vec4f(-15, 15, -15, 15);
   ci::Vec3f eyePos = ci::Vec3f( 50, 0, 0 );
   ci::Vec3f targetPos = ci::Vec3f( 0, 0, 0 );
   
@@ -90,7 +90,7 @@ void ThreadTestApp::setup()
   YarnEnergy* twisting = new Twisting(*y, Explicit);
   energies.push_back(twisting);
   
-  YarnEnergy* intContact = new IntContact(*y, Explicit);
+  YarnEnergy* intContact = new IntContact(*y, Implicit);
   energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*y, Implicit, 0, 1000);

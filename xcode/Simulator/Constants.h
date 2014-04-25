@@ -9,6 +9,8 @@
 #ifndef Visualizer_Constants_h
 #define Visualizer_Constants_h
 
+typedef Eigen::Vector4f Vec4f;
+
 namespace constants {
 
   /// Timestep of the simulation in seconds.
@@ -24,6 +26,11 @@ namespace constants {
 
   /// Pi. You know the one.
   const float pi = 3.1415926535;
+  
+  const Vec4f basis[4] = { Vec4f(-0.5,  1,  -0.5, 0),
+                           Vec4f( 1.5, -2.5, 0,   1),
+                           Vec4f(-1.5,  2,   0.5, 0),
+                           Vec4f( 0.5, -0.5, 0,   0) };
   
 }
 

@@ -15,6 +15,8 @@
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7101FBBF18595AA9008553D8 /* PosFileConv.cpp */; };
+		71197EEF190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
+		71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
 		715D32B618FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
@@ -66,6 +68,8 @@
 		6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
 		7101FBBF18595AA9008553D8 /* PosFileConv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PosFileConv.cpp; sourceTree = "<group>"; };
 		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PosFileConv.h; sourceTree = "<group>"; };
+		71197EED190ABB18003D1E8D /* PTDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTDetector.cpp; sourceTree = "<group>"; };
+		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTDetector.h; sourceTree = "<group>"; };
 		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InfoPanel.cpp; sourceTree = "<group>"; };
 		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
 		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
@@ -289,6 +293,7 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				71197EEE190ABB18003D1E8D /* PTDetector.h */,
 				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
 				719B0C5718BD51CB00FB1633 /* autodiff.h */,
 				719B0C5318BBEB9400FB1633 /* Util.h */,
@@ -306,6 +311,7 @@
 		715D60C218ABE9E2008A9785 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
 				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
@@ -477,6 +483,7 @@
 				715D60A018A95941008A9785 /* AppDelegate.mm in Sources */,
 				715D609918A95941008A9785 /* main.m in Sources */,
 				719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */,
+				71197EEF190ABB18003D1E8D /* PTDetector.cpp in Sources */,
 				715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */,
 				715D32B618FC60490061154E /* Energy.cpp in Sources */,
 			);
@@ -487,6 +494,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
+				71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */,
 				715D32B718FC60490061154E /* Energy.cpp in Sources */,
 				71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */,
 			);

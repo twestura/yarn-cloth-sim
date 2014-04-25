@@ -523,22 +523,40 @@ IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
 bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   for (int i=0; i<y.numSegs(); i++) {
-    for (int j=i+1; j<y.numSegs(); j++) {
+    for (int j=i+2; j<y.numSegs(); j++) {
       if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends!!!
-      if (i-j <= 2 && j-i <= 2) continue; // Don't evaluate adjacent edges. FIXME: should be 1
+      if (i-j <= 3 && j-i <= 3) continue; // Don't evaluate close edges. FIXME: should be 1 ideally
+
       float h = c.timestep();
+      float r = constants::radius;
       const Segment& e1 = y.cur().segments[i];
       const Segment& e2 = y.cur().segments[j];
       
-      Vec3f e1p1 = e1.getFirst().pos;  // + h*(dqdot.block<3,1>(3*i, 0) + e1.getFirst().vel);
-      Vec3f e1p2 = e1.getSecond().pos; // + h*(dqdot.block<3,1>(3*i, 0) + e1.getSecond().vel);
-      Vec3f e2p1 = e2.getFirst().pos;  // + h*(dqdot.block<3,1>(3*j, 0) + e2.getFirst().vel);
-      Vec3f e2p2 = e2.getSecond().pos; // + h*(dqdot.block<3,1>(3*j, 0) + e2.getSecond().vel);
+      Vec3f e1p1 = e1.getFirst().pos;
+      Vec3f e1p2 = e1.getSecond().pos;
+      Vec3f e2p1 = e2.getFirst().pos;
+      Vec3f e2p2 = e2.getSecond().pos;
+      
+      if (et == Implicit) {
+        e1p1 += h*(dqdot.block<3,1>(3*i,     0) + e1.getFirst().vel);
+        e1p2 += h*(dqdot.block<3,1>(3*(i+1), 0) + e1.getSecond().vel);
+        e2p1 += h*(dqdot.block<3,1>(3*j,     0) + e2.getFirst().vel);
+        e2p2 += h*(dqdot.block<3,1>(3*(j+1), 0) + e2.getSecond().vel);
+      }
       
       Vec3f e1mid = (e1p1 + e1p2) / 2;
       Vec3f e2mid = (e2p1 + e2p2) / 2;
       
-      if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())/2) continue;
+      if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) {
+        if (ptd) {
+          std::pair<int, int> id = ptd->id();
+          if (id.first == i && id.second == j) {
+            delete ptd;
+            ptd = 0;
+          }
+        }
+        continue;
+      }
       
       // Splines are close, evaluate them.
       
@@ -567,23 +585,100 @@ bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
       // FIXME: hack to get an estimate of spline length.
       float l1 = e1.length();
       float l2 = e2.length();
+      float coeff = contactMod * l1 * l2;
       int nb = 24;
       
-      for (int n=0; n<nb; n++) { // TODO: remove hardcoded 12
+      Vec3f ref = e1mid - e2mid;
+      float s1dot = e1.getU().dot(ref);
+      float s2dot = e2.getU().dot(ref);
+      
+      if (ptd) {
+        std::pair<int, int> id = ptd->id();
+        if (id.first == i && id.second == j) {
+          if (ptd->pass(s1dot, s2dot)) {
+            std::cout << "Pullthrough detected: " << i << " " << j << "\n";
+          }
+        }
+      } else {
+        ptd = new PTDetector(i, j, s1dot, s2dot);
+      }
+      
+      typedef Eigen::Matrix3f Mat3f;
+      
+      Mat3f hess[8][8];
+      if (et == Implicit) {
+        for (int k=0; k<8; k++) {
+          for (int l=0; l<8; l++) {
+            hess[k][l] = Mat3f::Zero();
+          }
+        }
+      }
+      
+      for (int n=0; n<nb; n++) {
         for (int m=0; m<nb; m++) {
           float t1 = ((float) n) / nb;
           float t2 = ((float) m) / nb;
           Vec3f p1 = s1.eval(t1, false);
           Vec3f p2 = s2.eval(t2, false);
-          float dist = (p1 - p2).norm();
-          float coeff = contactMod*l1*l2*df(dist / 2 / constants::radius) / 2 /constants::radius;
+          Vec3f v = p2 - p1; // FIXME: shouldn't this be p1 - p2??
+          float norm = v.norm();
+          Vec4f u1(t1*t1*t1, t1*t1, t1, 1);
+          Vec4f u2(t2*t2*t2, t2*t2, t2, 1);
+          
+          float dfnorm = df(norm / 2 / r) / 2 / r;
+          Vec3f gradBase = v/norm;
+          
+          float d2fnorm = d2f(norm / 2 / r) / 4 / r / r;
+          Mat3f grad2Base = v*v.transpose()/norm/norm;
+          Mat3f hessBase = (Mat3f::Identity() - grad2Base) * dfnorm / norm + grad2Base * d2fnorm;
           
           for (int k=0; k<4; k++) {
-            Fx.block<3,1>(3*(i-1+k), 0) += h*coeff*s1.distGrad(k, t1, p2);
-            Fx.block<3,1>(3*(j-1+k), 0) += h*coeff*s2.distGrad(k, t2, p1);
+            float c = u1.dot(constants::basis[k]);
+            float d = -u2.dot(constants::basis[k]);
+            
+            Fx.block<3,1>(3*(i-1+k), 0) += h*coeff*c*gradBase;
+            Fx.block<3,1>(3*(j-1+k), 0) += h*coeff*d*gradBase;
+          }
+          
+          if (et == Implicit) {
+            for (int k=0; k<4; k++) {
+              for (int l=0; l<4; l++) {
+                float ck = u1.dot(constants::basis[k]);
+                float cl = u1.dot(constants::basis[l]);
+                float dk = -u2.dot(constants::basis[k]);
+                float dl = -u2.dot(constants::basis[l]);
+                
+                hess[k][l]     += ck * cl * hessBase;
+                hess[k+4][l]   += ck * dl * hessBase;
+                hess[k][l+4]   += dk * cl * hessBase;
+                hess[k+4][l+4] += dk * dl * hessBase;
+              }
+            }
           }
         }
       }
+      
+      if (et == Implicit) {
+        for (int k=0; k<8; k++) {
+          for (int l=0; l<8; l++) {
+            hess[k][l] *= h*h*coeff;
+          }
+        }
+
+        for (int k=0; k<4; k++) {
+          for (int l=0; l<4; l++) {
+            for (int p=0; p<3; p++) {
+              for (int q=0; q<3; q++) {
+                pushBackIfNotZero(GradFx, Triplet(3*(i-1+k)+p, 3*(i-1+l)+q, hess[k][l](p, q)));
+                pushBackIfNotZero(GradFx, Triplet(3*(i-1+k)+p, 3*(j-1+l)+q, hess[k+4][l](p, q)));
+                pushBackIfNotZero(GradFx, Triplet(3*(j-1+k)+p, 3*(i-1+l)+q, hess[k][l+4](p, q)));
+                pushBackIfNotZero(GradFx, Triplet(3*(j-1+k)+p, 3*(j-1+l)+q, hess[k+4][l+4](p, q)));
+              }
+            }
+          }
+        }
+      }
+
       
     }
   }

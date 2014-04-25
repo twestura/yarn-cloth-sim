@@ -14,6 +14,7 @@
 #include "Yarn.h"
 #include "Constants.h"
 #include "Clock.h"
+#include "PTDetector.h"
 
 typedef Eigen::Triplet<float> Triplet;
 typedef Eigen::VectorXf VecXf;
@@ -122,16 +123,22 @@ public:
 
 class IntContact : public YarnEnergy {
 private:
-  inline float f(float d) {
+  static inline float f(float d) {
     return d >= 1 ? 0 : 1/d/d + d*d - 2;
   }
   
-  inline float df(float d) {
+  static inline float df(float d) {
     return d >= 1 ? 0 : -2/d/d/d + 2*d;
   }
   
-  const float contactMod = .02;
+  static inline float d2f(float d) {
+    return d >= 1 ? 0 : 6/d/d/d/d + 2;
+  }
+  
+  const float contactMod = .1;
 
+  PTDetector* ptd = 0;
+  
 public:
   IntContact(const Yarn& y, EvalType et);
   bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
