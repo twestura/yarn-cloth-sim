@@ -1,16 +1,19 @@
 //
-//  ThreadTestApp.cpp
+//  SimulatorApp.cpp
 //  Visualizer
 //
 //  Created by eschweickart on 3/5/14.
 //
 //
 
-#include "ThreadTestApp.h"
+#include "SimulatorApp.h"
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
+#include "cinder/gl/Light.h"
+#include "cinder/gl/DisplayList.h"
+#include "cinder/gl/GlslProg.h"
 #include "cinder/Camera.h"
-#include <fstream>
+#include "cinder/DataSource.h"
 
 #include "Util.h"
 #include "Yarn.h"
@@ -23,7 +26,7 @@ using namespace Eigen;
 
 #define ANG_VEL (10*3.14159) // Constant angular velocity of the material frame.
 
-class ThreadTestApp : public AppNative {
+class SimulatorApp : public AppNative {
   public:
 	void setup();
 	void mouseDown( MouseEvent event );
@@ -46,6 +49,13 @@ class ThreadTestApp : public AppNative {
   ci::Vec3f eyePos = ci::Vec3f( 50, 0, 0 );
   ci::Vec3f targetPos = ci::Vec3f( 0, 0, 0 );
   
+  // Rendering stuff
+  gl::GlslProg meshProg;
+  gl::DisplayList* spheredl;
+  gl::DisplayList* cylinderdl;
+  gl::Material m = gl::Material(Color(.2, .2, .2), Color(.8, .9, .9));
+  gl::Light* l;
+  
   Yarn* y = 0;
   Clock c;
   Integrator* integrator;
@@ -63,19 +73,43 @@ class ThreadTestApp : public AppNative {
   bool isMouseDown = false;
   ci::Vec3f mousePosition = ci::Vec3f(0, 0, 0);
   bool isRotate = false;
-  
-  Eigen::Vector3f p0 = Eigen::Vector3f(0, 0, -10);
-  
 };
 
 
-void ThreadTestApp::setup()
+void SimulatorApp::setup()
 {
   // Setup scene
   cam.setOrtho(cameraBounds[0], cameraBounds[1], cameraBounds[2], cameraBounds[3], 1, 100);
   cam.lookAt(eyePos, targetPos, ci::Vec3f( 0, 1, 0 ));
   
+  // Load the yarn
   loadDefaultYarn(42);
+  
+  // Setup rendering stuff
+  spheredl = new gl::DisplayList(GL_COMPILE);
+  spheredl->newList();
+  gl::drawSphere(ci::Vec3f::zero(), constants::radius);
+  spheredl->endList();
+  
+  cylinderdl = new gl::DisplayList(GL_COMPILE);
+  cylinderdl->newList();
+  gl::drawCylinder(constants::radius, constants::radius, 1);
+  cylinderdl->endList();
+  
+  l = new gl::Light(gl::Light::POINT, 0);
+  
+  try {
+    // FIXME: Make this portable
+    DataSourcePathRef vert = DataSourcePath::create(fs::path("/Users/eschweickart/Research/Visualizer/xcode/Simulator/vert.glsl"));
+    DataSourcePathRef frag = DataSourcePath::create(fs::path("/Users/eschweickart/Research/Visualizer/xcode/Simulator/frag.glsl"));
+    meshProg = gl::GlslProg(vert, frag);
+  } catch (gl::GlslProgCompileExc e) {
+    std::cerr << "Error compiling GLSL program: " << e.what();
+    exit(1);
+  } catch (ci::StreamExc e) {
+    std::cerr << "Error loading shaders: " << e.what();
+    exit(1);
+  }
   
   // Create Yarn Energies
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
@@ -115,7 +149,7 @@ void ThreadTestApp::setup()
   
 }
 
-void ThreadTestApp::mouseDown( MouseEvent event )
+void SimulatorApp::mouseDown( MouseEvent event )
 {
   if (!running) return;
   isMouseDown = true;
@@ -125,7 +159,7 @@ void ThreadTestApp::mouseDown( MouseEvent event )
   mousePosition.y = cameraBounds[3] * (1.0 - (float) mouse.y / windowSize.y)  + cameraBounds[2] * ((float) mouse.y / windowSize.y);
 }
 
-void ThreadTestApp::mouseDrag( MouseEvent event )
+void SimulatorApp::mouseDrag( MouseEvent event )
 {
   if (!running) return;
   Vec2i mouse = event.getPos();
@@ -134,14 +168,14 @@ void ThreadTestApp::mouseDrag( MouseEvent event )
   mousePosition.y = cameraBounds[3] * (1.0 - (float) mouse.y / windowSize.y)  + cameraBounds[2] * ((float) mouse.y / windowSize.y);
 }
 
-void ThreadTestApp::mouseUp( MouseEvent event )
+void SimulatorApp::mouseUp( MouseEvent event )
 {
   if (!running) return;
   isMouseDown = false;
   
 }
 
-void ThreadTestApp::keyDown( KeyEvent event )
+void SimulatorApp::keyDown( KeyEvent event )
 {
   char input = event.getChar();
   switch (input) {
@@ -156,14 +190,12 @@ void ThreadTestApp::keyDown( KeyEvent event )
     break;
       
       case 'w':
-      // p0.y() += 1;
       testSpring1Clamp.z() += 1;
       testSpring2Clamp.z() += 1;
       testSpring1->setClamp(testSpring1Clamp);
       testSpring2->setClamp(testSpring2Clamp);
       break;
       case 's':
-      // p0.y() -= 1;
       testSpring1Clamp.z() -= 1;
       testSpring2Clamp.z() -= 1;
       testSpring1->setClamp(testSpring1Clamp);
@@ -174,7 +206,7 @@ void ThreadTestApp::keyDown( KeyEvent event )
   }
 }
 
-void ThreadTestApp::update()
+void SimulatorApp::update()
 {
   if (!running) return;
   
@@ -217,10 +249,10 @@ void ThreadTestApp::update()
   c.increment();
 }
 
-void ThreadTestApp::draw()
+void SimulatorApp::draw()
 {
 	// Clear out the window with grey
-	gl::clear( Color( 0.5, 0.5, 0.6 ) );
+	gl::clear(Color( 0.5, 0.5, 0.6 ));
   
   // Enable alpha blending and depth testing
   gl::enableAlphaBlending();
@@ -232,7 +264,10 @@ void ThreadTestApp::draw()
   gl::setMatricesWindow(getWindowSize());
   std::stringstream ss;
   ss << getAverageFps();
-  gl::drawStringRight(ss.str(), ci::Vec2f(getWindowWidth() - toPixels(10), getWindowHeight()- toPixels(20)), Color(0, 0, 0), Font("Arial", toPixels(12)));
+  gl::drawStringRight(ss.str(),
+                      ci::Vec2f(getWindowWidth()-toPixels(10), getWindowHeight()-toPixels(20)),
+                      Color(0, 0, 0),
+                      Font("Arial", toPixels(12)));
   
   // Set projection/modelview matrices
   gl::setMatrices(cam);
@@ -253,54 +288,44 @@ void ThreadTestApp::draw()
     gl::drawLine((p0+p1)/2, (p0+p1)/2+u);
   }
   
-  if (isMouseDown) {
-    gl::color(1, 0, 0);
-    ci::Vec3f p(y->cur().points[y->numCPs()-1].pos.x(), y->cur().points[y->numCPs()-1].pos.y(), y->cur().points[y->numCPs()-1].pos.z());
-    gl::drawLine(p, mousePosition);
+
+  m.apply();
+  
+  l->setDiffuse(Color::white());
+  l->setAmbient(Color::white());
+  l->setPosition(ci::Vec3f(0, 50, 0));
+  l->enable();
+  
+  meshProg.bind();
+  
+  for (int i=0; i<y->numCPs(); i++) {
+    gl::pushModelView();
+    gl::translate(y->cur().points[i].pos.x(), y->cur().points[i].pos.y(), y->cur().points[i].pos.z());
+    spheredl->draw();
+    gl::popModelView();
+  }
+  
+  for (int i=0; i<y->numSegs(); i++) {
+    gl::pushModelView();
+    Segment& s = y->cur().segments[i];
+    gl::translate(s.getFirst().pos.x(), s.getFirst().pos.y(), s.getFirst().pos.z());
+    Eigen::Vector3f seg = s.vec().normalized();
+    Quatf q(ci::Vec3f(0,1,0), ci::Vec3f(seg.x(), seg.y(), seg.z()));
+    gl::rotate(q);
+    gl::scale(1, s.length(), 1);
+    cylinderdl->draw();
+    gl::popModelView();
   }
 
-  /*
-  gl::lineWidth(5);
-  gl::color(1, 0, 0);
-  CtrlPoint splinepts[4];
-  splinepts[0].pos = p0;
-  splinepts[1].pos = Eigen::Vector3f(0, 10, -8);
-  splinepts[2].pos = Eigen::Vector3f(0, 8, 0);
-  splinepts[3].pos = Eigen::Vector3f(0, -2, 4);
+  meshProg.unbind();
   
-  for (int i=0; i<4; i++) {
-    ci::Vec3f p(splinepts[i].pos.x(), splinepts[i].pos.y(), splinepts[i].pos.z());
-    gl::drawLine(p, p + ci::Vec3f(0, 0.1, 0));
+  for (YarnEnergy* e : energies) {
+    e->draw();
   }
-  
-  Spline s(splinepts[0], splinepts[1], splinepts[2], splinepts[3]);
-  std::vector<ci::Vec3f> pl;
-  std::vector<ci::Vec3f> plTest;
-  for (int i=0; i<=12; i++) {
-    float t = (((float) i) / 12);
-    Eigen::Vector3f p = s.eval(t, false);
-    ci::Vec3f v(p.x(), p.y(), p.z());
-    pl.push_back(v);
-    gl::drawSphere(v, .05);
-    p = s.eval(t, true);
-    ci::Vec3f v1(p.x(), p.y(), p.z());
-    plTest.push_back(v1);
-    gl::drawSphere(v1, .05);
-  }
-  gl::lineWidth(1);
-  
-
-  for (int i=0; i<pl.size()-1; i++) {
-    gl::color(0, 1, 0);
-    gl::drawLine(pl[i], pl[i+1]);
-    gl::color(0, 1, 1);
-    gl::drawLine(plTest[i], plTest[i+1]);
-  }
-  */
   
 }
 
-void ThreadTestApp::loadYarnFile(std::string filename) {
+void SimulatorApp::loadYarnFile(std::string filename) {
   if (y != 0) delete y;
   if (filename.empty()) filename = getOpenFilePath().string();
   
@@ -334,7 +359,7 @@ void ThreadTestApp::loadYarnFile(std::string filename) {
   y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
 }
 
-void ThreadTestApp::loadDefaultYarn(int numPoints) {
+void SimulatorApp::loadDefaultYarn(int numPoints) {
   if (y != 0) delete y;
   
   std::vector<Eigen::Vector3f> yarnPoints;
@@ -350,4 +375,4 @@ void ThreadTestApp::loadDefaultYarn(int numPoints) {
 
 
 
-CINDER_APP_NATIVE( ThreadTestApp, RendererGl )
+CINDER_APP_NATIVE( SimulatorApp, RendererGl )

@@ -1,13 +1,13 @@
 //
-//  Thread-Test_Prefix.pch
+//  Simulator_Prefix.pch
 //  Visualizer
 //
 //  Created by eschweickart on 3/5/14.
 //
 //
 
-#ifndef Visualizer_Thread_Test_Prefix_pch
-#define Visualizer_Thread_Test_Prefix_pch
+#ifndef Visualizer_Simulator_Prefix_pch
+#define Visualizer_Simulator_Prefix_pch
 
 // Include any system framework and library headers here that should be included in all compilation units.
 // You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.

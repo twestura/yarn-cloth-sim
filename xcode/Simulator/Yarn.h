@@ -98,19 +98,12 @@ public:
 
 class Spline {
   typedef Eigen::Vector4f Vec4f;
-  
-  // TODO: make this const?
   Vec3f p[4];
-  float ti[4] = {0, 0, 0, 0};
-    
   
 public:
   
   Spline(const Vec3f p0, const Vec3f p1, const Vec3f p2, const Vec3f p3) {
     p[0] = p0; p[1] = p1; p[2] = p2; p[3] = p3;
-    ti[1] = powf((p1-p0).norm(), 0.5);
-    ti[2] = powf((p2-p1).norm(), 0.5) + ti[1];
-    ti[3] = powf((p3-p2).norm(), 0.5) + ti[2];
   }
   
   Spline(const CtrlPoint& cp0, const CtrlPoint& cp1, const CtrlPoint& cp2, const  CtrlPoint& cp3) :
@@ -120,20 +113,7 @@ public:
   Spline(start ? cp0.pos : (2*cp0.pos) - cp1.pos, start ? cp1.pos : cp0.pos,
          start ? cp2.pos : cp1.pos, start ? (2*cp2.pos) - cp1.pos : cp2.pos) { }
 
-  
-  Vec3f eval(float t, bool test) const {
-    if (test) {
-      t = (1-t)*ti[1] + t*ti[2];
-      
-      Vec3f l01  = ((ti[1] - t)*p[0] + (t - ti[0])*p[1]) / (ti[1] - ti[0]);
-      Vec3f l12  = ((ti[2] - t)*p[1] + (t - ti[1])*p[2]) / (ti[2] - ti[1]);
-      Vec3f l23  = ((ti[3] - t)*p[2] + (t - ti[2])*p[3]) / (ti[3] - ti[2]);
-      Vec3f l012 = ((ti[2] - t)*l01  + (t - ti[0])*l12)  / (ti[2] - ti[0]);
-      Vec3f l123 = ((ti[3] - t)*l12  + (t - ti[1])*l23)  / (ti[3] - ti[1]);
-      Vec3f c12  = ((ti[2] - t)*l012 + (t - ti[1])*l123) / (ti[2] - ti[1]);
-      return c12;
-    }
-    
+  Vec3f eval(float t) const {
     Vec4f u(t*t*t, t*t, t, 1);
     Vec4f uBasis(u.dot(constants::basis[0]),
                  u.dot(constants::basis[1]),

@@ -8,10 +8,20 @@
 
 #include "Energy.h"
 
+// Declare static vector
+std::vector<float> YarnEnergy::voronoiCell;
 
 void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
   if (value.value() != 0) {
     GradFx.push_back(value);
+  }
+}
+
+void const YarnEnergy::draw() {
+  for (std::pair<Vec3f, Vec3f> p : frames) {
+    ci::Vec3f v1(p.first.x(), p.first.y(), p.first.z());
+    ci::Vec3f v2(p.second.x(), p.second.y(), p.second.z());
+    ci::gl::drawLine(v1, v2);
   }
 }
 
@@ -34,6 +44,8 @@ Spring::Spring(const Yarn& y, EvalType et, size_t index, float stiffness) :
   YarnEnergy(y, et), index(index), stiffness(stiffness) {}
 
 bool Spring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+  frames.clear();
+  frames.push_back(std::pair<Vec3f, Vec3f>(clamp, y.cur().points[index].pos));
   const float h = c.timestep();
   if (et == Explicit) {
     Fx.block<3,1>(3*index, 0) -= (clamp - y.cur().points[index].pos) * stiffness * h;
@@ -52,6 +64,11 @@ bool Spring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, C
 
 void Spring::setClamp(Vec3f newClamp) { clamp = newClamp; }
 
+void const Spring::draw() {
+  ci::gl::color(1, 0.5, 0);
+  YarnEnergy::draw();
+}
+
 
 // MOUSE SPRING
 
@@ -59,10 +76,12 @@ MouseSpring::MouseSpring(const Yarn& y, EvalType et, size_t index, float stiffne
   YarnEnergy(y, et), index(index), stiffness(stiffness) {}
 
 bool MouseSpring::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+  frames.clear();
   if (!mouseDown) return true;
   assert(et == Explicit && "Unsupported EvalType");
   assert(mouseSet && "Set the mouse position each time you call eval()!");
   Fx.block<3,1>(3*index, 0) -= (mouse - y.cur().points[index].pos) * stiffness * c.timestep();
+  frames.push_back(std::pair<Vec3f, Vec3f>(mouse, y.cur().points[index].pos));
   return true;
 }
 
@@ -72,11 +91,17 @@ void MouseSpring::setMouse(Vec3f newMouse, bool newDown) {
   mouseSet = true;
 }
 
+void const MouseSpring::draw() {
+  ci::gl::color(1, 0, 0);
+  YarnEnergy::draw();
+}
+
 
 // BENDING
 
 Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
-  // Init rest curve
+  bool initVoronoi = voronoiCell.empty();
+  
   for (int i=1; i<y.numCPs()-1; i++) {
     const Segment& ePrev = y.rest().segments[i-1];
     const Segment& eNext = y.rest().segments[i];
@@ -90,7 +115,7 @@ Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
     
     restCurve.push_back(restMatCurve);
     
-    voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
+    if (initVoronoi) voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
   }
 }
 
@@ -493,10 +518,12 @@ bool Stretching::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
 // TWISTING
 
 Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
-  for (int i=1; i<y.numCPs()-1; i++) {
-    const Segment& ePrev = y.rest().segments[i-1];
-    const Segment& eNext = y.rest().segments[i];
-    voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
+  if (!voronoiCell.empty()) {
+    for (int i=1; i<y.numCPs()-1; i++) {
+      const Segment& ePrev = y.rest().segments[i-1];
+      const Segment& eNext = y.rest().segments[i];
+      voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
+    }
   }
 }
 
@@ -524,7 +551,7 @@ IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+2; j<y.numSegs(); j++) {
-      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends!!!
+      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends
       if (i-j <= 3 && j-i <= 3) continue; // Don't evaluate close edges. FIXME: should be 1 ideally
 
       float h = c.timestep();
@@ -618,8 +645,8 @@ bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
         for (int m=0; m<nb; m++) {
           float t1 = ((float) n) / nb;
           float t2 = ((float) m) / nb;
-          Vec3f p1 = s1.eval(t1, false);
-          Vec3f p2 = s2.eval(t2, false);
+          Vec3f p1 = s1.eval(t1);
+          Vec3f p2 = s2.eval(t2);
           Vec3f v = p2 - p1; // FIXME: shouldn't this be p1 - p2??
           float norm = v.norm();
           Vec4f u1(t1*t1*t1, t1*t1, t1, 1);

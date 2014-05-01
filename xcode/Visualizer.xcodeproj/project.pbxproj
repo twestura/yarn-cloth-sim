@@ -15,22 +15,13 @@
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7101FBBF18595AA9008553D8 /* PosFileConv.cpp */; };
-		71197EEF190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
 		71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
+		71197EF31911758B003D1E8D /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* vert.glsl */; };
+		71197EF6191175E6003D1E8D /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* frag.glsl */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
-		715D32B618FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		715D32B718FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
-		715D609018A95941008A9785 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 715D608F18A95941008A9785 /* Cocoa.framework */; };
-		715D609718A95941008A9785 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 715D609518A95941008A9785 /* InfoPlist.strings */; };
-		715D609918A95941008A9785 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 715D609818A95941008A9785 /* main.m */; };
-		715D609D18A95941008A9785 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 715D609B18A95941008A9785 /* Credits.rtf */; };
-		715D60A018A95941008A9785 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 715D609F18A95941008A9785 /* AppDelegate.mm */; };
-		715D60A318A95941008A9785 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 715D60A118A95941008A9785 /* MainMenu.xib */; };
-		715D60A518A95941008A9785 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 715D60A418A95941008A9785 /* Images.xcassets */; };
-		715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D60BE18A95CD3008A9785 /* Simulator.cpp */; };
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
-		719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
 		71AAF9E31898425100710A16 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
@@ -45,7 +36,7 @@
 		71CAE64718C78B7A002C9FD3 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B00FF439BC000DE1D7 /* AudioToolbox.framework */; };
 		71CAE64818C78B7A002C9FD3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B10FF439BC000DE1D7 /* AudioUnit.framework */; };
 		71CAE64918C78B7A002C9FD3 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
-		71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */; };
+		71CAE65518C78D7E002C9FD3 /* SimulatorApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */; };
 		71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
@@ -70,12 +61,13 @@
 		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PosFileConv.h; sourceTree = "<group>"; };
 		71197EED190ABB18003D1E8D /* PTDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTDetector.cpp; sourceTree = "<group>"; };
 		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTDetector.h; sourceTree = "<group>"; };
+		71197EF11911758B003D1E8D /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vert.glsl; sourceTree = "<group>"; };
+		71197EF4191175E6003D1E8D /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = frag.glsl; sourceTree = "<group>"; };
 		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InfoPanel.cpp; sourceTree = "<group>"; };
 		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
 		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		715D32B518FC60490061154E /* Energy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Energy.cpp; sourceTree = "<group>"; };
-		715D608E18A95941008A9785 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		715D608F18A95941008A9785 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		715D609118A95941008A9785 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		715D609418A95941008A9785 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Simulator-Info.plist"; sourceTree = "<group>"; };
@@ -88,8 +80,6 @@
 		715D60A218A95941008A9785 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		715D60A418A95941008A9785 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		715D60AB18A95941008A9785 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		715D60BE18A95CD3008A9785 /* Simulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Simulator.cpp; path = ../../src/Simulator.cpp; sourceTree = "<group>"; };
-		715D60BF18A95CD3008A9785 /* Simulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Simulator.h; path = ../../src/Simulator.h; sourceTree = "<group>"; };
 		715D60C818ABEABA008A9785 /* Segment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Segment.h; sourceTree = "<group>"; };
 		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Yarn.h; sourceTree = "<group>"; };
 		715D60CD18ABEE71008A9785 /* CtrlPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CtrlPoint.h; path = ../CtrlPoint.h; sourceTree = "<group>"; };
@@ -105,11 +95,11 @@
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = frag.glsl; path = ../resources/frag.glsl; sourceTree = "<group>"; };
 		71AAF9E11898425100710A16 /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = vert.glsl; path = ../resources/vert.glsl; sourceTree = "<group>"; };
-		71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Visualizer copy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Visualizer copy-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/xcode/Visualizer copy-Info.plist"; sourceTree = "<absolute>"; };
-		71CAE65218C78CB7002C9FD3 /* Thread-Test_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Thread-Test_Prefix.pch"; sourceTree = "<group>"; };
-		71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ThreadTestApp.cpp; sourceTree = "<group>"; };
-		71CAE65418C78D7E002C9FD3 /* ThreadTestApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadTestApp.h; sourceTree = "<group>"; };
+		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = ../Simulator_Prefix.pch; sourceTree = "<group>"; };
+		71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SimulatorApp.cpp; path = ../SimulatorApp.cpp; sourceTree = "<group>"; };
+		71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimulatorApp.h; path = ../SimulatorApp.h; sourceTree = "<group>"; };
 		71F2BF0218CA58DD001AA0D4 /* Energy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Energy.h; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -117,14 +107,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		715D608B18A95941008A9785 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				715D609018A95941008A9785 /* Cocoa.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		71CAE64118C78B7A002C9FD3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -207,8 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Visualizer.app */,
-				715D608E18A95941008A9785 /* Simulator.app */,
-				71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */,
+				71CAE64D18C78B7A002C9FD3 /* Simulator.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -216,7 +197,6 @@
 		29B97314FDCFA39411CA2CEA /* Visualizer */ = {
 			isa = PBXGroup;
 			children = (
-				71CAE64F18C78BB7002C9FD3 /* Thread-Test */,
 				715D609218A95941008A9785 /* Simulator */,
 				719B0C4E18B7DE4A00FB1633 /* Visualizer */,
 				01B97315FEAEA392516A2CEA /* Blocks */,
@@ -293,6 +273,8 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
+				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
 				71197EEE190ABB18003D1E8D /* PTDetector.h */,
 				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
 				719B0C5718BD51CB00FB1633 /* autodiff.h */,
@@ -301,7 +283,6 @@
 				715D60C818ABEABA008A9785 /* Segment.h */,
 				719B0C4F18BBDD7100FB1633 /* Integrator.h */,
 				719B0C5018BBDDC000FB1633 /* Clock.h */,
-				715D60BF18A95CD3008A9785 /* Simulator.h */,
 				715D60CB18ABEC77008A9785 /* Yarn.h */,
 				715D60CE18AD553C008A9785 /* Constants.h */,
 			);
@@ -311,10 +292,12 @@
 		715D60C218ABE9E2008A9785 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */,
 				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
-				715D60BE18A95CD3008A9785 /* Simulator.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
+				71197EF11911758B003D1E8D /* vert.glsl */,
+				71197EF4191175E6003D1E8D /* frag.glsl */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -328,55 +311,12 @@
 			name = Visualizer;
 			sourceTree = "<group>";
 		};
-		71CAE64F18C78BB7002C9FD3 /* Thread-Test */ = {
-			isa = PBXGroup;
-			children = (
-				71CAE65118C78BF0002C9FD3 /* Headers */,
-				71CAE65018C78BDD002C9FD3 /* Source */,
-			);
-			name = "Thread-Test";
-			sourceTree = "<group>";
-		};
-		71CAE65018C78BDD002C9FD3 /* Source */ = {
-			isa = PBXGroup;
-			children = (
-				71CAE65318C78D7E002C9FD3 /* ThreadTestApp.cpp */,
-				71CAE65418C78D7E002C9FD3 /* ThreadTestApp.h */,
-			);
-			name = Source;
-			sourceTree = "<group>";
-		};
-		71CAE65118C78BF0002C9FD3 /* Headers */ = {
-			isa = PBXGroup;
-			children = (
-				71CAE65218C78CB7002C9FD3 /* Thread-Test_Prefix.pch */,
-			);
-			name = Headers;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		715D608D18A95941008A9785 /* Simulator */ = {
+		71CAE63518C78B7A002C9FD3 /* Simulator */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 715D60B818A95941008A9785 /* Build configuration list for PBXNativeTarget "Simulator" */;
-			buildPhases = (
-				715D608A18A95941008A9785 /* Sources */,
-				715D608B18A95941008A9785 /* Frameworks */,
-				715D608C18A95941008A9785 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = Simulator;
-			productName = Simulator;
-			productReference = 715D608E18A95941008A9785 /* Simulator.app */;
-			productType = "com.apple.product-type.application";
-		};
-		71CAE63518C78B7A002C9FD3 /* Thread-Test */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Thread-Test" */;
+			buildConfigurationList = 71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Simulator" */;
 			buildPhases = (
 				71CAE63618C78B7A002C9FD3 /* Resources */,
 				71CAE63A18C78B7A002C9FD3 /* Sources */,
@@ -386,10 +326,10 @@
 			);
 			dependencies = (
 			);
-			name = "Thread-Test";
+			name = Simulator;
 			productInstallPath = "$(HOME)/Applications";
 			productName = Visualizer;
-			productReference = 71CAE64D18C78B7A002C9FD3 /* Visualizer copy.app */;
+			productReference = 71CAE64D18C78B7A002C9FD3 /* Simulator.app */;
 			productType = "com.apple.product-type.application";
 		};
 		8D1107260486CEB800E47090 /* Visualizer */ = {
@@ -435,30 +375,20 @@
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Visualizer */,
-				715D608D18A95941008A9785 /* Simulator */,
-				71CAE63518C78B7A002C9FD3 /* Thread-Test */,
+				71CAE63518C78B7A002C9FD3 /* Simulator */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		715D608C18A95941008A9785 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				715D609718A95941008A9785 /* InfoPlist.strings in Resources */,
-				715D60A518A95941008A9785 /* Images.xcassets in Resources */,
-				715D609D18A95941008A9785 /* Credits.rtf in Resources */,
-				715D60A318A95941008A9785 /* MainMenu.xib in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		71CAE63618C78B7A002C9FD3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */,
 				71CAE63818C78B7A002C9FD3 /* vert.glsl in Resources */,
+				71197EF31911758B003D1E8D /* vert.glsl in Resources */,
+				71197EF6191175E6003D1E8D /* frag.glsl in Resources */,
 				71CAE63918C78B7A002C9FD3 /* frag.glsl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -476,19 +406,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		715D608A18A95941008A9785 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				715D60A018A95941008A9785 /* AppDelegate.mm in Sources */,
-				715D609918A95941008A9785 /* main.m in Sources */,
-				719B0C5218BBE9F200FB1633 /* Integrator.cpp in Sources */,
-				71197EEF190ABB18003D1E8D /* PTDetector.cpp in Sources */,
-				715D60C018A95CD3008A9785 /* Simulator.cpp in Sources */,
-				715D32B618FC60490061154E /* Energy.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		71CAE63A18C78B7A002C9FD3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -496,7 +413,7 @@
 				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
 				71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */,
 				715D32B718FC60490061154E /* Energy.cpp in Sources */,
-				71CAE65518C78D7E002C9FD3 /* ThreadTestApp.cpp in Sources */,
+				71CAE65518C78D7E002C9FD3 /* SimulatorApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -543,97 +460,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		715D60B918A95941008A9785 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = "compiler-default";
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Simulator/Simulator-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_PEDANTIC = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				INFOPLIST_FILE = "Simulator/Simulator-Info.plist";
-				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
-				OTHER_LDFLAGS = (
-					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = app;
-			};
-			name = Debug;
-		};
-		715D60BA18A95941008A9785 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				GCC_C_LANGUAGE_STANDARD = "compiler-default";
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Simulator/Simulator-Prefix.pch";
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_PEDANTIC = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				INFOPLIST_FILE = "Simulator/Simulator-Info.plist";
-				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
-				OTHER_LDFLAGS = (
-					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
-					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = app;
-			};
-			name = Release;
-		};
 		71CAE64B18C78B7A002C9FD3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -646,7 +472,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Thread-Test_Prefix.pch";
+				GCC_PREFIX_HEADER = Simulator_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -655,6 +481,7 @@
 				INFOPLIST_FILE = "Visualizer copy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				OTHER_LDFLAGS = (
 					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
 					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
@@ -662,7 +489,7 @@
 					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
 					"\"$(CINDER_PATH)/lib/libcinder_d.a\"",
 				);
-				PRODUCT_NAME = "Visualizer copy";
+				PRODUCT_NAME = Simulator;
 				SYMROOT = ./build;
 				WRAPPER_EXTENSION = app;
 			};
@@ -681,11 +508,12 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Thread-Test_Prefix.pch";
+				GCC_PREFIX_HEADER = Simulator_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = "Visualizer copy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				OTHER_LDFLAGS = (
 					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
 					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
@@ -693,7 +521,7 @@
 					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
 					"\"$(CINDER_PATH)/lib/libcinder.a\"",
 				);
-				PRODUCT_NAME = "Visualizer copy";
+				PRODUCT_NAME = Simulator;
 				STRIP_INSTALLED_PRODUCT = YES;
 				SYMROOT = ./build;
 				WRAPPER_EXTENSION = app;
@@ -789,16 +617,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		715D60B818A95941008A9785 /* Build configuration list for PBXNativeTarget "Simulator" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				715D60B918A95941008A9785 /* Debug */,
-				715D60BA18A95941008A9785 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Thread-Test" */ = {
+		71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Simulator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				71CAE64B18C78B7A002C9FD3 /* Debug */,
