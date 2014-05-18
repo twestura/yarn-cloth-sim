@@ -94,7 +94,7 @@ void Decompressor::init() {
   }
   
   try {
-    skinningProg = gl::GlslProg(cinder::app::loadResource(RES_VERT_GLSL), cinder::app::loadResource(RES_FRAG_GLSL));
+    skinningProg = gl::GlslProg(cinder::app::loadResource(RES_VIS_VERT_GLSL), cinder::app::loadResource(RES_VIS_FRAG_GLSL));
   } catch (gl::GlslProgCompileExc e) {
     cerr << "Error compiling GLSL program: " << e.what();
     exit(1);

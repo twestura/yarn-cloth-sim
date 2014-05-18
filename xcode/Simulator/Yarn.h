@@ -20,8 +20,6 @@ public:
   std::vector<CtrlPoint> points;
   /// Segments (n total) that define the yarn.
   std::vector<Segment> segments;
-  
-  // TODO: Need Catmull-Rom interpolation for contact resolution.
 };
 
 /// A Yarn stepped though points in time.
@@ -65,8 +63,6 @@ public:
     }
   }
   
-  /// Get a reference to the yarn at the current point in time.
-  YarnStr& cur()  { return *curYS;  }
   /// Get a const reference to the yarn at the current point in time.
   const YarnStr& cur() const  { return *curYS;  }
   /// Get a reference to the yarn at the next point in time.

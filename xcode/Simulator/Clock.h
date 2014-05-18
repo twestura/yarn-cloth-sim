@@ -18,10 +18,13 @@ private:
   float t = 0;
   /// Timestep of the model for the next step.
   float h = constants::INITIAL_TIMESTEP;
-  /// The timestep will not decrease beyond this value.
-  const float minTimestep = 1e-5;
   
 public:
+  /// The timestep will not decrease beyond this value.
+  const float minTimestep = 1e-5;
+  /// The timestep cannot be larger than this value.
+  const float maxTimestep = constants::INITIAL_TIMESTEP;
+  
   /// Get the current time of the simulation.
   const float inline time() const;
   /// Get the size of the next timestep.

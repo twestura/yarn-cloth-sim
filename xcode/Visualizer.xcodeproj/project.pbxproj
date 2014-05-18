@@ -16,18 +16,25 @@
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7101FBBF18595AA9008553D8 /* PosFileConv.cpp */; };
 		71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
-		71197EF31911758B003D1E8D /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* vert.glsl */; };
-		71197EF6191175E6003D1E8D /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* frag.glsl */; };
+		71197EF31911758B003D1E8D /* sim-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* sim-vert.glsl */; };
+		71197EF6191175E6003D1E8D /* sim-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* sim-frag.glsl */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
+		714D113A1914073F00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
+		714D113B1914073F00C8B1BD /* sim-vert-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11391914073F00C8B1BD /* sim-vert-tex.glsl */; };
+		714D113C191407FF00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
+		714D113D191407FF00C8B1BD /* sim-vert-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11391914073F00C8B1BD /* sim-vert-tex.glsl */; };
+		714D113F1914094600C8B1BD /* yarnTex.tga in Resources */ = {isa = PBXBuildFile; fileRef = 714D113E1914094600C8B1BD /* yarnTex.tga */; };
+		714D114219140FAC00C8B1BD /* yarnTex.png in Resources */ = {isa = PBXBuildFile; fileRef = 714D114119140FAC00C8B1BD /* yarnTex.png */; };
+		714D114319140FBE00C8B1BD /* yarnTex.png in Resources */ = {isa = PBXBuildFile; fileRef = 714D114119140FAC00C8B1BD /* yarnTex.png */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
 		715D32B718FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
-		71AAF9E21898425100710A16 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
-		71AAF9E31898425100710A16 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
+		71AAF9E21898425100710A16 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
+		71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
 		71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
-		71CAE63818C78B7A002C9FD3 /* vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vert.glsl */; };
-		71CAE63918C78B7A002C9FD3 /* frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* frag.glsl */; };
+		71CAE63818C78B7A002C9FD3 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
+		71CAE63918C78B7A002C9FD3 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
 		71CAE64218C78B7A002C9FD3 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		71CAE64318C78B7A002C9FD3 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0091D8F80E81B9330029341E /* OpenGL.framework */; };
 		71CAE64418C78B7A002C9FD3 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
@@ -61,10 +68,14 @@
 		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PosFileConv.h; sourceTree = "<group>"; };
 		71197EED190ABB18003D1E8D /* PTDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTDetector.cpp; sourceTree = "<group>"; };
 		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTDetector.h; sourceTree = "<group>"; };
-		71197EF11911758B003D1E8D /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vert.glsl; sourceTree = "<group>"; };
-		71197EF4191175E6003D1E8D /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = frag.glsl; sourceTree = "<group>"; };
+		71197EF11911758B003D1E8D /* sim-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert.glsl"; path = "Simulator/sim-vert.glsl"; sourceTree = "<group>"; };
+		71197EF4191175E6003D1E8D /* sim-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag.glsl"; path = "Simulator/sim-frag.glsl"; sourceTree = "<group>"; };
 		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InfoPanel.cpp; sourceTree = "<group>"; };
 		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
+		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
+		714D11391914073F00C8B1BD /* sim-vert-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert-tex.glsl"; path = "../resources/sim-vert-tex.glsl"; sourceTree = "<group>"; };
+		714D113E1914094600C8B1BD /* yarnTex.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = yarnTex.tga; path = ../resources/yarnTex.tga; sourceTree = "<group>"; };
+		714D114119140FAC00C8B1BD /* yarnTex.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = yarnTex.png; path = ../resources/yarnTex.png; sourceTree = "<group>"; };
 		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		715D32B518FC60490061154E /* Energy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Energy.cpp; sourceTree = "<group>"; };
@@ -93,8 +104,8 @@
 		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = ../autodiff.h; sourceTree = "<group>"; };
 		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Decompressor.cpp; sourceTree = "<group>"; };
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
-		71AAF9E01898425100710A16 /* frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = frag.glsl; path = ../resources/frag.glsl; sourceTree = "<group>"; };
-		71AAF9E11898425100710A16 /* vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = vert.glsl; path = ../resources/vert.glsl; sourceTree = "<group>"; };
+		71AAF9E01898425100710A16 /* vis-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-frag.glsl"; path = "../resources/vis-frag.glsl"; sourceTree = "<group>"; };
+		71AAF9E11898425100710A16 /* vis-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-vert.glsl"; path = "../resources/vis-vert.glsl"; sourceTree = "<group>"; };
 		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Visualizer copy-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/xcode/Visualizer copy-Info.plist"; sourceTree = "<absolute>"; };
 		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = ../Simulator_Prefix.pch; sourceTree = "<group>"; };
@@ -225,8 +236,14 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				71AAF9E01898425100710A16 /* frag.glsl */,
-				71AAF9E11898425100710A16 /* vert.glsl */,
+				714D114119140FAC00C8B1BD /* yarnTex.png */,
+				714D113E1914094600C8B1BD /* yarnTex.tga */,
+				714D11381914073F00C8B1BD /* sim-frag-tex.glsl */,
+				714D11391914073F00C8B1BD /* sim-vert-tex.glsl */,
+				71197EF11911758B003D1E8D /* sim-vert.glsl */,
+				71197EF4191175E6003D1E8D /* sim-frag.glsl */,
+				71AAF9E01898425100710A16 /* vis-frag.glsl */,
+				71AAF9E11898425100710A16 /* vis-vert.glsl */,
 				6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */,
 				BB0A1373225F4D5196F608BC /* Info.plist */,
 			);
@@ -296,8 +313,6 @@
 				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
-				71197EF11911758B003D1E8D /* vert.glsl */,
-				71197EF4191175E6003D1E8D /* frag.glsl */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -385,11 +400,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				714D114319140FBE00C8B1BD /* yarnTex.png in Resources */,
+				714D113C191407FF00C8B1BD /* sim-frag-tex.glsl in Resources */,
+				714D113D191407FF00C8B1BD /* sim-vert-tex.glsl in Resources */,
 				71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */,
-				71CAE63818C78B7A002C9FD3 /* vert.glsl in Resources */,
-				71197EF31911758B003D1E8D /* vert.glsl in Resources */,
-				71197EF6191175E6003D1E8D /* frag.glsl in Resources */,
-				71CAE63918C78B7A002C9FD3 /* frag.glsl in Resources */,
+				71CAE63818C78B7A002C9FD3 /* vis-vert.glsl in Resources */,
+				71197EF31911758B003D1E8D /* sim-vert.glsl in Resources */,
+				71197EF6191175E6003D1E8D /* sim-frag.glsl in Resources */,
+				71CAE63918C78B7A002C9FD3 /* vis-frag.glsl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -398,8 +416,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */,
-				71AAF9E31898425100710A16 /* vert.glsl in Resources */,
-				71AAF9E21898425100710A16 /* frag.glsl in Resources */,
+				714D113A1914073F00C8B1BD /* sim-frag-tex.glsl in Resources */,
+				71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */,
+				714D113B1914073F00C8B1BD /* sim-vert-tex.glsl in Resources */,
+				714D114219140FAC00C8B1BD /* yarnTex.png in Resources */,
+				714D113F1914094600C8B1BD /* yarnTex.tga in Resources */,
+				71AAF9E21898425100710A16 /* vis-frag.glsl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

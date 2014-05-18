@@ -9,8 +9,11 @@
 #ifndef Visualizer_Util_h
 #define Visualizer_Util_h
 
+#include "Eigen/Dense"
+#include <boost/asio/io_service.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/timer.hpp>
+#include <boost/bind.hpp>
 
 //#define PARALLEL
 #define NUM_THREADS 4
@@ -38,11 +41,16 @@
 /// A space to keep common data. Currently in flux.
 struct Workspace
 {
+  boost::asio::io_service ioService;
   /// "Thread pool" for parallel procedures. In quotes because, as far as I know, threads are
   /// re-initialized each time boost::thread(f) is called.
-  boost::thread threads[NUM_THREADS];
+  boost::thread_group threads;
   
 };
+
+static inline bool is_approx(float f1, float f2) {
+  return std::abs(f1 - f2) < 1e-5;
+}
 
 class Profiler {
   struct Stopwatch {
@@ -108,5 +116,9 @@ public:
 };
 
 #define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
+
+const ci::Vec3f static toCi(const Eigen::Vector3f& v) {
+  return ci::Vec3f(v.x(), v.y(), v.z());
+}
 
 #endif

@@ -29,7 +29,6 @@ void Integrator::integrate(Yarn& y, Clock& c) {
 
   while (!success) {
     iter++;
-//    assert(iter < 10 && "Could not find a stable timestep!!");
     
     Eigen::VectorXf Fx    = Eigen::VectorXf::Zero(NumEqs);
     Eigen::VectorXf FxEx  = Eigen::VectorXf::Zero(NumEqs);
@@ -40,6 +39,7 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     
     // WARNING: push_back() on a vector is thread-safe if no allocation is performed. Make sure
     // the correct amount of space is reserved here!
+    // TODO: Query energies to figure out a good estimate
     size_t numTriplets = 9*9*y.numIntCPs();
     
     bool converge = false;
@@ -98,7 +98,7 @@ void Integrator::integrate(Yarn& y, Clock& c) {
 #endif
       
       Profiler::start("CG Solver");
-      Eigen::ConjugateGradient<Eigen::SparseMatrix<float>, Eigen::Lower, Eigen::IncompleteLUT<float>> cg;
+      Eigen::ConjugateGradient<Eigen::SparseMatrix<float>, Eigen::Upper, Eigen::IncompleteLUT<float>> cg;
       cg.compute(GradFx);
       Eigen::VectorXf temp = sol;
       sol = cg.solveWithGuess(Fx, temp);
@@ -128,14 +128,14 @@ void Integrator::integrate(Yarn& y, Clock& c) {
       
       if (sol.maxCoeff() < ConvergenceThreshold) {
         converge = true;
-      } else if (iterations > 3) {
+      } else if (iterations > 4) {
 //        std::cerr << "Too many newton iterations, breaking.\n";
         break;
       }
     }
     if (!success) continue;
     
-    //#define NEWMARK_BETA
+// #define NEWMARK_BETA
 #ifdef NEWMARK_BETA
     
     // Newmark-Beta update

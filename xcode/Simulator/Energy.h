@@ -30,7 +30,7 @@ protected:
   static std::vector<float> voronoiCell;
   const Yarn& y;
   EvalType et;
-  std::vector<std::pair<Vec3f, Vec3f>> frames;
+  std::vector<std::function<void(void)>> frames;
 public:
   YarnEnergy(const Yarn& y, EvalType et) : y(y), et(et) { }
   virtual bool eval(VecXf&, std::vector<Triplet>&, const VecXf&, Clock&) =0;
@@ -56,7 +56,6 @@ public:
   Spring(const Yarn& y, EvalType et, size_t index, float stiffness);
   bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
   void setClamp(Vec3f newClamp);
-  void const draw();
 };
 
 class MouseSpring : public YarnEnergy {
@@ -70,7 +69,6 @@ public:
   MouseSpring(const Yarn& y, EvalType et, size_t index, float stiffness);
   bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
   void setMouse(Vec3f newMouse, bool newDown);
-  void const draw();
 };
 
 #define NUM_VARS 9
@@ -107,6 +105,7 @@ private:
   
 public:
   Stretching(const Yarn& y, EvalType et);
+  void suggestTimestep(Clock&);
   bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 #undef NUM_VARS
@@ -114,9 +113,9 @@ public:
 
 class Twisting : public YarnEnergy {
 private:
-  float shearModulus = 1e-5;
-  float xArea = constants::pi * constants::radius * constants::radius;
-  float twistMod = xArea * shearModulus * constants::radius * constants::radius / 2;
+  const float shearModulus = 1e5;
+  const float xArea = constants::pi * constants::radius * constants::radius;
+  const float twistMod = xArea * shearModulus * constants::radius * constants::radius / 2;
 
 public:
   Twisting(const Yarn& y, EvalType et);
@@ -137,9 +136,10 @@ private:
     return d >= 1 ? 0 : 6/d/d/d/d + 2;
   }
   
-  const float contactMod = .1;
+  const float contactMod = .01;
 
   PTDetector* ptd = 0;
+  
   
 public:
   IntContact(const Yarn& y, EvalType et);

@@ -66,7 +66,7 @@ public:
   
   /// Set the reference frame by parallel transporting via the given vector. No reference twist is
   /// assumed to occur.
-  void parallelTransport(Segment& prevSeg) {
+  void parallelTransport(const Segment& prevSeg) {
     Vec3f vprev = prevSeg.vec();
     Vec3f vcur  = vec();
     Vec3f cross = vprev.cross(vcur);
@@ -84,7 +84,7 @@ public:
   /// Set the reference frame by parallel transporting via prevSeg, then update refSeg with the
   /// amount of twist accumulated by the transport.
   /// WARNING: does not account for twists greater than pi correctly.
-  void parallelTransport(Segment& prevSeg, Segment& refSeg) {
+  void parallelTransport(const Segment& prevSeg, Segment& refSeg) {
     parallelTransport(prevSeg);
     Vec3f ucur = getU().normalized();
     Vec3f vcur = v().normalized();
