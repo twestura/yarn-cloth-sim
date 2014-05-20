@@ -10,8 +10,41 @@
 #define __Visualizer__PTDetector__
 
 #include <iostream>
+#include "Eigen/Sparse"
 
-
+/*
+class PTDetector {
+  Eigen::SparseMatrix<float> mat;
+  
+public:
+  
+  PTDetector(size_t size) : mat(Eigen::SparseMatrix<float>(size, size)) {}
+  
+  void contact(size_t i, size_t j, float priority) {
+    if (i > j) { // store upper half
+      size_t temp = i;
+      i = j;
+      j = temp;
+    }
+    assert(mat.coeff(i, j) == 0 && "You forgot to reset!");
+    mat.insert(i, j) = priority;
+  }
+  
+  void iter() {
+    
+  }
+  
+  float topPriority() {
+    return mat.toDense().maxCoeff(); // not great...
+  }
+  
+  void reset() {
+    mat.setZero();
+  }
+  
+};
+*/
+ 
 class PTDetector {
   int i;
   int j;

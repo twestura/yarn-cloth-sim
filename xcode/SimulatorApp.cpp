@@ -22,6 +22,7 @@
 #include "Yarn.h"
 #include "Clock.h"
 #include "Integrator.h"
+#include "YarnBuilder.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -41,6 +42,7 @@ class SimulatorApp : public AppNative {
   
   void loadYarnFile(std::string filename);
   void loadDefaultYarn(int numPoints);
+  void loadStdEnergies();
   
   // Set to false to pause the simulation
   bool running = true;
@@ -61,9 +63,9 @@ class SimulatorApp : public AppNative {
   gl::Light* l;
   TriMesh floor;
   
-  Yarn* y = 0;
+  Yarn* y = nullptr;
   Clock c;
-  Integrator* integrator;
+  Integrator* integrator = nullptr;
   std::vector<YarnEnergy*> energies;
   MouseSpring* mouseSpring;
   
@@ -83,12 +85,11 @@ class SimulatorApp : public AppNative {
 
 void SimulatorApp::setup()
 {
+  YarnBuilder::buildBraid();
+  
   // Setup scene
   cam.setPerspective(40, getWindowAspectRatio(), .1, 1000);
   cam.lookAt(eyePos, targetPos, ci::Vec3f( 0, 1, 0 ));
-  
-  // Load the yarn
-  loadDefaultYarn(42);
   
   // Setup rendering stuff
   spheredl = new gl::DisplayList(GL_COMPILE);
@@ -150,44 +151,10 @@ void SimulatorApp::setup()
   floorTex.setMagFilter(GL_NEAREST);
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
-  
-  // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
-  
-  YarnEnergy* stretch = new Stretching(*y, Implicit);
-  energies.push_back(stretch);
-  
-  YarnEnergy* bending = new Bending(*y, Explicit);
-  energies.push_back(bending);
-  
-  YarnEnergy* twisting = new Twisting(*y, Explicit);
-  energies.push_back(twisting);
-  
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
-  energies.push_back(gravity);
-  
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10);
-  energies.push_back(mouseSpring);
-  
-  YarnEnergy* intContact = new IntContact(*y, Implicit);
-  energies.push_back(intContact);
-  
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 1000);
-  clamp1->setClamp(y->rest().points[0].pos);
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000);
-  clamp2->setClamp(y->rest().points[1].pos);
-  energies.push_back(clamp1);
-  energies.push_back(clamp2);
-  
-  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50);
-  testSpring1->setClamp(testSpring1Clamp);
-  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50);
-  testSpring2->setClamp(testSpring2Clamp);
-  energies.push_back(testSpring1);
-  energies.push_back(testSpring2);
-  
-  // Create integrator
-  integrator = new Integrator(energies);
-  
+  // Load the yarn
+  // loadDefaultYarn(42);
+  loadYarnFile("");
+  loadStdEnergies();
 }
 
 void SimulatorApp::mouseDown( MouseEvent event )
@@ -262,6 +229,11 @@ void SimulatorApp::keyDown( KeyEvent event )
       break;
     case event.KEY_p:
       running = !running;
+      break;
+    case event.KEY_y:
+      running = false;
+      loadYarnFile("");
+      loadStdEnergies();
       break;
     case event.KEY_LEFT:
     {
@@ -422,7 +394,6 @@ void SimulatorApp::draw()
     float angle = acosf(std::max(-1.0f, std::min(1.0f, (q*ci::Vec3f(-1, 0, 0)).dot(toCi(s.getU())))));
     if ((q*ci::Vec3f(-1, 0, 0)).dot(toCi(s.v())) > 0) angle *= -1;
     gl::rotate(Quatf(v, angle));
-//    gl::rotate(Quatf(q * ci::Vec3f(-1, 0, 0), toCi(s.getU())));
     gl::rotate(q);
     gl::rotate(ci::Vec3f(0, (s.getRot() - s.getRefTwist() - totalTwist)*180/constants::pi, 0));
     gl::scale(1, s.length(), 1);
@@ -445,22 +416,21 @@ void SimulatorApp::loadYarnFile(std::string filename) {
   if (filename.empty()) filename = getOpenFilePath().string();
   if (filename.empty()) return;
   
-  std::ifstream yarnFile;
-
-  try {
-    yarnFile.open(filename);
-  } catch (Exception e) {
-    std::cerr << e.what() << "\n";
-    return;
-  }
+  std::ifstream yarnFile(filename);
   
   if (!yarnFile.is_open()) {
     std::cerr << filename << " failed to open!\n";
     return;
   }
   
+  std::string line;
+  std::getline(yarnFile, line);
+  const int numPoints = std::stoi(line);
+  
   std::vector<Eigen::Vector3f> yarnPoints;
-  while (!yarnFile.eof()) {
+  yarnPoints.reserve(numPoints);
+  
+  for (int j=0; j<numPoints; j++) {
     Eigen::Vector3f p;
     for (int i=0; i<3; i++) {
       std::string line;
@@ -471,13 +441,21 @@ void SimulatorApp::loadYarnFile(std::string filename) {
     }
     yarnPoints.push_back(p);
   }
+  Eigen::Vector3f u;
+  for (int i=0; i<3; i++) {
+    std::string line;
+    std::getline(yarnFile, line);
+    u(i) = std::stof(line);
+  }
+  assert((yarnPoints[1] - yarnPoints[0]).dot(u) < 5e-6);
   
-  if (y != 0) delete y;
-  y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
+  yarnFile.close();
+  if (y) delete y;
+  y = new Yarn(yarnPoints, u);
 }
 
 void SimulatorApp::loadDefaultYarn(int numPoints) {
-  if (y != 0) delete y;
+  if (y) delete y;
   
   std::vector<Eigen::Vector3f> yarnPoints;
   for(int i=0; i < numPoints; i++) {
@@ -490,6 +468,56 @@ void SimulatorApp::loadDefaultYarn(int numPoints) {
   cam.lookAt(eyePos, targetPos, ci::Vec3f(0, 1, 0));
   
   y = new Yarn(yarnPoints, Eigen::Vector3f(0, 0, 1));
+}
+
+void SimulatorApp::loadStdEnergies() {
+  // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
+  assert(y && "Tried to load evergies on a null yarn");
+  energies.clear();
+  
+  YarnEnergy* stretch = new Stretching(*y, Implicit);
+  energies.push_back(stretch);
+  
+  YarnEnergy* bending = new Bending(*y, Explicit);
+  energies.push_back(bending);
+  
+  YarnEnergy* twisting = new Twisting(*y, Explicit);
+  energies.push_back(twisting);
+  
+  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
+  energies.push_back(gravity);
+  
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10);
+  energies.push_back(mouseSpring);
+  
+  YarnEnergy* intContact = new IntContact(*y, Implicit);
+  energies.push_back(intContact);
+  
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 1000);
+//  clamp1->setClamp(y->rest().points[0].pos);
+  clamp1->setClamp(y->rest().points[0].pos + Eigen::Vector3f(0, 6, 2));
+//  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000);
+//  clamp2->setClamp(y->rest().points[1].pos);
+  Spring* clamp2 = new Spring(*y, Implicit, 14, 1000);
+  clamp2->setClamp(y->rest().points[14].pos + Eigen::Vector3f(0, -6, 2));
+  Spring* clamp3 = new Spring(*y, Implicit, 28, 1000);
+  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0, 6, -2));
+  Spring* clamp4 = new Spring(*y, Implicit, 42, 1000);
+  clamp4->setClamp(y->rest().points[42].pos + Eigen::Vector3f(0, -6, -2));
+  energies.push_back(clamp1);
+  energies.push_back(clamp2);
+  energies.push_back(clamp3);
+  energies.push_back(clamp4);
+  
+  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50);
+  testSpring1->setClamp(testSpring1Clamp);
+  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50);
+  testSpring2->setClamp(testSpring2Clamp);
+  //energies.push_back(testSpring1);
+  //energies.push_back(testSpring2);
+  
+  if (integrator) delete integrator;
+  integrator = new Integrator(energies);
 }
 
 

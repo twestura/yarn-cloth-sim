@@ -46,10 +46,9 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     int iterations = 0;
     
     for (int i=0; i<y.numCPs(); i++) {
-#ifdef ENABLE_CHECK_NAN
-      assert(y.cur().points[i].pos.allFinite());
-      assert(y.cur().points[i].vel.allFinite());
-#endif
+      CHECK_NAN_VEC(y.cur().points[i].pos);
+      CHECK_NAN_VEC(y.cur().points[i].vel);
+      CHECK_NAN_VEC(y.cur().points[i].accel);
       y.next().points[i].pos = y.cur().points[i].pos;
       y.next().points[i].vel = y.cur().points[i].vel;
     }
@@ -60,10 +59,12 @@ void Integrator::integrate(Yarn& y, Clock& c) {
     for (YarnEnergy* e : energies) {
       if (e->evalType() == Explicit) {
         success = e->eval(FxEx, triplets, dqdot, c); // Ignores triplets and dqdot
+        CHECK_NAN_VEC(FxEx);
         if (!success) break;
       }
     }
     if (!success) continue;
+    
     
     // Perform Newton iteration to solve IMEX equations
     while (!converge) {
@@ -93,9 +94,8 @@ void Integrator::integrate(Yarn& y, Clock& c) {
       // Solve equations for updates to changes in position and velocity using Conjugate Gradient
       GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
       
-#ifdef ENABLE_CHECK_NANS
-      assert(Fx.allFinite());
-#endif
+      CHECK_NAN_VEC(Fx);
+      CHECK_NAN_VEC(GradFx.toDense());
       
       Profiler::start("CG Solver");
       Eigen::ConjugateGradient<Eigen::SparseMatrix<float>, Eigen::Upper, Eigen::IncompleteLUT<float>> cg;

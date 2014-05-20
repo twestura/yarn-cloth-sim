@@ -136,13 +136,16 @@ private:
     return d >= 1 ? 0 : 6/d/d/d/d + 2;
   }
   
-  const float contactMod = .01;
+  const int nb = 24;
+  const float contactMod = 1;
 
-  PTDetector* ptd = 0;
+  PTDetector* ptd = nullptr;
+  
   
   
 public:
   IntContact(const Yarn& y, EvalType et);
+  void suggestTimestep(Clock&);
   bool eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c);
 };
 

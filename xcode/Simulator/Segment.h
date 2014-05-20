@@ -11,6 +11,7 @@
 
 #include "Eigen/Geometry"
 #include "Constants.h"
+#include "Util.h"
 #include "CtrlPoint.h"
 
 class Segment
@@ -41,7 +42,7 @@ public:
   /// Calculate the length of the segment.
   const float inline length() const { return vec().norm(); }
   
-  // TODO: remove these?
+  // TODO: rename these?
   const Vec3f inline getU() const { return u; }
   void inline setU(const Vec3f newU) { u = newU; }
   
@@ -75,7 +76,7 @@ public:
     u = prevSeg.u;
     // If the angle is too small, cross becomes inaccurate. In order to prevent error propagation,
     // it's better to pretend the angle is 0. Also guards against NaNs from acos.
-    if (twist > .00001) {
+    if (twist > .00001 && cross.allFinite()) {
       Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
       u = q * u;
     }

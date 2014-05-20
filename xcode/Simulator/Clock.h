@@ -37,6 +37,8 @@ public:
   bool inline canDecreaseTimestep() const;
 };
 
+
+// TODO: move this to Clock.cpp
 const float inline Clock::time() const      { return t; }
 const float inline Clock::timestep() const  { return h; }
 void inline Clock::suggestTimestep(float s) { h = fmax(minTimestep, fmin(h, s)); }

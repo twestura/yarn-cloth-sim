@@ -29,6 +29,7 @@
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
 		715D32B718FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
+		71A93CCC192A4FF70030A80B /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
 		71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
@@ -102,6 +103,8 @@
 		719B0C5118BBE9F200FB1633 /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
 		719B0C5318BBEB9400FB1633 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Util.h; path = ../Util.h; sourceTree = "<group>"; };
 		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = ../autodiff.h; sourceTree = "<group>"; };
+		71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = YarnBuilder.cpp; sourceTree = "<group>"; };
+		71A93CCB192A4FF70030A80B /* YarnBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YarnBuilder.h; sourceTree = "<group>"; };
 		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Decompressor.cpp; sourceTree = "<group>"; };
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* vis-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-frag.glsl"; path = "../resources/vis-frag.glsl"; sourceTree = "<group>"; };
@@ -290,6 +293,7 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				71A93CCB192A4FF70030A80B /* YarnBuilder.h */,
 				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
 				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
 				71197EEE190ABB18003D1E8D /* PTDetector.h */,
@@ -313,6 +317,7 @@
 				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
+				71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -433,6 +438,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
+				71A93CCC192A4FF70030A80B /* YarnBuilder.cpp in Sources */,
 				71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */,
 				715D32B718FC60490061154E /* Energy.cpp in Sources */,
 				71CAE65518C78D7E002C9FD3 /* SimulatorApp.cpp in Sources */,

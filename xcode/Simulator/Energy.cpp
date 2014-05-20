@@ -112,6 +112,8 @@ Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
     Vec3f curveBinorm = 2*ePrev.vec().cross(eNext.vec()) /
     (ePrev.length()*eNext.length() + ePrev.vec().dot(eNext.vec()));
     
+    CHECK_NAN_VEC(curveBinorm);
+    
     Vec2f restMatCurvePrev(curveBinorm.dot(ePrev.m2()), -(curveBinorm.dot(ePrev.m1())));
     Vec2f restMatCurveNext(curveBinorm.dot(eNext.m2()), -(curveBinorm.dot(eNext.m1())));
     Vec2f restMatCurve = 0.5*(restMatCurvePrev + restMatCurveNext);
@@ -127,7 +129,7 @@ Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
 bool Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
   Profiler::start("Bend Eval");
   DiffScalarBase::setVariableCount(NUM_VARS);
-  float h = c.timestep();
+  const float h = c.timestep();
   
   //VecXf test1 = VecXf::Zero(Fx.rows());
   //VecXf test2 = VecXf::Zero(Fx.rows());
@@ -233,6 +235,7 @@ bool Bending::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, 
     
     Vec3f dPrevSeg   = dCurPoint - dPrevPoint;
     Vec3f dNextSeg   = dNextPoint - dCurPoint;
+    assert(dPrevSeg.norm() > 0 && dNextSeg.norm() > 0 && "Segment length is zero!");
     
     // WARNING: assumes that twist in the material curvature changes minimally
     // between Newton iterations. This may not be the case.
@@ -637,14 +640,60 @@ bool Twisting::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot,
 
 IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
+void IntContact::suggestTimestep(Clock& c) {
+  float minDist = 1e6;
+  const float r = constants::radius;
+  for (int i=0; i<y.numSegs(); i++) {
+    for (int j=i+2; j<y.numSegs(); j++) {
+      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends
+      if (i-j <= 3 && j-i <= 3) continue; // Don't evaluate close edges. FIXME: should be 1 ideally
+      
+      const Segment& e1 = y.cur().segments[i];
+      const Segment& e2 = y.cur().segments[j];
+      
+      Vec3f e1p1 = e1.getFirst().pos;
+      Vec3f e1p2 = e1.getSecond().pos;
+      Vec3f e2p1 = e2.getFirst().pos;
+      Vec3f e2p2 = e2.getSecond().pos;
+      
+      Vec3f e1mid = (e1p1 + e1p2) / 2;
+      Vec3f e2mid = (e2p1 + e2p2) / 2;
+      
+      if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) continue;
+      
+      const Segment& e1prev = y.cur().segments[i-1];
+      const Segment& e1next = y.cur().segments[i+1];
+      Spline s1(e1prev.getFirst(), e1.getFirst(), e1.getSecond(), e1next.getSecond());
+      
+      const Segment& e2prev = y.cur().segments[j-1];
+      const Segment& e2next = y.cur().segments[j+1];
+      Spline s2(e2prev.getFirst(), e2.getFirst(), e2.getSecond(), e2next.getSecond());
+     
+      for (int n=0; n<=nb; n++) {
+        for (int m=0; m<=nb; m++) {
+          float t1 = ((float) n) / nb;
+          float t2 = ((float) m) / nb;
+          Vec3f p1 = s1.eval(t1);
+          Vec3f p2 = s2.eval(t2);
+          Vec3f v = p2 - p1;
+          float norm = v.norm();
+          if (norm < minDist) minDist = norm;
+        }
+      }
+    }
+  }
+  c.suggestTimestep(minDist / (4 * r) * constants::INITIAL_TIMESTEP);
+}
+
 bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdot, Clock& c) {
+  const float h = c.timestep();
+  const float r = constants::radius;
+  
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+2; j<y.numSegs(); j++) {
       if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends
       if (i-j <= 3 && j-i <= 3) continue; // Don't evaluate close edges. FIXME: should be 1 ideally
 
-      const float h = c.timestep();
-      const float r = constants::radius;
       const Segment& e1 = y.cur().segments[i];
       const Segment& e2 = y.cur().segments[j];
       
@@ -668,7 +717,7 @@ bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
           std::pair<int, int> id = ptd->id();
           if (id.first == i && id.second == j) {
             delete ptd;
-            ptd = 0;
+            ptd = nullptr;
           }
         }
         continue;
@@ -702,7 +751,6 @@ bool IntContact::eval(VecXf& Fx, std::vector<Triplet>& GradFx, const VecXf& dqdo
       float l1 = e1.length();
       float l2 = e2.length();
       float coeff = contactMod * l1 * l2;
-      int nb = 24;
       
       Vec3f ref = e1mid - e2mid;
       float s1dot = e1.getU().dot(ref);

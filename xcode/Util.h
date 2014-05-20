@@ -15,43 +15,37 @@
 #include <boost/timer.hpp>
 #include <boost/bind.hpp>
 
-//#define PARALLEL
-#define NUM_THREADS 4
-/// A macro for parallelizing a for loop. f is a closure that takes (startIndex, endIndex) as
-/// arguments, threads is an array of `boost::thread`s of size NUM_THREADS, num is the number
-/// of elements in the for loop, limit is a threshold such that if num<threshold, then the
-/// for loop is executed on a single thread to reduce the overhead of spawning threads.
-#define MAYBE_PARALLEL(f, threads, num, limit) \
- if (num<limit) { f(0,num); } \
- else { \
-   for(int i=0; i<NUM_THREADS; i++) { \
-      threads[i]=boost::thread(f,(i*num)/NUM_THREADS,((i+1)*num)/NUM_THREADS);\
-   } \
-   for(int i=0; i<NUM_THREADS ;i++) { threads[i].join(); } \
- }
-
 // #define ENABLE_CHECK_NAN
 
 #ifdef ENABLE_CHECK_NAN
-#define CHECK_NAN(f) if(isnan(f)) assert(false && "NaN Detected.")
+#define CHECK_NAN(f) assert(!isnan(f) && "NaN Detected.")
+#define CHECK_NAN_VEC(v) assert(v.allFinite() && "NaN or Inf Detected.")
 #else
-#define CHECK_NAN(f)
+#define CHECK_NAN(f) // NOP
+#define CHECK_NAN_VEC(v) // NOP
 #endif
 
-/// A space to keep common data. Currently in flux.
-struct Workspace
+/// A space for parallelizing operations. Currently in flux.
+/// See http://stackoverflow.com/questions/19500404/how-to-create-a-thread-pool-using-boost-in-c
+/// for an example of how this should be used.
+struct Threadpool
 {
+  // TODO: make these static
   boost::asio::io_service ioService;
-  /// "Thread pool" for parallel procedures. In quotes because, as far as I know, threads are
-  /// re-initialized each time boost::thread(f) is called.
   boost::thread_group threads;
-  
 };
 
-static inline bool is_approx(float f1, float f2) {
-  return std::abs(f1 - f2) < 1e-5;
+/// Convenience method for checking if two floats are within some epsilon of each other.
+static inline bool is_approx(float f1, float f2, float eps = 1e-5) {
+  return std::abs(f1 - f2) < eps;
 }
 
+/// Convenience method for converting an Eigen Vec3f to a Cinder Vec3f. Useful for draw-time ops.
+const ci::Vec3f static inline toCi(const Eigen::Vector3f& v) {
+  return ci::Vec3f(v.x(), v.y(), v.z());
+}
+
+/// A class for profiling operations over several iterations.
 class Profiler {
   struct Stopwatch {
     boost::timer t;
@@ -61,8 +55,11 @@ class Profiler {
   
 public:
   typedef std::map<std::string, Stopwatch> TimerMap;
+  // This shouldn't really be public, but needs to be so it can be declared in a separate .cpp file.
   static TimerMap map;
   
+  /// Start a timer with the given name. If the timer does not already exist, it is created. If the
+  /// timer is already running, this method fails.
   void static start(std::string name) {
     TimerMap::iterator it = map.find(name);
     if (it == map.end()) {
@@ -74,6 +71,8 @@ public:
     }
   }
   
+  /// Stop a timer with a given name. The timer must already exist and be running, or this method
+  /// will fail.
   void static stop(std::string name) {
     TimerMap::iterator it = map.find(name);
     assert(it != map.end() && "Timer doesn't exist!");
@@ -82,6 +81,8 @@ public:
     it->second.running = false;
   }
   
+  /// Reset the timer with the given name (i.e. sets the elapsed time to 0). The timer must exist.
+  /// Note that the timer is not stopped if it is currently running.
   void static reset(std::string name) {
     TimerMap::iterator it = map.find(name);
     assert(it != map.end() && "Timer doesn't exist!");
@@ -89,6 +90,8 @@ public:
     it->second.e = 0;
   }
   
+  /// Returns the amount of time (in seconds) that the given timer has recorded. The timer must
+  /// exist.
   double static elapsed(std::string name) {
     TimerMap::iterator it = map.find(name);
     assert(it != map.end() && "Timer doesn't exist!");
@@ -98,6 +101,7 @@ public:
     return it->second.e;
   }
   
+  /// Resets all timers. Note that timers are not stopped if they are currently running.
   void static resetAll() {
     TimerMap::iterator it = map.begin();
     while (it != map.end()) {
@@ -106,6 +110,8 @@ public:
     }
   }
   
+  /// Prints the amount of time recorded by each timer. Not that timers are not stopped if they are
+  /// currently running.
   void static printElapsed() {
     TimerMap::iterator it = map.begin();
     while (it != map.end()) {
@@ -115,10 +121,7 @@ public:
   }
 };
 
+/// Call this in a .cpp file to initialize the static profiler struct.
 #define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
-
-const ci::Vec3f static toCi(const Eigen::Vector3f& v) {
-  return ci::Vec3f(v.x(), v.y(), v.z());
-}
 
 #endif
