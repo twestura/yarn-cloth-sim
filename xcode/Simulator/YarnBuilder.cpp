@@ -12,8 +12,8 @@
 
 void YarnBuilder::buildBraid() {
   const float height = 20;
-  const float width = 10;
-  const float depth = 5;
+  const float width = 8;
+  const float depth = 3;
   const int depthLevels = 3;
   const int vertLevels = 15;
   const int horizLevels = 7;

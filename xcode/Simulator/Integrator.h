@@ -24,10 +24,12 @@
 class Integrator {
 private:
   std::vector<YarnEnergy*>& energies;
+  std::vector<std::function<void(void)>> frames;
 public:
   Integrator(std::vector<YarnEnergy*>& energies) : energies(energies) {}
   
-  void integrate(Yarn& y, Clock& c);
+  bool integrate(Yarn& y, Clock& c);
+  void const draw();
   
 };
 

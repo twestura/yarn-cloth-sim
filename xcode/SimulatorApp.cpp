@@ -85,7 +85,7 @@ class SimulatorApp : public AppNative {
 
 void SimulatorApp::setup()
 {
-  YarnBuilder::buildBraid();
+  // YarnBuilder::buildBraid();
   
   // Setup scene
   cam.setPerspective(40, getWindowAspectRatio(), .1, 1000);
@@ -152,8 +152,8 @@ void SimulatorApp::setup()
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
   // Load the yarn
-  // loadDefaultYarn(42);
-  loadYarnFile("");
+   loadDefaultYarn(42);
+  // loadYarnFile("");
   loadStdEnergies();
 }
 
@@ -290,7 +290,14 @@ void SimulatorApp::update()
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
-  integrator->integrate(*y, c);
+  while (!integrator->integrate(*y, c)) {
+    if (c.canDecreaseTimestep()) {
+      c.suggestTimestep(c.timestep() / 2);
+    } else {
+      std::cout << "Simulation Failed!\n";
+      running = false;
+    }
+  }
   
   /// Update Bishop frame
   for(int i=0; i<y->numSegs(); i++) {
@@ -364,15 +371,12 @@ void SimulatorApp::draw()
   l->enable();
   
   diffuseProg.bind();
-  
   for (int i=0; i<y->numCPs(); i++) {
     gl::pushModelView();
     gl::translate(toCi(y->cur().points[i].pos));
     spheredl->draw();
     gl::popModelView();
   }
-  
-//  gl::draw(floor);
   diffuseProg.unbind();
   
   yarnProg.bind();
@@ -409,6 +413,7 @@ void SimulatorApp::draw()
   for (YarnEnergy* e : energies) {
     e->draw();
   }
+  integrator->draw();
   
 }
 
@@ -487,27 +492,27 @@ void SimulatorApp::loadStdEnergies() {
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0, -9.8, 0));
   energies.push_back(gravity);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10);
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100);
   energies.push_back(mouseSpring);
   
-  YarnEnergy* intContact = new IntContact(*y, Implicit);
-  energies.push_back(intContact);
+  YarnEnergy* intContact = new IntContact(*y, Explicit);
+//  energies.push_back(intContact);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 1000);
-//  clamp1->setClamp(y->rest().points[0].pos);
-  clamp1->setClamp(y->rest().points[0].pos + Eigen::Vector3f(0, 6, 2));
-//  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000);
-//  clamp2->setClamp(y->rest().points[1].pos);
-  Spring* clamp2 = new Spring(*y, Implicit, 14, 1000);
-  clamp2->setClamp(y->rest().points[14].pos + Eigen::Vector3f(0, -6, 2));
-  Spring* clamp3 = new Spring(*y, Implicit, 28, 1000);
-  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0, 6, -2));
-  Spring* clamp4 = new Spring(*y, Implicit, 42, 1000);
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 500);
+  clamp1->setClamp(y->rest().points[0].pos);
+//  clamp1->setClamp(y->rest().points[0].pos + Eigen::Vector3f(0, 6, 2));
+  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000);
+  clamp2->setClamp(y->rest().points[1].pos);
+//  Spring* clamp2 = new Spring(*y, Implicit, 14, 500);
+//  clamp2->setClamp(y->rest().points[14].pos + Eigen::Vector3f(0, -6, 2));
+//  Spring* clamp3 = new Spring(*y, Implicit, 28, 500);
+//  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0, 6, -2));
+Spring* clamp4 = new Spring(*y, Implicit, 42, 500);
   clamp4->setClamp(y->rest().points[42].pos + Eigen::Vector3f(0, -6, -2));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
-  energies.push_back(clamp3);
-  energies.push_back(clamp4);
+//  energies.push_back(clamp3);
+//  energies.push_back(clamp4);
   
   testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50);
   testSpring1->setClamp(testSpring1Clamp);

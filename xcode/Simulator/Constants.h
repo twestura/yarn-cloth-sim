@@ -14,7 +14,7 @@ typedef Eigen::Vector4f Vec4f;
 namespace constants {
 
   /// Timestep of the simulation in seconds.
-  const float INITIAL_TIMESTEP = (1.0/10000.0);
+  const float INITIAL_TIMESTEP = (1.0/60.0);
 
   /// Determines centerline plasticity due to bending forces on the yarn.
   const float pPlastic = 0.01;
