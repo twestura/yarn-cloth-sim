@@ -183,6 +183,86 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
   return newtonConverge;
 }
 
+void static calcRotEqs(const Yarn& y, const VecXf& rot, const std::vector<Vec3f>& curveBinorm,
+                      VecXf& grad, std::vector<Triplet>& triplets) {
+  Eigen::Matrix2f J;
+  J << 0, -1, 1, 0;
+  // This assumes the yarn is isotropic
+  for (int i=1; i<y.numSegs()-1; i++) {
+    const Segment& s = y.next().segments[i];
+    Vec3f m1 = cos(rot(i)) * s.getU() + sin(rot(i)) * s.v();
+    Vec3f m2 = -sin(rot(i)) * s.getU() + cos(rot(i)) * s.v();
+    Vec2f curvePrev(curveBinorm[i-1].dot(m2), -curveBinorm[i-1].dot(m1)); // omega ^i _i
+    Vec2f curveNext(curveBinorm[i].dot(m2), -curveBinorm[i].dot(m1)); // omega ^i _i+1
+    float dWprev = y.bendCoeff() / y.restVoronoiLength
+    
+    (i) * curvePrev.dot(J * (curvePrev - y.restCurveNext(i)));
+    float dWnext = y.bendCoeff() / y.restVoronoiLength(i+1) * curveNext.dot(J * (curveNext - y.restCurvePrev(i+1)));
+    float twistPrev = rot(i) - rot(i-1) + y.next().segments[i].getRefTwist();
+    float twistNext = rot(i+1) - rot(i) + y.next().segments[i+1].getRefTwist();
+    grad(i-1) = -(dWprev + dWnext + 2*y.twistCoeff()*(twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
+    
+    float hess = 2*y.twistCoeff()/y.restVoronoiLength(i) + 2*y.twistCoeff()/y.restVoronoiLength(i+1);
+    hess += y.bendCoeff()/y.restVoronoiLength(i) * (curvePrev.dot(curvePrev) - curvePrev.dot(curvePrev - y.restCurveNext(i)));
+    hess += y.bendCoeff()/y.restVoronoiLength(i+1) * (curveNext.dot(curveNext) - curveNext.dot(curveNext - y.restCurvePrev(i+1)));
+    triplets.push_back(Triplet(i-1, i-1, hess));
+    
+    // TODO: These are constant throughout the simulation.
+    if (i > 1) {
+      triplets.push_back(Triplet(i-1, i-2, -2*y.twistCoeff()/y.restVoronoiLength(i)));
+    }
+    if (i < y.numSegs()-2) {
+      triplets.push_back(Triplet(i-1, i, -2*y.twistCoeff()/y.restVoronoiLength(i+1)));
+    }
+  }
+}
+
+bool Integrator::setRotations(Yarn& y) const {
+  const float newtonThreshold = 0.5; // FIXME: this is pretty arbitrary
+  std::vector<Triplet> triplets;
+  Eigen::SparseMatrix<float> hess(y.numSegs()-2, y.numSegs()-2);
+  VecXf rot(y.numSegs());
+  VecXf grad = VecXf::Zero(y.numSegs()-2); // Assumes edges are clamped
+  bool newtonConverge = false;
+  for(int i=0; i<y.numSegs(); i++) {
+    rot(i) = y.next().segments[i].getRot();
+  }
+  std::vector<Vec3f> curveBinorm;
+  for (int i=1; i<y.numCPs()-1; i++) {
+    Vec3f tPrev = y.next().segments[i-1].vec().normalized();
+    Vec3f tNext = y.next().segments[i].vec().normalized();
+    float chi = 1 + (tPrev.dot(tNext));
+    curveBinorm.push_back(2*tPrev.cross(tNext)/chi);
+  }
+  int newtonIterations = 0;
+  
+  do {
+    triplets.clear();
+    calcRotEqs(y, rot, curveBinorm, grad, triplets);
+    float resid = grad.norm();
+    if (resid < newtonThreshold || newtonIterations > 4) {
+      if (resid > 25) { return false; } // FIXME: The 25 is arbitrary.
+      newtonConverge = true;
+      break;
+    }
+    newtonIterations++;
+    hess.setFromTriplets(triplets.begin(), triplets.end());
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<float>> sLDLT;
+    sLDLT.compute(hess);
+    VecXf sol = sLDLT.solve(grad);
+    assert(sLDLT.info() == Eigen::Success);
+    rot.block(1, 0, y.numSegs()-2, 1) += sol;
+  } while (!newtonConverge);
+  
+  if (newtonConverge) {
+    for (int i=1; i<y.numSegs()-1; i++) {
+      y.next().segments[i].setRot(rot(i));
+    }
+  }
+  
+  return newtonConverge;
+}
+
 void const Integrator::draw() {
   for (std::function<void(void)> f : frames) {
     f();

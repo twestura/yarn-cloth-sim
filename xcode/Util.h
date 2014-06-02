@@ -11,9 +11,9 @@
 
 #include "Eigen/Dense"
 #include <boost/asio/io_service.hpp>
+#include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/timer.hpp>
-#include <boost/bind.hpp>
 
 // #define ENABLE_CHECK_NAN
 

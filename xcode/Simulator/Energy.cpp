@@ -8,9 +8,6 @@
 
 #include "Energy.h"
 
-// Declare static vector
-std::vector<float> YarnEnergy::voronoiCell;
-
 void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
   if (value.value() != 0) {
     GradFx.push_back(value);
@@ -18,9 +15,10 @@ void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
 }
 
 void const YarnEnergy::draw() {
-  // TODO: Add support for drawing more than just the last frame
   if (frames.empty()) return;
-  frames[frames.size()-1]();
+  for (std::function<void(void)> f : frames) {
+    f();
+  }
 }
 
 // GRAVITY
@@ -115,27 +113,7 @@ void MouseSpring::setMouse(Vec3f newMouse, bool newDown) {
 
 // BENDING
 
-Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
-  bool initVoronoi = voronoiCell.empty();
-  
-  for (int i=1; i<y.numCPs()-1; i++) {
-    const Segment& ePrev = y.rest().segments[i-1];
-    const Segment& eNext = y.rest().segments[i];
-    
-    Vec3f curveBinorm = 2*ePrev.vec().cross(eNext.vec()) /
-    (ePrev.length()*eNext.length() + ePrev.vec().dot(eNext.vec()));
-    
-    CHECK_NAN_VEC(curveBinorm);
-    
-    Vec2f restMatCurvePrev(curveBinorm.dot(ePrev.m2()), -(curveBinorm.dot(ePrev.m1())));
-    Vec2f restMatCurveNext(curveBinorm.dot(eNext.m2()), -(curveBinorm.dot(eNext.m1())));
-    Vec2f restMatCurve = 0.5*(restMatCurvePrev + restMatCurveNext);
-    
-    restCurve.push_back(restMatCurve);
-    
-    if (initVoronoi) voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
-  }
-}
+Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 // #define ENABLE_BEND_AUTODIFF
 bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
@@ -207,11 +185,11 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     DVector2 matCurveNext(dvcurveBinorm.dot(d2next), -dvcurveBinorm.dot(d1next));
     DVector2 dvmatCurve = DScalar(0.5)*(matCurvePrev + matCurveNext);
     
-    DVector2 restMatCurve(DScalar(restCurve[i-1].x()), DScalar(restCurve[i-1].y()));
+    DVector2 restMatCurve(DScalar(y.restCurve(i).x()), DScalar(y.restCurve(i).y()));
     
     // TODO: bending matrix may not be I
     DVector2 curveDiff = dvmatCurve - restMatCurve;
-    DScalar bendEnergy = (0.5/voronoiCell[i-1])*curveDiff.dot(curveDiff);
+    DScalar bendEnergy = (0.5/y.restVoronoiLength(i))*curveDiff.dot(curveDiff);
     
     Gradient grad = bendEnergy.getGradient();
     Fx.block<NUM_VARS, 1>(3*(i-1), 0) += h*grad;
@@ -266,12 +244,12 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     
     // WARNING: assumes that the bending matrix is the identity.
     
-    Vec2f& restCurveVec = restCurve[i-1];
+    Vec2f restCurveVec = y.restCurve(i);
     // b11*2*(k1-restk1) + (b21+b12)(k2-restk2)
     float k1coeff = 2*(matCurve.x()-restCurveVec.x()); // Verified
     // b22*2*(k2-restk2) + (b21+b12)(k1-restk1)
     float k2coeff = 2*(matCurve.y()-restCurveVec.y()); // Verified
-    float totalcoeff = 0.5/voronoiCell[i-1];
+    float totalcoeff = 0.5/y.restVoronoiLength(i);
     
     Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff); // Verified
     Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff); // Verified
@@ -581,8 +559,8 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
      */
     
     
-    Fx.block<3,1>(3*i, 0) -= h * stretchScalar * myGrad;
-    Fx.block<3,1>(3*(i+1), 0) += h * stretchScalar * myGrad;
+    Fx.block<3,1>(3*i, 0) -= h * y.stretchCoeff() * myGrad;
+    Fx.block<3,1>(3*(i+1), 0) += h * y.stretchCoeff() * myGrad;
     if (et == Implicit && GradFx) {
       typedef Eigen::Matrix3f Mat3f;
       Mat3f myHess = (Mat3f::Identity()/restSegLength -
@@ -590,10 +568,10 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       
       for (int j=0; j<3; j++) {
         for (int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     h*h*stretchScalar*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     -h*h*stretchScalar*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, -h*h*stretchScalar*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, h*h*stretchScalar*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     h*h*y.stretchCoeff()*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     -h*h*y.stretchCoeff()*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, -h*h*y.stretchCoeff()*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, h*h*y.stretchCoeff()*myHess(j,k)));
         }
       }
     }
@@ -611,17 +589,13 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
 
 // TWISTING
 
-Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
-  if (!voronoiCell.empty()) {
-    for (int i=1; i<y.numCPs()-1; i++) {
-      const Segment& ePrev = y.rest().segments[i-1];
-      const Segment& eNext = y.rest().segments[i];
-      voronoiCell.push_back(0.5*(ePrev.length()+eNext.length()));
-    }
-  }
-}
+Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
+#define DRAW_TWIST
 bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+#ifdef DRAW_TWIST
+  frames.clear();
+#endif // ifdef DRAW_TWIST
   assert(et == Explicit && "EvalType unsupported");
   for (int i=1; i<y.numCPs()-1; i++) {
     const Segment& segPrev = y.cur().segments[i-1];
@@ -632,9 +606,18 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     float chi = 1+tPrev.dot(tNext);
     assert(chi > 0 && "Segments are pointing in exactly opposite directions!");
     Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi;
-    float dThetaHat = twistMod * (segNext.getRefTwist() - (segNext.getRot() - segPrev.getRot())) / voronoiCell[i-1];
+    float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() - (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
     Vec3f dxi = curveBinorm / y.rest().segments[i].length() - curveBinorm / y.rest().segments[i-1].length();
     Fx.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * dxi;
+    
+#ifdef DRAW_TWIST
+    ci::Vec3f s = toCi(y.cur().points[i].pos);
+    ci::Vec3f e = toCi(y.cur().points[i].pos - c.timestep() * dThetaHat * dxi);
+    frames.push_back([s, e] () {
+      ci::gl::color(ci::Color(1, 0.5, 0.5));
+      ci::gl::drawVector(s, e);
+    });
+#endif // ifdef DRAW_TWIST
   }
   return true;
 }
@@ -645,6 +628,7 @@ IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
 // FIXME: This is hacky and slow
 void IntContact::suggestTimestep(Clock& c) {
+  /*
   float minDist = 1e6;
   const float r = constants::radius;
   for (int i=0; i<y.numSegs(); i++) {
@@ -687,11 +671,18 @@ void IntContact::suggestTimestep(Clock& c) {
     }
   }
   c.suggestTimestep(minDist / (4 * r) * constants::INITIAL_TIMESTEP);
+   */
+  YarnEnergy::suggestTimestep(c);
 }
 
+
+#define DRAW_INT_CONTACT
 bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+#ifdef DRAW_INT_CONTACT
+  frames.clear();
+#endif // ifdef DRAW_INT_CONTACT
   const float h = c.timestep();
-  const float r = constants::radius;
+  const float r = y.radius();
   
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+2; j<y.numSegs(); j++) {
@@ -781,6 +772,15 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
         }
       }
       
+#ifdef DRAW_INT_CONTACT
+      Vec3f s1draw[4];
+      Vec3f s2draw[4];
+      for (int k=0; k<4; k++) {
+        s1draw[k] = Vec3f::Zero();
+        s2draw[k] = Vec3f::Zero();
+      }
+#endif // ifdef DRAW_INT_CONTACT
+      
       for (int n=0; n<=nb; n++) {
         for (int m=0; m<=nb; m++) {
           float t1 = ((float) n) / nb;
@@ -859,8 +859,12 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
             float c = u1.dot(constants::basis[k]);
             float d = u2.dot(constants::basis[k]);
             
-            Fx.block<3,1>(3*(i-1+k), 0) += h * coeff * c * gradBase; // Verified
-            Fx.block<3,1>(3*(j-1+k), 0) -= h * coeff * d * gradBase; // Verified
+            Fx.block<3,1>(3*(i-1+k), 0) -= h * coeff * c * gradBase; // Verified
+            Fx.block<3,1>(3*(j-1+k), 0) += h * coeff * d * gradBase; // Verified
+#ifdef DRAW_INT_CONTACT
+            s1draw[k] += h * coeff * c * gradBase;
+            s2draw[k] -= h * coeff * d * gradBase;
+#endif // ifdef DRAW_INT_CONTACT
           }
           
           if (et == Implicit && GradFx) {
@@ -871,10 +875,10 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
                 float dk = u2.dot(constants::basis[k]);
                 float dl = u2.dot(constants::basis[l]);
                 
-                hess[k][l]     -= ck * cl * hessBase;
-                hess[k+4][l]   += ck * dl * hessBase;
-                hess[k][l+4]   += dk * cl * hessBase;
-                hess[k+4][l+4] -= dk * dl * hessBase;
+                hess[k][l]     += ck * cl * hessBase;
+                hess[k+4][l]   -= ck * dl * hessBase;
+                hess[k][l+4]   -= dk * cl * hessBase;
+                hess[k+4][l+4] += dk * dl * hessBase;
               }
             }
           }
@@ -902,6 +906,19 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
         }
       }
 
+#ifdef DRAW_INT_CONTACT
+      for (int k=0; k<4; k++) {
+        ci::Vec3f s1start = toCi(y.cur().points[i-1+k].pos);
+        ci::Vec3f s1end = toCi(y.cur().points[i-1+k].pos + s1draw[k]);
+        ci::Vec3f s2start = toCi(y.cur().points[j-1+k].pos);
+        ci::Vec3f s2end = toCi(y.cur().points[j-1+k].pos + s2draw[k]);
+        frames.push_back([s1start, s1end, s2start, s2end] () {
+          ci::gl::color(ci::Color(0, 1, 0));
+          ci::gl::drawVector(s1start, s1end);
+          ci::gl::drawVector(s2start, s2end);
+        });
+      }
+#endif // ifdef DRAW_INT_CONTACT
       
     }
   }

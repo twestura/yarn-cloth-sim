@@ -29,6 +29,7 @@ public:
   Integrator(std::vector<YarnEnergy*>& energies) : energies(energies) {}
   
   bool integrate(Yarn& y, Clock& c);
+  bool setRotations(Yarn& y) const;
   void const draw();
   
 };

@@ -52,12 +52,15 @@ public:
   void inline setRot(const float f) { rot = f; }
   /// Get the material frame rotation.
   const float inline getRot() const { return rot; }
-  /// Calculate the material frave vector m1.
+  /// Calculate the material frame vector m1.
   const Vec3f inline m1() const {
+    // return cos(getRot()) * u + sin(getRot()) * v();
+    // .. or, equivalently:
     Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * u;
+    
   }
-  /// Calculate the material frave vector m2.
+  /// Calculate the material frame vector m2.
   const Vec3f inline m2() const {
     Eigen::Quaternionf q(Eigen::AngleAxisf(getRot(), vec().normalized()));
     return q * v();
@@ -65,52 +68,58 @@ public:
   /// Get twist in reference frame from previous frame.
   const float getRefTwist() const { return refTwist + 2*constants::pi*numTwists; }
   
+  /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
+  Vec3f static parallelTransport(const Vec3f vecPrev, const Vec3f vecCur, const Vec3f uPrev) {
+    Vec3f cross = vecPrev.cross(vecCur).normalized();
+    float twist = acos(vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm()));
+    if (cross.allFinite() && twist > .00001) {
+      Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
+      return q * uPrev;
+    }
+    return uPrev;
+  }
+  
   /// Set the reference frame by parallel transporting via the given vector. No reference twist is
   /// assumed to occur.
   void parallelTransport(const Segment& prevSeg) {
-    Vec3f vprev = prevSeg.vec();
-    Vec3f vcur  = vec();
-    Vec3f cross = vprev.cross(vcur);
-    cross.normalize();
-    float twist = acos(vcur.dot(vprev)/(vcur.norm()*vprev.norm()));
-    u = prevSeg.u;
-    // If the angle is too small, cross becomes inaccurate. In order to prevent error propagation,
-    // it's better to pretend the angle is 0. Also guards against NaNs from acos.
-    if (twist > .00001 && cross.allFinite()) {
-      Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
-      u = q * u;
-    }
+    u = parallelTransport(prevSeg.vec(), vec(), prevSeg.u);
+    CHECK_NAN_VEC(u);
   }
   
-  /// Set the reference frame by parallel transporting via prevSeg, then update refSeg with the
-  /// amount of twist accumulated by the transport.
-  /// WARNING: does not account for twists greater than pi correctly.
-  void parallelTransport(const Segment& prevSeg, Segment& refSeg) {
-    parallelTransport(prevSeg);
-    Vec3f ucur = getU().normalized();
-    Vec3f vcur = v().normalized();
-    Vec3f uref = refSeg.getU().normalized();
-    float val = ucur.dot(uref);
-    float sign = vcur.dot(uref);
-    float oldTwist = refSeg.refTwist;
-    if (val >= 1) { // Avoid values like 1.0000000012 that introduce NaNs
-      refSeg.refTwist = 0;
-    } else if (val <= -1) {
-      refSeg.refTwist = constants::pi;
+  /// Parallel transports a segment through time, recording the amount of reference twist
+  /// accumulated through space.
+  void parallelTransport(const Segment& prevTimeSeg, const Segment& prevSpaceSeg) {
+    // Parallel transport through time to update this.u
+    parallelTransport(prevTimeSeg);
+    // Find the amount of twist in the reference frame. First, parallel transport
+    // prevSpaceSeg through space so the u vectors lie in the plane with the normal
+    // parallel to this.vec.
+    Vec3f uRef = parallelTransport(prevSpaceSeg.vec(), vec(), prevSpaceSeg.u);
+    CHECK_NAN_VEC(uRef);
+    float cosTwist = u.normalized().dot(uRef.normalized());
+    // Now find the angle between the reference (space-parallel transported u) and this.u
+    float oldTwist = refTwist;
+    if (cosTwist >= 1) { // Avoid values like 1.0000000012 that introduce NaNs
+      refTwist = 0;
+    } else if (cosTwist <= -1) {
+      refTwist = constants::pi;
     } else {
-      refSeg.refTwist = acos(val);
+      refTwist = acos(cosTwist);
     }
-    if (sign < 0) { // check if we need to switch sign
-      refSeg.refTwist *= -1;
+    // Flip the sign if necessary
+    if (v().normalized().dot(uRef) > 0) {
+      refTwist = -refTwist;
     }
+    CHECK_NAN(refTwist);
     
     // Account for twists >|pi|. Assumes that twists are not greater than pi between each transport.
-    float diff = refSeg.refTwist - oldTwist;
+    float diff = refTwist - oldTwist;
     if (diff < -constants::pi) {
-      refSeg.numTwists -= 1;
+      numTwists += 1;
     } else if (diff > constants::pi) {
-      refSeg.numTwists += 1;
+      numTwists -= 1;
     }
+    
   }
 };
 

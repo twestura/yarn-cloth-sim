@@ -26,7 +26,6 @@ enum EvalType {
 
 class YarnEnergy {
 protected:
-  static std::vector<float> voronoiCell;
   const Yarn& y;
   EvalType et;
   std::vector<std::function<void(void)>> frames;
@@ -72,9 +71,6 @@ public:
 
 class Bending : public YarnEnergy {
 private:
-  typedef Eigen::Vector2f Vec2f;
-  std::vector<Vec2f> restCurve;
-  bool init = false;
   
 public:
   Bending(const Yarn& y, EvalType et);
@@ -83,10 +79,6 @@ public:
 
 class Stretching : public YarnEnergy {
 private:
-  // TODO: find a good value for this
-  float youngsModulus = 2e7;
-  float xArea = constants::pi * constants::radius * constants::radius;
-  float stretchScalar = xArea * youngsModulus;
   
 public:
   Stretching(const Yarn& y, EvalType et);
@@ -97,9 +89,6 @@ public:
 
 class Twisting : public YarnEnergy {
 private:
-  const float shearModulus = 1e5;
-  const float xArea = constants::pi * constants::radius * constants::radius;
-  const float twistMod = xArea * shearModulus * constants::radius * constants::radius / 2;
 
 public:
   Twisting(const Yarn& y, EvalType et);
@@ -121,7 +110,7 @@ private:
   }
   
   const int nb = 24;
-  const float contactMod = 2;
+  const float contactMod = .1;
 
   PTDetector* ptd = nullptr;
   

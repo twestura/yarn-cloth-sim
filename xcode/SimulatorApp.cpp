@@ -125,16 +125,16 @@ void SimulatorApp::setup()
   
   floor.appendVertex(ci::Vec3f(-100, 0, -100));
   floor.appendNormal(ci::Vec3f(0, 1, 0));
-  floor.appendTexCoord(Vec2f(-12, -12));
+  floor.appendTexCoord(ci::Vec2f(-12, -12));
   floor.appendVertex(ci::Vec3f(100, 0, -100));
   floor.appendNormal(ci::Vec3f(0, 1, 0));
-  floor.appendTexCoord(Vec2f(12, -12));
+  floor.appendTexCoord(ci::Vec2f(12, -12));
   floor.appendVertex(ci::Vec3f(100, 0, 100));
   floor.appendNormal(ci::Vec3f(0, 1, 0));
-  floor.appendTexCoord(Vec2f(12, 12));
+  floor.appendTexCoord(ci::Vec2f(12, 12));
   floor.appendVertex(ci::Vec3f(-100, 0, 100));
   floor.appendNormal(ci::Vec3f(0, 1, 0));
-  floor.appendTexCoord(Vec2f(-12, 12));
+  floor.appendTexCoord(ci::Vec2f(-12, 12));
   floor.appendTriangle(0, 1, 2);
   floor.appendTriangle(0, 3, 2);
   
@@ -152,7 +152,7 @@ void SimulatorApp::setup()
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
   // Load the yarn
-   loadDefaultYarn(42);
+  loadDefaultYarn(42);
   // loadYarnFile("");
   loadStdEnergies();
 }
@@ -237,7 +237,7 @@ void SimulatorApp::keyDown( KeyEvent event )
       break;
     case event.KEY_LEFT:
     {
-      Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
+      ci::Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
       eyePos.x = v.x*cosf(0.2) - v.y*sinf(0.2) + targetPos.x;
       eyePos.z = v.x*sinf(0.2) + v.y*cosf(0.2) + targetPos.z;
       cam.lookAt(eyePos, targetPos);
@@ -245,7 +245,7 @@ void SimulatorApp::keyDown( KeyEvent event )
       break;
     case event.KEY_RIGHT:
     {
-      Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
+      ci::Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
       eyePos.x = v.x*cosf(0.2) + v.y*sinf(0.2) + targetPos.x;
       eyePos.z = - v.x*sinf(0.2) + v.y*cosf(0.2) + targetPos.z;
       cam.lookAt(eyePos, targetPos);
@@ -301,14 +301,14 @@ void SimulatorApp::update()
   
   /// Update Bishop frame
   for(int i=0; i<y->numSegs(); i++) {
-    const Segment& prevSeg = y->cur().segments[i];
+    const Segment& prevTimeSeg = y->cur().segments[i];
     Segment& seg = y->next().segments[i];
     
-    if (i < y->numSegs()-1) {
-      Segment& refSeg = y->next().segments[i+1];
-      seg.parallelTransport(prevSeg, refSeg);
+    if (i == 0) {
+      seg.parallelTransport(prevTimeSeg);
     } else {
-      seg.parallelTransport(prevSeg);
+      const Segment& prevSpaceSeg = y->next().segments[i-1];
+      seg.parallelTransport(prevTimeSeg, prevSpaceSeg);
     }
   }
   
@@ -316,10 +316,9 @@ void SimulatorApp::update()
   if (isRotate) {
     twist += 2*constants::pi*c.timestep();
   }
-  
-  float delta = twist/y->numCPs(); // Twist is constant and instant
-  for(int i=1; i<y->numSegs(); i++) {
-    y->next().segments[i].setRot(y->next().segments[i-1].getRot() + delta);
+  y->next().segments[y->numSegs()-1].setRot(twist);
+  if (!integrator->setRotations(*y)) {
+    std::cout << "rotations failed";
   }
   
   // Swap Yarns
@@ -387,7 +386,6 @@ void SimulatorApp::draw()
   
   yarnTex.enableAndBind();
   
-  float totalTwist = 0;
   for (int i=0; i<y->numSegs(); i++) {
     gl::pushModelView();
     const Segment& s = y->cur().segments[i];
@@ -399,11 +397,10 @@ void SimulatorApp::draw()
     if ((q*ci::Vec3f(-1, 0, 0)).dot(toCi(s.v())) > 0) angle *= -1;
     gl::rotate(Quatf(v, angle));
     gl::rotate(q);
-    gl::rotate(ci::Vec3f(0, (s.getRot() - s.getRefTwist() - totalTwist)*180/constants::pi, 0));
+    gl::rotate(ci::Vec3f(0, s.getRot()*180/constants::pi, 0));
     gl::scale(1, s.length(), 1);
     cylinderdl->draw();
     gl::popModelView();
-    totalTwist += s.getRefTwist();
   }
 
   yarnTex.unbind();
@@ -496,7 +493,7 @@ void SimulatorApp::loadStdEnergies() {
   energies.push_back(mouseSpring);
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
-//  energies.push_back(intContact);
+  energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*y, Implicit, 0, 500);
   clamp1->setClamp(y->rest().points[0].pos);
@@ -505,9 +502,9 @@ void SimulatorApp::loadStdEnergies() {
   clamp2->setClamp(y->rest().points[1].pos);
 //  Spring* clamp2 = new Spring(*y, Implicit, 14, 500);
 //  clamp2->setClamp(y->rest().points[14].pos + Eigen::Vector3f(0, -6, 2));
-//  Spring* clamp3 = new Spring(*y, Implicit, 28, 500);
-//  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0, 6, -2));
-Spring* clamp4 = new Spring(*y, Implicit, 42, 500);
+  Spring* clamp3 = new Spring(*y, Implicit, 28, 500);
+  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0, 6, -2));
+  Spring* clamp4 = new Spring(*y, Implicit, 42, 500);
   clamp4->setClamp(y->rest().points[42].pos + Eigen::Vector3f(0, -6, -2));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
@@ -518,8 +515,8 @@ Spring* clamp4 = new Spring(*y, Implicit, 42, 500);
   testSpring1->setClamp(testSpring1Clamp);
   testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50);
   testSpring2->setClamp(testSpring2Clamp);
-  //energies.push_back(testSpring1);
-  //energies.push_back(testSpring2);
+//  energies.push_back(testSpring1);
+//  energies.push_back(testSpring2);
   
   if (integrator) delete integrator;
   integrator = new Integrator(energies);

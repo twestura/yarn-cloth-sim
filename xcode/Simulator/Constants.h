@@ -21,9 +21,15 @@ namespace constants {
   /// Determines the maximum amount of plasticity the centerline of the yarn exhibits.
   const float pPlasticMax = 2.5;
 
-  /// Determines the radius of the yarn.
+  /// The default radius of the yarn.
   const float radius = 0.15;
+  
+  // The default shear modulus of the yarn.
+  const float shearModulus = 6e7;
 
+  // the default Young's modulus of the yarn.
+  const float youngsModulus = 2e7;
+  
   /// Pi. You know the one.
   const float pi = 3.1415926535;
   

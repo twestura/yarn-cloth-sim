@@ -12,6 +12,8 @@
 #include "Segment.h"
 #include <vector>
 
+typedef Eigen::Vector2f Vec2f;
+
 /// A Yarn at a specific point in time.
 struct YarnStr
 {
@@ -26,12 +28,29 @@ public:
 class Yarn
 {
 private:
+  float r = constants::radius;
+  float shearModulus = constants::shearModulus;
+  float youngsModulus = constants::youngsModulus;
+  
+  float xArea = constants::pi * r * r;
+  float tCoeff = xArea * shearModulus * r * r / 2;
+  float sCoeff = xArea * youngsModulus;
+  float bCoeff = xArea * youngsModulus * r * r / 4;
+  
   /// The yarn at rest.
   YarnStr  restYS;
   /// The yarn at the current point in time.
   YarnStr* curYS;
   /// The yarn at the next point in time.
   YarnStr* nextYS;
+  /// The rest Voronoi lengths defined at each internal control point of the yarn.
+  std::vector<float> rvl;
+  /// The rest curvature with respect to the previous edge (﻿﻿omega bar ^i _i)
+  std::vector<Vec2f> rcp;
+  /// The rest curvature with respect to the next edge (omega bar ^i _i+1)
+  std::vector<Vec2f> rcn;
+  /// The rest curvature defined at each internal control point of the yarn.
+  std::vector<Vec2f> rc;
 public:
   /// Constructs a yarn that is initially at rest given a vector of initial positions.
   /// The U vector for the first segment is then propagated down the yarn by parallel transport
@@ -61,8 +80,29 @@ public:
       curYS->segments[i].setU(restYS.segments[i].getU());
       nextYS->segments[i].setU(restYS.segments[i].getU());
     }
+    
+    for (int i=1; i<numCPs()-1; i++) {
+      const Segment& ePrev = restYS.segments[i-1];
+      const Segment& eNext = restYS.segments[i];
+      
+      Vec3f curveBinorm = 2*ePrev.vec().cross(eNext.vec()) /
+      (ePrev.length()*eNext.length() + ePrev.vec().dot(eNext.vec()));
+      
+      CHECK_NAN_VEC(curveBinorm);
+      
+      Vec2f restMatCurvePrev(curveBinorm.dot(ePrev.m2()), -(curveBinorm.dot(ePrev.m1())));
+      Vec2f restMatCurveNext(curveBinorm.dot(eNext.m2()), -(curveBinorm.dot(eNext.m1())));
+      Vec2f restMatCurve = 0.5*(restMatCurvePrev + restMatCurveNext);
+      
+      rcp.push_back(restMatCurvePrev);
+      rcn.push_back(restMatCurveNext);
+      rc.push_back(restMatCurve);
+      rvl.push_back(0.5*(ePrev.length()+eNext.length()));
+    }
   }
   
+  // WARNING: The following methods are safe as long as curYS and nextYS are always allocated upon
+  // construction and are never deleted until destruction.
   /// Get a const reference to the yarn at the current point in time.
   const YarnStr& cur() const  { return *curYS;  }
   /// Get a reference to the yarn at the next point in time.
@@ -85,6 +125,42 @@ public:
     curYS = nextYS;
     nextYS = temp;
   }
+  
+  // Get the rest Voronoi length for an internal control point.
+  const float inline restVoronoiLength(size_t index) const {
+    assert(index > 0 && "Voronoi length undifined at this control point.");
+    return rvl[index-1];
+  }
+  
+  // Get the rest curvature for an internal control point.
+  const Vec2f inline restCurvePrev(size_t index) const {
+    assert(index > 0 && "Curvature undefined at this control point.");
+    return rcp[index-1];
+  }
+  
+  // Get the rest curvature for an internal control point.
+  const Vec2f inline restCurveNext(size_t index) const {
+    assert(index > 0 && "Curvature undefined at this control point.");
+    return rcn[index-1];
+  }
+  
+  // Get the rest curvature for an internal control point.
+  const Vec2f inline restCurve(size_t index) const {
+    assert(index > 0 && "Curvature undefined at this control point.");
+    return rc[index-1];
+  }
+  
+  /// Get the yarn's radius
+  const float inline radius() const { return r; }
+  
+  /// Get the twist coefficient
+  const float inline twistCoeff() const { return tCoeff; }
+  
+  /// Get the stretch coefficient
+  const float inline stretchCoeff() const { return sCoeff; }
+  
+  /// Get the bend coefficient (multiply by the identity matrix to get the bending matrix)
+  const float inline bendCoeff() const { return bCoeff; }
   
   ~Yarn() {
     delete curYS;
