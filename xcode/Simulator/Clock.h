@@ -15,13 +15,13 @@ class Clock
 {
 private:
   /// Current time of the simulation.
-  float t = 0;
+  float t = 0.0f;
   /// Timestep of the model for the next step.
   float h = constants::INITIAL_TIMESTEP;
   
 public:
   /// The timestep will not decrease beyond this value.
-  const float minTimestep = 1e-5;
+  const float minTimestep = 1e-5f;
   /// The timestep cannot be larger than this value.
   const float maxTimestep = constants::INITIAL_TIMESTEP;
   
@@ -44,7 +44,7 @@ const float inline Clock::timestep() const  { return h; }
 void inline Clock::suggestTimestep(float s) { h = fmax(minTimestep, fmin(h, s)); }
 
 void inline Clock::increment() {
-  if (h <= 0) throw;
+  if (h <= 0.0f) throw;
   t += h;
   h = constants::INITIAL_TIMESTEP;
 }

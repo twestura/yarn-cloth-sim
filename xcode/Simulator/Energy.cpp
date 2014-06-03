@@ -9,7 +9,7 @@
 #include "Energy.h"
 
 void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
-  if (value.value() != 0) {
+  if (value.value() != 0.0f) {
     GradFx.push_back(value);
   }
 }
@@ -44,7 +44,7 @@ bool Spring::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>*
   ci::Vec3f ciclamp = toCi(clamp);
   ci::Vec3f ciindex = toCi(y.cur().points[index].pos);
   frames.push_back([ciclamp, ciindex] () {
-    ci::gl::color(1, 0.5, 0);
+    ci::gl::color(1.0f, 0.5f, 0.0f);
     ci::gl::drawLine(ciclamp, ciindex);
   });
   
@@ -97,7 +97,7 @@ bool MouseSpring::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Trip
   ci::Vec3f cimouse = toCi(mouse);
   ci::Vec3f ciindex = toCi(y.cur().points[index].pos);
   frames.push_back([cimouse, ciindex] () {
-    ci::gl::color(1, 0, 0);
+    ci::gl::color(1.0f, 0.0f, 0.0f);
     ci::gl::drawLine(cimouse, ciindex);
   });
   
@@ -162,14 +162,14 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     
     DVector3 dvPrevSeg = dvCurPoint - dvPrevPoint;
     DVector3 dvNextSeg = dvNextPoint - dvCurPoint;
-    assert(dvPrevSeg.norm() != 0 && dvNextSeg.norm() != 0 && "Edge length is 0");
+    assert(dvPrevSeg.norm() != 0.0f && dvNextSeg.norm() != 0.0f && "Edge length is 0");
     
     DVector3 dvPrevSegN = dvPrevSeg.normalized();
     DVector3 dvNextSegN = dvNextSeg.normalized();
     DScalar dotProd = dvPrevSegN.dot(dvNextSegN);
-    assert(dotProd != -1 && "Segments are pointing in exactly opposite directions");
+    assert(dotProd > -1.0f && "Segments are pointing in exactly opposite directions");
     
-    DVector3 dvcurveBinorm = (DScalar(2)*dvPrevSegN.cross(dvNextSegN))/(1+dotProd);
+    DVector3 dvcurveBinorm = (DScalar(2.0f)*dvPrevSegN.cross(dvNextSegN))/(1.0f+dotProd);
     
     Vec3f prevm1 = prevSeg.m1();
     Vec3f prevm2 = prevSeg.m2();
@@ -183,23 +183,23 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     
     DVector2 matCurvePrev(dvcurveBinorm.dot(d2prev), -dvcurveBinorm.dot(d1prev));
     DVector2 matCurveNext(dvcurveBinorm.dot(d2next), -dvcurveBinorm.dot(d1next));
-    DVector2 dvmatCurve = DScalar(0.5)*(matCurvePrev + matCurveNext);
+    DVector2 dvmatCurve = DScalar(0.5f)*(matCurvePrev + matCurveNext);
     
     DVector2 restMatCurve(DScalar(y.restCurve(i).x()), DScalar(y.restCurve(i).y()));
     
     // TODO: bending matrix may not be I
     DVector2 curveDiff = dvmatCurve - restMatCurve;
-    DScalar bendEnergy = (0.5/y.restVoronoiLength(i))*curveDiff.dot(curveDiff);
+    DScalar bendEnergy = (0.5f/y.restVoronoiLength(i))*curveDiff.dot(curveDiff);
     
     Gradient grad = bendEnergy.getGradient();
-    Fx.block<NUM_VARS, 1>(3*(i-1), 0) += h*grad;
+    Fx.block<NUM_VARS, 1>(3*(i-1), 0) += h*y.bendCoeff()*grad;
     //test1.block<9,1>(3*(i-1), 0) += grad;
     
     if (et == Implicit && GradFx) {
       Hessian hess = bendEnergy.getHessian();
       for (int j=0; j<NUM_VARS; j++) {
         for (int k=0; k<NUM_VARS; k++) {
-          float val = h*h*hess(j,k);
+          float val = h*h*y.bendCoeff()*hess(j,k);
           CHECK_NAN(val);
           pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, val));
           pushBackIfNotZero(test1, Triplet(3*(i-1)+j, 3*(i-1)+k, hess(j,k)));
@@ -219,22 +219,22 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     
     Vec3f prevVec   = curPoint - prevPoint;
     Vec3f nextVec   = nextPoint - curPoint;
-    assert(prevVec.norm() > 0 && nextVec.norm() > 0 && "Segment length is zero!");
+    assert(prevVec.norm() > 0.0f && nextVec.norm() > 0.0f && "Segment length is zero!");
     
     // WARNING: assumes that twist in the material curvature changes minimally
     // between Newton iterations. This may not be the case.
     
     Vec3f tPrev = prevVec.normalized();
     Vec3f tNext = nextVec.normalized();
-    float chi = 1 + (tPrev.dot(tNext));
-    assert(chi > 0 && "Segments are pointing in exactly opposite directions!");
+    float chi = 1.0f + (tPrev.dot(tNext));
+    assert(chi > 0.0f && "Segments are pointing in exactly opposite directions!");
     Vec3f tTilde = (tPrev + tNext)/chi;
     Vec3f d1 = prevSeg.m1() + nextSeg.m1();
     Vec3f d1tilde = d1/chi;
     Vec3f d2 = prevSeg.m2() + nextSeg.m2();
     Vec3f d2tilde = d2/chi;
-    Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi; // Verified
-    Vec2f matCurve = 0.5*Vec2f(d2.dot(curveBinorm), -d1.dot(curveBinorm)); // Verified
+    Vec3f curveBinorm = (2.0f*tPrev.cross(tNext))/chi; // Verified
+    Vec2f matCurve = 0.5f*Vec2f(d2.dot(curveBinorm), -d1.dot(curveBinorm)); // Verified
     
     Vec3f gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / prevVec.norm(); // Verified
     Vec3f gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / nextVec.norm(); // Verified
@@ -246,10 +246,10 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     
     Vec2f restCurveVec = y.restCurve(i);
     // b11*2*(k1-restk1) + (b21+b12)(k2-restk2)
-    float k1coeff = 2*(matCurve.x()-restCurveVec.x()); // Verified
+    float k1coeff = 2.0f * (matCurve.x()-restCurveVec.x()); // Verified
     // b22*2*(k2-restk2) + (b21+b12)(k1-restk1)
-    float k2coeff = 2*(matCurve.y()-restCurveVec.y()); // Verified
-    float totalcoeff = 0.5/y.restVoronoiLength(i);
+    float k2coeff = 2.0f * (matCurve.y()-restCurveVec.y()); // Verified
+    float totalcoeff = 0.5f * y.bendCoeff()/y.restVoronoiLength(i);
     
     Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff); // Verified
     Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff); // Verified
@@ -265,40 +265,40 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
       Mat3f tPrevxd1TildextTilde = (tPrev.cross(d1tilde))*tTilde.transpose();
       
       Mat3f d2TildeCross, d1TildeCross;
-      d2TildeCross << 0, -d2tilde.z(), d2tilde.y(),
-      d2tilde.z(), 0, -d2tilde.x(),
-      -d2tilde.y(), d2tilde.x(), 0;
-      d1TildeCross << 0, -d1tilde.z(), d1tilde.y(),
-      d1tilde.z(), 0, -d1tilde.x(),
-      -d1tilde.y(), d1tilde.x(), 0;
+      d2TildeCross << 0.0f, -d2tilde.z(), d2tilde.y(),
+      d2tilde.z(), 0.0f, -d2tilde.x(),
+      -d2tilde.y(), d2tilde.x(), 0.0f;
+      d1TildeCross << 0.0f, -d1tilde.z(), d1tilde.y(),
+      d1tilde.z(), 0.0f, -d1tilde.x(),
+      -d1tilde.y(), d1tilde.x(), 0.0f;
       
-      Mat3f hessK1ePrev2 = 2*matCurve.x()*tTilde2-tNextxd2TildextTilde-tNextxd2TildextTilde.transpose();
+      Mat3f hessK1ePrev2 = 2.0f*matCurve.x()*tTilde2-tNextxd2TildextTilde-tNextxd2TildextTilde.transpose();
       hessK1ePrev2 -= (matCurve.x()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
-      hessK1ePrev2 += 0.25*(curveBinorm*prevSeg.m2().transpose()+prevSeg.m2()*curveBinorm.transpose());
+      hessK1ePrev2 += 0.25f*(curveBinorm*prevSeg.m2().transpose()+prevSeg.m2()*curveBinorm.transpose());
       hessK1ePrev2 /= prevVec.dot(prevVec);
       
-      Mat3f hessK2ePrev2 = 2*matCurve.y()*tTilde2+tNextxd1TildextTilde+tNextxd1TildextTilde.transpose();
+      Mat3f hessK2ePrev2 = 2.0f*matCurve.y()*tTilde2+tNextxd1TildextTilde+tNextxd1TildextTilde.transpose();
       hessK2ePrev2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tPrev*tPrev.transpose()));
-      hessK2ePrev2 += 0.25*(curveBinorm*prevSeg.m1().transpose()+prevSeg.m1()*curveBinorm.transpose());
+      hessK2ePrev2 += 0.25f*(curveBinorm*prevSeg.m1().transpose()+prevSeg.m1()*curveBinorm.transpose());
       hessK2ePrev2 /= prevVec.dot(prevVec);
       
-      Mat3f hessK1eNext2 = 2*matCurve.x()*tTilde2+tPrevxd2TildextTilde+tPrevxd2TildextTilde.transpose();
+      Mat3f hessK1eNext2 = 2.0f*matCurve.x()*tTilde2+tPrevxd2TildextTilde+tPrevxd2TildextTilde.transpose();
       hessK1eNext2 -= (matCurve.x()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
-      hessK1eNext2 += 0.25*(curveBinorm*nextSeg.m2().transpose()+nextSeg.m2()*curveBinorm.transpose());
+      hessK1eNext2 += 0.25f*(curveBinorm*nextSeg.m2().transpose()+nextSeg.m2()*curveBinorm.transpose());
       hessK1eNext2 /= nextVec.dot(nextVec);
       
-      Mat3f hessK2eNext2 = 2*matCurve.y()*tTilde2-tPrevxd1TildextTilde-tPrevxd1TildextTilde.transpose();
+      Mat3f hessK2eNext2 = 2.0f*matCurve.y()*tTilde2-tPrevxd1TildextTilde-tPrevxd1TildextTilde.transpose();
       hessK2eNext2 -= (matCurve.y()/chi)*(Mat3f::Identity() - (tNext*tNext.transpose()));
-      hessK2eNext2 += 0.25*(curveBinorm*nextSeg.m1().transpose()+nextSeg.m1()*curveBinorm.transpose());
+      hessK2eNext2 += 0.25f*(curveBinorm*nextSeg.m1().transpose()+nextSeg.m1()*curveBinorm.transpose());
       hessK2eNext2 /= nextVec.dot(nextVec);
       
       Mat3f hessK1ePreveNext = (-matCurve.x()/chi)*(Mat3f::Identity() + (tPrev * tNext.transpose()));
-      hessK1ePreveNext += (2*matCurve.x()*tTilde2) - tNextxd2TildextTilde + tPrevxd2TildextTilde.transpose();
+      hessK1ePreveNext += (2.0f*matCurve.x()*tTilde2) - tNextxd2TildextTilde + tPrevxd2TildextTilde.transpose();
       hessK1ePreveNext -= d2TildeCross;
       hessK1ePreveNext /= (nextVec.norm() * prevVec.norm());
       
       Mat3f hessK2ePreveNext = (-matCurve.y()/chi)*(Mat3f::Identity() + (tPrev * tNext.transpose()));
-      hessK2ePreveNext += (2*matCurve.y()*tTilde2) - tNextxd1TildextTilde + tPrevxd1TildextTilde.transpose();
+      hessK2ePreveNext += (2.0f*matCurve.y()*tTilde2) - tNextxd1TildextTilde + tPrevxd1TildextTilde.transpose();
       hessK2ePreveNext -= d1TildeCross;
       hessK2ePreveNext /= (nextVec.norm() * prevVec.norm());
       
@@ -314,15 +314,15 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
        //    TVec3 tenext = TVec3(TDS(0, dNextSeg.x()), TDS(1, dNextSeg.y()), TDS(3, dNextSeg.z()));
        TVec3 ttprev = teprev.normalized();
        TVec3 ttnext = tenext.normalized();
-       TDS tchi = ttprev.dot(ttnext) + 1;
-       TVec3 tkb = TDS(2)*(ttprev.cross(ttnext)) / tchi;
+       TDS tchi = ttprev.dot(ttnext) + 1.0f;
+       TVec3 tkb = TDS(2.0f)*(ttprev.cross(ttnext)) / tchi;
        TDS tk1 = TDS(0.5)*TVec3(TDS(d2.x()), TDS(d2.y()), TDS(d2.z())).dot(tkb);
        TDS tk2 = TDS(-.5)*TVec3(TDS(d1.x()), TDS(d1.y()), TDS(d1.z())).dot(tkb);
        //    Eigen::Matrix<float, 3, 2> t;
        //    t << tk2.getGradient(), gradK2eNext;
        //    std::cout << t << "\n\n";
        Mat3f tdiff = tk1.getHessian() - hessK1ePrev2;
-       if (tdiff.cwiseAbs().maxCoeff() >= 1)
+       if (tdiff.cwiseAbs().maxCoeff() >= 1.0f)
        std::cout << tdiff << "\n\n";
        // std::cout << tdiff.norm() << " / " << tk1.getHessian().cwiseAbs().maxCoeff() << "\n";
        */
@@ -335,28 +335,28 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
       
       Mat3f block[9];
       
-      block[0] = k1coeff*hessK1ePrev2 + k2coeff*hessK2ePrev2 + 2*(gradK1ePrev*gradK1ePrev.transpose() + gradK2ePrev*gradK2ePrev.transpose());
+      block[0] = k1coeff*hessK1ePrev2 + k2coeff*hessK2ePrev2 + 2.0f*(gradK1ePrev*gradK1ePrev.transpose() + gradK2ePrev*gradK2ePrev.transpose());
       
       block[1] = k1coeff*(hessK1ePreveNext-hessK1ePrev2) + k2coeff*(hessK2ePreveNext-hessK2ePrev2)
-      + 2*(-gradK1ePrev*(gradK1ePrev-gradK1eNext).transpose() + -gradK2ePrev*(gradK2ePrev-gradK2eNext).transpose());
+      + 2.0f*(-gradK1ePrev*(gradK1ePrev-gradK1eNext).transpose() + -gradK2ePrev*(gradK2ePrev-gradK2eNext).transpose());
       
-      block[2] = -k1coeff*hessK1ePreveNext - k2coeff*hessK2ePreveNext + 2*(-gradK1ePrev*gradK1eNext.transpose() + -gradK2ePrev*gradK2eNext.transpose());
+      block[2] = -k1coeff*hessK1ePreveNext - k2coeff*hessK2ePreveNext + 2.0f*(-gradK1ePrev*gradK1eNext.transpose() + -gradK2ePrev*gradK2eNext.transpose());
       
-      block[3] = k1coeff*(hessK1ePreveNext.transpose() - hessK1ePrev2) + k2coeff*(hessK2ePreveNext.transpose() - hessK2ePrev2) + 2*((gradK1ePrev-gradK1eNext)*-gradK1ePrev.transpose() + (gradK2ePrev-gradK2eNext)*-gradK2ePrev.transpose());
+      block[3] = k1coeff*(hessK1ePreveNext.transpose() - hessK1ePrev2) + k2coeff*(hessK2ePreveNext.transpose() - hessK2ePrev2) + 2.0f*((gradK1ePrev-gradK1eNext)*-gradK1ePrev.transpose() + (gradK2ePrev-gradK2eNext)*-gradK2ePrev.transpose());
       
       block[4] = k1coeff*(hessK1ePrev2 + hessK1eNext2 - hessK1ePreveNext - hessK1ePreveNext.transpose()) +
       k2coeff*(hessK2ePrev2 + hessK2eNext2 - hessK2ePreveNext - hessK2ePreveNext.transpose()) +
-      2*((gradK1ePrev-gradK1eNext)*(gradK1ePrev-gradK1eNext).transpose() + (gradK2ePrev-gradK2eNext)*(gradK2ePrev-gradK2eNext).transpose());
+      2.0f*((gradK1ePrev-gradK1eNext)*(gradK1ePrev-gradK1eNext).transpose() + (gradK2ePrev-gradK2eNext)*(gradK2ePrev-gradK2eNext).transpose());
       
       block[5] = k1coeff*(hessK1ePreveNext - hessK1eNext2) + k2coeff*(hessK2ePreveNext - hessK2eNext2)
-      + 2*((gradK1ePrev-gradK1eNext)*gradK1eNext.transpose() + (gradK2ePrev-gradK2eNext)*gradK2eNext.transpose());
+      + 2.0f*((gradK1ePrev-gradK1eNext)*gradK1eNext.transpose() + (gradK2ePrev-gradK2eNext)*gradK2eNext.transpose());
       
       block[6] = -k1coeff*hessK1ePreveNext.transpose() - k2coeff*hessK2ePreveNext.transpose()
-      + 2*(gradK1eNext*-gradK1ePrev.transpose() + gradK2eNext*-gradK2ePrev.transpose());
+      + 2.0f*(gradK1eNext*-gradK1ePrev.transpose() + gradK2eNext*-gradK2ePrev.transpose());
       
-      block[7] = k1coeff*(hessK1ePreveNext.transpose()-hessK1eNext2) + k2coeff*(hessK2ePreveNext.transpose()-hessK2eNext2) + 2*(gradK1eNext*(gradK1ePrev-gradK1eNext).transpose() + gradK2eNext*(gradK2ePrev-gradK2eNext).transpose());
+      block[7] = k1coeff*(hessK1ePreveNext.transpose()-hessK1eNext2) + k2coeff*(hessK2ePreveNext.transpose()-hessK2eNext2) + 2.0f*(gradK1eNext*(gradK1ePrev-gradK1eNext).transpose() + gradK2eNext*(gradK2ePrev-gradK2eNext).transpose());
       
-      block[8] = k1coeff*hessK1eNext2 + k2coeff*hessK2eNext2 + 2*(gradK1eNext*gradK1eNext.transpose() + gradK2eNext*gradK2eNext.transpose());
+      block[8] = k1coeff*hessK1eNext2 + k2coeff*hessK2eNext2 + 2.0f*(gradK1eNext*gradK1eNext.transpose() + gradK2eNext*gradK2eNext.transpose());
       
       
       for(int j=0; j<3; j++) {
@@ -458,15 +458,15 @@ void Stretching::suggestTimestep(Clock& c) {
     if (ratio > maxStrain) maxStrain = ratio;
     if (ratio < minStrain) minStrain = ratio;
   }
-  if (maxStrain >= 2 || minStrain <= 0.5) {
+  if (maxStrain >= 2.0f || minStrain <= 0.5f) {
     c.suggestTimestep(c.minTimestep);
-  } else if (maxStrain <= 1.3 && minStrain >= 0.77) {
+  } else if (maxStrain <= 1.3f && minStrain >= 0.77f) {
     c.suggestTimestep(c.maxTimestep);
   } else { // lerp between min and max timesteps
-    float alpha = (maxStrain - 1.3) / (2 - 1.3);
-    float beta  = 1 - ((minStrain - 0.5) / (0.77 - 0.5));
+    float alpha = (maxStrain - 1.3f) / (2.0f - 1.3f);
+    float beta  = 1.0f - ((minStrain - 0.5f) / (0.77f - 0.5f));
     float gamma = fmax(alpha, beta);
-    c.suggestTimestep(c.minTimestep*gamma+c.maxTimestep*(1-gamma));
+    c.suggestTimestep(c.minTimestep*gamma+c.maxTimestep*(1.0f-gamma));
   }
    */
 }
@@ -502,8 +502,8 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
                         DScalar(4, nextPoint.y()),
                         DScalar(5, nextPoint.z()));
     
-    DScalar axialStrain = (dNextPoint - dPrevPoint).norm()/restSegLength - 1;
-    DScalar stretchEnergy = (0.5 * restSegLength) * axialStrain * axialStrain;
+    DScalar axialStrain = (dNextPoint - dPrevPoint).norm()/restSegLength - 1.0f;
+    DScalar stretchEnergy = (0.5f * restSegLength) * axialStrain * axialStrain;
     
     Gradient grad = stretchEnergy.getGradient();
     
@@ -524,16 +524,16 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
 
     Vec3f ej = nextPoint - prevPoint;
     float l = ej.norm();
-    Vec3f myGrad = ((1/restSegLength) - (1 / l)) * ej; // Verified
+    Vec3f myGrad = ((1.0f/restSegLength) - (1.0f/l)) * ej; // Verified
      
     /*
     typedef DScalar2<float, 3, Vec3f, Mat3f> TDS;
     typedef TDS::DVector3 TVec3;
     typedef TDS::DVector2 TVec2;
     TVec3 te(TDS(0, ej.x()), TDS(1, ej.y()), TDS(2, ej.z()));
-    TDS tas = te.norm() / restSegLength - 1;
+    TDS tas = te.norm() / restSegLength - 1.0f;
     Vec3f diff = tas.getGradient() - ej/ej.norm()/restSegLength;
-    if (diff.norm() > 1e-5) {
+    if (diff.norm() > 1e-5f) {
       std::cout << "axial strain badness: " << diff << "\n";
     }
     */
@@ -542,7 +542,7 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
     Gradient graddiff = grad;
     graddiff.block<3,1>(0, 0) += myGrad;
     graddiff.block<3,1>(3, 0) -= myGrad;
-    if (graddiff.norm() > 1e-7) std::cout << "stretch error: " << graddiff << "\n\n";
+    if (graddiff.norm() > 1e-7f) std::cout << "stretch error: " << graddiff << "\n\n";
      */
     
     /*
@@ -551,7 +551,7 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
     diff.block<3,3>(3,0) += myHess;
     diff.block<3,3>(0,3) += myHess;
     diff.block<3,3>(3,3) -= myHess;
-    if (diff.norm() > .005) {
+    if (diff.norm() > .005f) {
       std::cout << "stretch error:\n" << diff << "\n\n";
     } else {
       std::cout << "success!\n";
@@ -603,18 +603,20 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     
     Vec3f tPrev = segPrev.vec().normalized();
     Vec3f tNext = segNext.vec().normalized();
-    float chi = 1+tPrev.dot(tNext);
-    assert(chi > 0 && "Segments are pointing in exactly opposite directions!");
-    Vec3f curveBinorm = (2*tPrev.cross(tNext))/chi;
+    float chi = 1.0f+tPrev.dot(tNext);
+    assert(chi > 0.0f && "Segments are pointing in exactly opposite directions!");
+    Vec3f curveBinorm = (2.0f*tPrev.cross(tNext))/chi;
     float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() - (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
     Vec3f dxi = curveBinorm / y.rest().segments[i].length() - curveBinorm / y.rest().segments[i-1].length();
     Fx.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * dxi;
     
 #ifdef DRAW_TWIST
-    ci::Vec3f s = toCi(y.cur().points[i].pos);
-    ci::Vec3f e = toCi(y.cur().points[i].pos - c.timestep() * dThetaHat * dxi);
-    frames.push_back([s, e] () {
-      ci::gl::color(ci::Color(1, 0.5, 0.5));
+    ci::Vec3f delta = toCi(c.timestep() * dThetaHat * dxi);
+    const Yarn* yp = &y;
+    if (delta.length() > 0.0f) frames.push_back([i, delta, yp] () {
+      ci::Vec3f s = toCi(yp->cur().points[i].pos);
+      ci::Vec3f e = s - delta;
+      ci::gl::color(ci::Color(1.0f, 0.5f, 0.5f));
       ci::gl::drawVector(s, e);
     });
 #endif // ifdef DRAW_TWIST
@@ -629,7 +631,7 @@ IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 // FIXME: This is hacky and slow
 void IntContact::suggestTimestep(Clock& c) {
   /*
-  float minDist = 1e6;
+  float minDist = 1e6f;
   const float r = constants::radius;
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+2; j<y.numSegs(); j++) {
@@ -644,8 +646,8 @@ void IntContact::suggestTimestep(Clock& c) {
       Vec3f e2p1 = e2.getFirst().pos;
       Vec3f e2p2 = e2.getSecond().pos;
       
-      Vec3f e1mid = (e1p1 + e1p2) / 2;
-      Vec3f e2mid = (e2p1 + e2p2) / 2;
+      Vec3f e1mid = (e1p1 + e1p2) / 2.0f;
+      Vec3f e2mid = (e2p1 + e2p2) / 2.0f;
       
       if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) continue;
       
@@ -670,7 +672,7 @@ void IntContact::suggestTimestep(Clock& c) {
       }
     }
   }
-  c.suggestTimestep(minDist / (4 * r) * constants::INITIAL_TIMESTEP);
+  c.suggestTimestep(minDist / (4.0f * r) * constants::INITIAL_TIMESTEP);
    */
   YarnEnergy::suggestTimestep(c);
 }
@@ -704,8 +706,8 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
         e2p2 += h*(dqdot.block<3,1>(3*(j+1), 0) + e2.getSecond().vel);
       }
       
-      Vec3f e1mid = (e1p1 + e1p2) / 2;
-      Vec3f e2mid = (e2p1 + e2p2) / 2;
+      Vec3f e1mid = (e1p1 + e1p2) / 2.0f;
+      Vec3f e2mid = (e2p1 + e2p2) / 2.0f;
       
       if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) {
         if (ptd) {
@@ -790,13 +792,13 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
           Vec3f v = p2 - p1; // FIXME: shouldn't this be p1 - p2??
           float norm = v.norm();
           if (norm > 2*r) continue; // Quadratures are not touching, will eval to 0
-          Vec4f u1(t1*t1*t1, t1*t1, t1, 1);
-          Vec4f u2(t2*t2*t2, t2*t2, t2, 1);
+          Vec4f u1(t1*t1*t1, t1*t1, t1, 1.0f);
+          Vec4f u2(t2*t2*t2, t2*t2, t2, 1.0f);
           
-          float dfnorm = df(norm / 2 / r) / 2 / r;
+          float dfnorm = df(norm / 2.0f / r) / 2.0f / r;
           Vec3f gradBase = v/norm * dfnorm;
           
-          float d2fnorm = d2f(norm / 2 / r) / 4 / r / r;
+          float d2fnorm = d2f(norm / 2.0f / r) / 4.0f / r / r;
           Mat3f grad2Base = v*v.transpose()/norm/norm;
           Mat3f hessBase = (Mat3f::Identity() - grad2Base) * dfnorm / norm + grad2Base * d2fnorm;
           
@@ -847,7 +849,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
           thess.block<3,3>(0, 3) += u1.dot(constants::basis[0]) * u2.dot(constants::basis[0]) * tgrad2;
           thess.block<3,3>(3, 3) -= u2.dot(constants::basis[0]) * u2.dot(constants::basis[0]) * tgrad2;
         
-          if (thess.norm() > 1e-5) {
+          if (thess.norm() > 1e-5f) {
             std::cout << "contact badness:\n" << thess << "\n\n";
           } else {
             std::cout << "contact success\n";
@@ -913,7 +915,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
         ci::Vec3f s2start = toCi(y.cur().points[j-1+k].pos);
         ci::Vec3f s2end = toCi(y.cur().points[j-1+k].pos + s2draw[k]);
         frames.push_back([s1start, s1end, s2start, s2end] () {
-          ci::gl::color(ci::Color(0, 1, 0));
+          ci::gl::color(ci::Color(0.0f, 1.0f, 0.0f));
           ci::gl::drawVector(s1start, s1end);
           ci::gl::drawVector(s2start, s2end);
         });

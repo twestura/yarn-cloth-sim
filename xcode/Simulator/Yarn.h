@@ -33,9 +33,9 @@ private:
   float youngsModulus = constants::youngsModulus;
   
   float xArea = constants::pi * r * r;
-  float tCoeff = xArea * shearModulus * r * r / 2;
+  float tCoeff = xArea * shearModulus * r * r / 2.0f;
   float sCoeff = xArea * youngsModulus;
-  float bCoeff = xArea * youngsModulus * r * r / 4;
+  float bCoeff = 1.0f; // xArea * youngsModulus * r * r / 4.0f;
   
   /// The yarn at rest.
   YarnStr  restYS;
@@ -92,12 +92,12 @@ public:
       
       Vec2f restMatCurvePrev(curveBinorm.dot(ePrev.m2()), -(curveBinorm.dot(ePrev.m1())));
       Vec2f restMatCurveNext(curveBinorm.dot(eNext.m2()), -(curveBinorm.dot(eNext.m1())));
-      Vec2f restMatCurve = 0.5*(restMatCurvePrev + restMatCurveNext);
+      Vec2f restMatCurve = 0.5f*(restMatCurvePrev + restMatCurveNext);
       
       rcp.push_back(restMatCurvePrev);
       rcn.push_back(restMatCurveNext);
       rc.push_back(restMatCurve);
-      rvl.push_back(0.5*(ePrev.length()+eNext.length()));
+      rvl.push_back(0.5f*(ePrev.length()+eNext.length()));
     }
   }
   

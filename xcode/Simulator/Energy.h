@@ -98,19 +98,19 @@ public:
 class IntContact : public YarnEnergy {
 private:
   static inline float f(float d) {
-    return d >= 1 ? 0 : 1/d/d + d*d - 2;
+    return d >= 1.0f ? 0.0f : 1.0f/d/d + d*d - 2.0f;
   }
   
   static inline float df(float d) {
-    return d >= 1 ? 0 : -2/d/d/d + 2*d;
+    return d >= 1.0f ? 0.0f : -2.0f/d/d/d + 2.0f*d;
   }
   
   static inline float d2f(float d) {
-    return d >= 1 ? 0 : 6/d/d/d/d + 2;
+    return d >= 1.0f ? 0.0f : 6.0f/d/d/d/d + 2.0f;
   }
   
   const int nb = 24;
-  const float contactMod = .1;
+  const float contactMod = 0.1f;
 
   PTDetector* ptd = nullptr;
   

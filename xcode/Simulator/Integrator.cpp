@@ -9,16 +9,19 @@
 #include "Integrator.h"
 #include <boost/timer.hpp>
 
-const float ConvergenceThreshold = 0.5;
-const float ConvergenceTolerance = 50;
-
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 DECLARE_PROFILER();
 
+#define DRAW_INTEGRATOR
+// #define NEWMARK_BETA
 bool Integrator::integrate(Yarn& y, Clock& c) {
-  frames.clear();
-  
   Profiler::start("Total");
+  
+#ifdef DRAW_INTEGRATOR
+  frames.clear();
+#endif // ifdef DRAW_INTEGRATOR
+  const float ConvergenceThreshold = 0.0125f * y.numCPs();
+  const float ConvergenceTolerance = 1.25f * y.numCPs();
   
   // Compute timestep
   for (YarnEnergy* e : energies) {
@@ -78,7 +81,7 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
       // TODO: Mass matrix may not be I
       for (int i=0; i<NumEqs; i++) {
         Fx(i) += dqdot(i) + FxEx(i);
-        triplets.push_back(Triplet(i, i, 1));
+        triplets.push_back(Triplet(i, i, 1.0f));
       }
       
       // Solve equations for updates to changes in position and velocity using Conjugate Gradient
@@ -97,7 +100,7 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
       if (cg.info() == Eigen::NoConvergence) {
         if (c.canDecreaseTimestep()) {
           Profiler::stop("CG Solver");
-          c.suggestTimestep(c.timestep()/2);
+          c.suggestTimestep(c.timestep()/2.0f);
           std::cout << "Warning: No convergence in CG solver. New timestep: " << c.timestep() << "\n";
           std::cout << "GradFx max coeff: " << GradFx.toDense().maxCoeff() << "\n";
           evalSuccess = false;
@@ -131,15 +134,17 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
         
         if (residual < ConvergenceTolerance) newtonConverge = true;
         
+#ifdef DRAW_INTEGRATOR
         float maxcoeff = error.maxCoeff();
         Yarn* yp = &y;
         for (int i=0; i<y.numCPs(); i++) {
           Vec3f curerror = error.block<3,1>(3*i, 0);
           frames.push_back([yp, i, maxcoeff, curerror] () {
-            ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7);
-            ci::gl::drawSphere(toCi(yp->cur().points[i].pos), constants::radius*2);
+            ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7f);
+            ci::gl::drawSphere(toCi(yp->cur().points[i].pos), constants::radius*2.0f);
           });
         }
+#endif // ifdef DRAW_INTEGRATOR
         
         break;
       }
@@ -148,29 +153,28 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
     
     // Update yarn positions
     if (newtonConverge) {
-// #define NEWMARK_BETA
 #ifdef NEWMARK_BETA
     // Newmark-Beta update
-    const float gamma = 0.5;
-    const float beta = 0.25;
-    for (int i=0; i<y.numCPs(); i++) {
-      Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
-      y.next().points[i].vel = y.cur().points[i].vel + (1-gamma)*y.cur().points[i].accel + gamma*curdqdot;
-      y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*(y.cur().points[i].vel +
-                                                                     (1-2*beta)/2*y.cur().points[i].accel +
-                                                                     beta*curdqdot);
-      y.next().points[i].accel = curdqdot;
-    }
+      const float gamma = 0.5f;
+      const float beta = 0.25f;
+      for (int i=0; i<y.numCPs(); i++) {
+        Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
+        y.next().points[i].vel = y.cur().points[i].vel + (1.0f-gamma)*y.cur().points[i].accel + gamma*curdqdot;
+        y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*(y.cur().points[i].vel +
+                                                                       (1.0f-2.0f*beta)/2.0f*y.cur().points[i].accel +
+                                                                       beta*curdqdot);
+        y.next().points[i].accel = curdqdot;
+      }
     
 #else // ifdef NEWMARK_BETA
     
-    // Update changes to position and velocity
-    for (int i=0; i<y.numCPs(); i++) {
-      Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
-      y.next().points[i].vel = y.cur().points[i].vel + curdqdot;
-      y.next().points[i].pos = c.timestep()*y.next().points[i].vel + y.cur().points[i].pos;
-    }
-    
+      // Update changes to position and velocity
+      for (int i=0; i<y.numCPs(); i++) {
+        Vec3f curdqdot = dqdot.block<3, 1>(3*i, 0);
+        y.next().points[i].vel = y.cur().points[i].vel + curdqdot;
+        y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*y.next().points[i].vel;
+      }
+      
 #endif // ifdef NEWMARK_BETA
     }
   }
@@ -186,7 +190,7 @@ bool Integrator::integrate(Yarn& y, Clock& c) {
 void static calcRotEqs(const Yarn& y, const VecXf& rot, const std::vector<Vec3f>& curveBinorm,
                       VecXf& grad, std::vector<Triplet>& triplets) {
   Eigen::Matrix2f J;
-  J << 0, -1, 1, 0;
+  J << 0.0f, -1.0f, 1.0f, 0.0f;
   // This assumes the yarn is isotropic
   for (int i=1; i<y.numSegs()-1; i++) {
     const Segment& s = y.next().segments[i];
@@ -194,31 +198,29 @@ void static calcRotEqs(const Yarn& y, const VecXf& rot, const std::vector<Vec3f>
     Vec3f m2 = -sin(rot(i)) * s.getU() + cos(rot(i)) * s.v();
     Vec2f curvePrev(curveBinorm[i-1].dot(m2), -curveBinorm[i-1].dot(m1)); // omega ^i _i
     Vec2f curveNext(curveBinorm[i].dot(m2), -curveBinorm[i].dot(m1)); // omega ^i _i+1
-    float dWprev = y.bendCoeff() / y.restVoronoiLength
-    
-    (i) * curvePrev.dot(J * (curvePrev - y.restCurveNext(i)));
+    float dWprev = y.bendCoeff() / y.restVoronoiLength(i) * curvePrev.dot(J * (curvePrev - y.restCurveNext(i)));
     float dWnext = y.bendCoeff() / y.restVoronoiLength(i+1) * curveNext.dot(J * (curveNext - y.restCurvePrev(i+1)));
     float twistPrev = rot(i) - rot(i-1) + y.next().segments[i].getRefTwist();
     float twistNext = rot(i+1) - rot(i) + y.next().segments[i+1].getRefTwist();
-    grad(i-1) = -(dWprev + dWnext + 2*y.twistCoeff()*(twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
+    grad(i-1) = -(dWprev + dWnext + 2.0f*y.twistCoeff()*(twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
     
-    float hess = 2*y.twistCoeff()/y.restVoronoiLength(i) + 2*y.twistCoeff()/y.restVoronoiLength(i+1);
+    float hess = 2.0f*(y.twistCoeff()/y.restVoronoiLength(i) + y.twistCoeff()/y.restVoronoiLength(i+1));
     hess += y.bendCoeff()/y.restVoronoiLength(i) * (curvePrev.dot(curvePrev) - curvePrev.dot(curvePrev - y.restCurveNext(i)));
     hess += y.bendCoeff()/y.restVoronoiLength(i+1) * (curveNext.dot(curveNext) - curveNext.dot(curveNext - y.restCurvePrev(i+1)));
     triplets.push_back(Triplet(i-1, i-1, hess));
     
     // TODO: These are constant throughout the simulation.
     if (i > 1) {
-      triplets.push_back(Triplet(i-1, i-2, -2*y.twistCoeff()/y.restVoronoiLength(i)));
+      triplets.push_back(Triplet(i-1, i-2, -2.0f*y.twistCoeff()/y.restVoronoiLength(i)));
     }
     if (i < y.numSegs()-2) {
-      triplets.push_back(Triplet(i-1, i, -2*y.twistCoeff()/y.restVoronoiLength(i+1)));
+      triplets.push_back(Triplet(i-1, i, -2.0f*y.twistCoeff()/y.restVoronoiLength(i+1)));
     }
   }
 }
 
 bool Integrator::setRotations(Yarn& y) const {
-  const float newtonThreshold = 0.5; // FIXME: this is pretty arbitrary
+  const float newtonThreshold = 0.025f * y.numSegs();
   std::vector<Triplet> triplets;
   Eigen::SparseMatrix<float> hess(y.numSegs()-2, y.numSegs()-2);
   VecXf rot(y.numSegs());
@@ -231,8 +233,8 @@ bool Integrator::setRotations(Yarn& y) const {
   for (int i=1; i<y.numCPs()-1; i++) {
     Vec3f tPrev = y.next().segments[i-1].vec().normalized();
     Vec3f tNext = y.next().segments[i].vec().normalized();
-    float chi = 1 + (tPrev.dot(tNext));
-    curveBinorm.push_back(2*tPrev.cross(tNext)/chi);
+    float chi = 1.0f + (tPrev.dot(tNext));
+    curveBinorm.push_back(2.0f*tPrev.cross(tNext)/chi);
   }
   int newtonIterations = 0;
   
@@ -241,7 +243,7 @@ bool Integrator::setRotations(Yarn& y) const {
     calcRotEqs(y, rot, curveBinorm, grad, triplets);
     float resid = grad.norm();
     if (resid < newtonThreshold || newtonIterations > 4) {
-      if (resid > 25) { return false; } // FIXME: The 25 is arbitrary.
+      if (resid > 0.625f * y.numSegs()) { return false; }
       newtonConverge = true;
       break;
     }

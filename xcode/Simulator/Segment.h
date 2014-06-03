@@ -23,11 +23,11 @@ class Segment
   /// The u vector of the twist-free reference (Bishop) frame.
   Vec3f u;
   /// Rotation in radians of the material frame.
-  float rot = 0;
+  float rot = 0.0f;
   /// Twist in radians from reference frame parallel transport through time.
-  float refTwist = 0;
+  float refTwist = 0.0f;
   /// The number of full (2*pi) twists in the reference frame.
-  int numTwists = 0;
+  int numTwists = 0.0f;
   
 public:
   /// Default Segment constructor
@@ -66,13 +66,13 @@ public:
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
-  const float getRefTwist() const { return refTwist + 2*constants::pi*numTwists; }
+  const float getRefTwist() const { return refTwist + 2.0f*constants::pi*numTwists; }
   
   /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
   Vec3f static parallelTransport(const Vec3f vecPrev, const Vec3f vecCur, const Vec3f uPrev) {
     Vec3f cross = vecPrev.cross(vecCur).normalized();
     float twist = acos(vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm()));
-    if (cross.allFinite() && twist > .00001) {
+    if (cross.allFinite() && twist > .00001f) {
       Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
       return q * uPrev;
     }
@@ -99,15 +99,15 @@ public:
     float cosTwist = u.normalized().dot(uRef.normalized());
     // Now find the angle between the reference (space-parallel transported u) and this.u
     float oldTwist = refTwist;
-    if (cosTwist >= 1) { // Avoid values like 1.0000000012 that introduce NaNs
-      refTwist = 0;
-    } else if (cosTwist <= -1) {
+    if (cosTwist >= 1.0f) { // Avoid values like 1.0000000012 that introduce NaNs
+      refTwist = 0.0f;
+    } else if (cosTwist <= -1.0f) {
       refTwist = constants::pi;
     } else {
       refTwist = acos(cosTwist);
     }
     // Flip the sign if necessary
-    if (v().normalized().dot(uRef) > 0) {
+    if (v().normalized().dot(uRef) > 0.0f) {
       refTwist = -refTwist;
     }
     CHECK_NAN(refTwist);

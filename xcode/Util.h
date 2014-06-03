@@ -36,7 +36,7 @@ struct Threadpool
 };
 
 /// Convenience method for checking if two floats are within some epsilon of each other.
-static inline bool is_approx(float f1, float f2, float eps = 1e-5) {
+static inline bool is_approx(float f1, float f2, float eps = 1e-5f) {
   return std::abs(f1 - f2) < eps;
 }
 
@@ -49,7 +49,7 @@ const ci::Vec3f static inline toCi(const Eigen::Vector3f& v) {
 class Profiler {
   struct Stopwatch {
     boost::timer t;
-    double e = 0;
+    double e = 0.0;
     bool running = true;
   };
   
@@ -87,7 +87,7 @@ public:
     TimerMap::iterator it = map.find(name);
     assert(it != map.end() && "Timer doesn't exist!");
     it->second.t.restart();
-    it->second.e = 0;
+    it->second.e = 0.0;
   }
   
   /// Returns the amount of time (in seconds) that the given timer has recorded. The timer must
