@@ -15,7 +15,7 @@
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7101FBBF18595AA9008553D8 /* PosFileConv.cpp */; };
-		71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
+		7116A445193E64FD006278C8 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
 		71197EF31911758B003D1E8D /* sim-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* sim-vert.glsl */; };
 		71197EF6191175E6003D1E8D /* sim-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* sim-frag.glsl */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
@@ -27,9 +27,12 @@
 		714D114219140FAC00C8B1BD /* yarnTex.png in Resources */ = {isa = PBXBuildFile; fileRef = 714D114119140FAC00C8B1BD /* yarnTex.png */; };
 		714D114319140FBE00C8B1BD /* yarnTex.png in Resources */ = {isa = PBXBuildFile; fileRef = 714D114119140FAC00C8B1BD /* yarnTex.png */; };
 		715454C4188495D300F2C196 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715454C3188495D200F2C196 /* Common.cpp */; };
-		715D32B718FC60490061154E /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
-		71A93CCC192A4FF70030A80B /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
+		719F3A95193E71B30096FC24 /* SimulatorApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */; };
+		719F3A96193E71B30096FC24 /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
+		719F3A97193E71B30096FC24 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
+		719F3A98193E71B30096FC24 /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
+		719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
 		71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
@@ -44,10 +47,7 @@
 		71CAE64718C78B7A002C9FD3 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B00FF439BC000DE1D7 /* AudioToolbox.framework */; };
 		71CAE64818C78B7A002C9FD3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B10FF439BC000DE1D7 /* AudioUnit.framework */; };
 		71CAE64918C78B7A002C9FD3 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
-		71CAE65518C78D7E002C9FD3 /* SimulatorApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */; };
-		71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F945C3F150C458FB3352920 /* VisualizerApp.cpp */; };
 		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
 /* End PBXBuildFile section */
 
@@ -62,62 +62,53 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		5323E6B50EAFCA7E003A9687 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
-		55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = Visualizer_Prefix.pch; sourceTree = "<group>"; };
+		55457FF66E734604AB0FECF7 /* Visualizer_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Visualizer_Prefix.pch; path = ../src/Visualizer/Headers/Visualizer_Prefix.pch; sourceTree = "<group>"; };
 		5F70902D1A5C4662889367FC /* Resources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
 		6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
-		7101FBBF18595AA9008553D8 /* PosFileConv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PosFileConv.cpp; sourceTree = "<group>"; };
-		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PosFileConv.h; sourceTree = "<group>"; };
+		7101FBBF18595AA9008553D8 /* PosFileConv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PosFileConv.cpp; path = ../src/Visualizer/Source/PosFileConv.cpp; sourceTree = "<group>"; };
+		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PosFileConv.h; path = ../src/Visualizer/Headers/PosFileConv.h; sourceTree = "<group>"; };
 		71197EED190ABB18003D1E8D /* PTDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTDetector.cpp; sourceTree = "<group>"; };
-		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTDetector.h; sourceTree = "<group>"; };
-		71197EF11911758B003D1E8D /* sim-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert.glsl"; path = "Simulator/sim-vert.glsl"; sourceTree = "<group>"; };
-		71197EF4191175E6003D1E8D /* sim-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag.glsl"; path = "Simulator/sim-frag.glsl"; sourceTree = "<group>"; };
-		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InfoPanel.cpp; sourceTree = "<group>"; };
-		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InfoPanel.h; sourceTree = "<group>"; };
+		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PTDetector.h; path = Headers/PTDetector.h; sourceTree = "<group>"; };
+		71197EF11911758B003D1E8D /* sim-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert.glsl"; path = "../resources/sim-vert.glsl"; sourceTree = "<group>"; };
+		71197EF4191175E6003D1E8D /* sim-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag.glsl"; path = "../resources/sim-frag.glsl"; sourceTree = "<group>"; };
+		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = InfoPanel.cpp; path = ../src/Visualizer/Source/InfoPanel.cpp; sourceTree = "<group>"; };
+		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = InfoPanel.h; path = ../src/Visualizer/Headers/InfoPanel.h; sourceTree = "<group>"; };
 		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
 		714D11391914073F00C8B1BD /* sim-vert-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert-tex.glsl"; path = "../resources/sim-vert-tex.glsl"; sourceTree = "<group>"; };
 		714D113E1914094600C8B1BD /* yarnTex.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = yarnTex.tga; path = ../resources/yarnTex.tga; sourceTree = "<group>"; };
 		714D114119140FAC00C8B1BD /* yarnTex.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = yarnTex.png; path = ../resources/yarnTex.png; sourceTree = "<group>"; };
-		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
-		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		715454C2187C6D4600F2C196 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Common.h; path = ../src/Visualizer/Headers/Common.h; sourceTree = "<group>"; };
+		715454C3188495D200F2C196 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = Common.cpp; path = ../src/Visualizer/Source/Common.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		715D32B518FC60490061154E /* Energy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Energy.cpp; sourceTree = "<group>"; };
 		715D608F18A95941008A9785 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		715D609118A95941008A9785 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
-		715D609418A95941008A9785 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Simulator-Info.plist"; sourceTree = "<group>"; };
-		715D609618A95941008A9785 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		715D609818A95941008A9785 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		715D609A18A95941008A9785 /* Simulator-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Simulator-Prefix.pch"; sourceTree = "<group>"; };
-		715D609C18A95941008A9785 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
-		715D609E18A95941008A9785 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		715D609F18A95941008A9785 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
-		715D60A218A95941008A9785 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		715D60A418A95941008A9785 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		715D60AB18A95941008A9785 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		715D60C818ABEABA008A9785 /* Segment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Segment.h; sourceTree = "<group>"; };
-		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Yarn.h; sourceTree = "<group>"; };
-		715D60CD18ABEE71008A9785 /* CtrlPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CtrlPoint.h; path = ../CtrlPoint.h; sourceTree = "<group>"; };
-		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
-		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Compressor.cpp; sourceTree = "<group>"; };
-		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compressor.h; sourceTree = "<group>"; };
-		719B0C4F18BBDD7100FB1633 /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Integrator.h; sourceTree = "<group>"; };
-		719B0C5018BBDDC000FB1633 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
+		715D60C818ABEABA008A9785 /* Segment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Segment.h; path = Headers/Segment.h; sourceTree = "<group>"; };
+		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Yarn.h; path = Headers/Yarn.h; sourceTree = "<group>"; };
+		715D60CD18ABEE71008A9785 /* CtrlPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CtrlPoint.h; path = Headers/CtrlPoint.h; sourceTree = "<group>"; };
+		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = Headers/Constants.h; sourceTree = "<group>"; };
+		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Compressor.cpp; path = ../src/Visualizer/Source/Compressor.cpp; sourceTree = "<group>"; };
+		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Compressor.h; path = ../src/Visualizer/Headers/Compressor.h; sourceTree = "<group>"; };
+		719B0C4F18BBDD7100FB1633 /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Integrator.h; path = Headers/Integrator.h; sourceTree = "<group>"; };
+		719B0C5018BBDDC000FB1633 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Clock.h; path = Headers/Clock.h; sourceTree = "<group>"; };
 		719B0C5118BBE9F200FB1633 /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
-		719B0C5318BBEB9400FB1633 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Util.h; path = ../Util.h; sourceTree = "<group>"; };
-		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = ../autodiff.h; sourceTree = "<group>"; };
+		719B0C5318BBEB9400FB1633 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Util.h; path = Headers/Util.h; sourceTree = "<group>"; };
+		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = Headers/autodiff.h; sourceTree = "<group>"; };
 		71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = YarnBuilder.cpp; sourceTree = "<group>"; };
-		71A93CCB192A4FF70030A80B /* YarnBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YarnBuilder.h; sourceTree = "<group>"; };
-		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Decompressor.cpp; sourceTree = "<group>"; };
-		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decompressor.h; sourceTree = "<group>"; };
+		71A93CCB192A4FF70030A80B /* YarnBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = YarnBuilder.h; path = Headers/YarnBuilder.h; sourceTree = "<group>"; };
+		71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Decompressor.cpp; path = ../src/Visualizer/Source/Decompressor.cpp; sourceTree = "<group>"; };
+		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Decompressor.h; path = ../src/Visualizer/Headers/Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* vis-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-frag.glsl"; path = "../resources/vis-frag.glsl"; sourceTree = "<group>"; };
 		71AAF9E11898425100710A16 /* vis-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-vert.glsl"; path = "../resources/vis-vert.glsl"; sourceTree = "<group>"; };
 		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Visualizer copy-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/xcode/Visualizer copy-Info.plist"; sourceTree = "<absolute>"; };
-		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = ../Simulator_Prefix.pch; sourceTree = "<group>"; };
-		71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SimulatorApp.cpp; path = ../SimulatorApp.cpp; sourceTree = "<group>"; };
-		71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimulatorApp.h; path = ../SimulatorApp.h; sourceTree = "<group>"; };
-		71F2BF0218CA58DD001AA0D4 /* Energy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Energy.h; sourceTree = "<group>"; };
-		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Simulator-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/resources/Simulator-Info.plist"; sourceTree = "<absolute>"; };
+		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = Headers/Simulator_Prefix.pch; sourceTree = "<group>"; };
+		71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SimulatorApp.cpp; sourceTree = "<group>"; };
+		71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimulatorApp.h; path = Headers/SimulatorApp.h; sourceTree = "<group>"; };
+		71F2BF0218CA58DD001AA0D4 /* Energy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Energy.h; path = Headers/Energy.h; sourceTree = "<group>"; };
+		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/Visualizer/Source/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB0A1373225F4D5196F608BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../resources/Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,7 +208,6 @@
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
-				71CAE64E18C78B7B002C9FD3 /* Visualizer copy-Info.plist */,
 			);
 			name = Visualizer;
 			sourceTree = "<group>";
@@ -239,6 +229,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */,
 				714D114119140FAC00C8B1BD /* yarnTex.png */,
 				714D113E1914094600C8B1BD /* yarnTex.tga */,
 				714D11381914073F00C8B1BD /* sim-frag-tex.glsl */,
@@ -269,25 +260,9 @@
 			children = (
 				715D60C218ABE9E2008A9785 /* Source */,
 				715D60C118ABE9D6008A9785 /* Headers */,
-				715D609E18A95941008A9785 /* AppDelegate.h */,
-				715D609F18A95941008A9785 /* AppDelegate.mm */,
-				715D60A118A95941008A9785 /* MainMenu.xib */,
-				715D60A418A95941008A9785 /* Images.xcassets */,
-				715D609318A95941008A9785 /* Supporting Files */,
 			);
-			path = Simulator;
-			sourceTree = "<group>";
-		};
-		715D609318A95941008A9785 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				715D609418A95941008A9785 /* Simulator-Info.plist */,
-				715D609518A95941008A9785 /* InfoPlist.strings */,
-				715D609818A95941008A9785 /* main.m */,
-				715D609A18A95941008A9785 /* Simulator-Prefix.pch */,
-				715D609B18A95941008A9785 /* Credits.rtf */,
-			);
-			name = "Supporting Files";
+			name = Simulator;
+			path = ../src/Simulator;
 			sourceTree = "<group>";
 		};
 		715D60C118ABE9D6008A9785 /* Headers */ = {
@@ -319,7 +294,7 @@
 				715D32B518FC60490061154E /* Energy.cpp */,
 				71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */,
 			);
-			name = Source;
+			path = Source;
 			sourceTree = "<group>";
 		};
 		719B0C4E18B7DE4A00FB1633 /* Visualizer */ = {
@@ -437,11 +412,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				71CAE65818C7C207002C9FD3 /* Integrator.cpp in Sources */,
-				71A93CCC192A4FF70030A80B /* YarnBuilder.cpp in Sources */,
-				71197EF0190ABB18003D1E8D /* PTDetector.cpp in Sources */,
-				715D32B718FC60490061154E /* Energy.cpp in Sources */,
-				71CAE65518C78D7E002C9FD3 /* SimulatorApp.cpp in Sources */,
+				719F3A95193E71B30096FC24 /* SimulatorApp.cpp in Sources */,
+				719F3A96193E71B30096FC24 /* PTDetector.cpp in Sources */,
+				719F3A97193E71B30096FC24 /* Integrator.cpp in Sources */,
+				719F3A98193E71B30096FC24 /* Energy.cpp in Sources */,
+				719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -449,8 +424,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7116A445193E64FD006278C8 /* VisualizerApp.cpp in Sources */,
 				71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */,
-				C701C84AABDB4227AEC263B4 /* VisualizerApp.cpp in Sources */,
 				717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */,
 				7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */,
 				715454C4188495D300F2C196 /* Common.cpp in Sources */,
@@ -460,37 +435,11 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-		715D609518A95941008A9785 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				715D609618A95941008A9785 /* en */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		715D609B18A95941008A9785 /* Credits.rtf */ = {
-			isa = PBXVariantGroup;
-			children = (
-				715D609C18A95941008A9785 /* en */,
-			);
-			name = Credits.rtf;
-			sourceTree = "<group>";
-		};
-		715D60A118A95941008A9785 /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				715D60A218A95941008A9785 /* Base */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
 		71CAE64B18C78B7A002C9FD3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -500,16 +449,17 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Simulator_Prefix.pch;
+				GCC_PREFIX_HEADER = ../src/Simulator/headers/Simulator_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INFOPLIST_FILE = "Visualizer copy-Info.plist";
+				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
+				INFOPLIST_FILE = "../resources/Simulator-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_LDFLAGS = (
 					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
 					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
@@ -518,7 +468,8 @@
 					"\"$(CINDER_PATH)/lib/libcinder_d.a\"",
 				);
 				PRODUCT_NAME = Simulator;
-				SYMROOT = ./build;
+				SYMROOT = ../build;
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -526,6 +477,7 @@
 		71CAE64C18C78B7A002C9FD3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -536,12 +488,13 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Simulator_Prefix.pch;
+				GCC_PREFIX_HEADER = ../src/Simulator/headers/Simulator_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INFOPLIST_FILE = "Visualizer copy-Info.plist";
+				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
+				INFOPLIST_FILE = "../resources/Simulator-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_LDFLAGS = (
 					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
 					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
@@ -551,7 +504,8 @@
 				);
 				PRODUCT_NAME = Simulator;
 				STRIP_INSTALLED_PRODUCT = YES;
-				SYMROOT = ./build;
+				SYMROOT = ../build;
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -560,6 +514,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -568,17 +523,18 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Visualizer_Prefix.pch;
+				GCC_PREFIX_HEADER = ../src/Visualizer/Headers/Visualizer_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INFOPLIST_FILE = Info.plist;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				INFOPLIST_FILE = ../resources/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder_d.a\"";
 				PRODUCT_NAME = Visualizer;
-				SYMROOT = ./build;
+				SYMROOT = ../build;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -587,6 +543,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
@@ -596,14 +553,15 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Visualizer_Prefix.pch;
+				GCC_PREFIX_HEADER = ../src/Visualizer/Headers/Visualizer_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INFOPLIST_FILE = Info.plist;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				INFOPLIST_FILE = ../resources/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				OTHER_LDFLAGS = "\"$(CINDER_PATH)/lib/libcinder.a\"";
 				PRODUCT_NAME = Visualizer;
 				STRIP_INSTALLED_PRODUCT = YES;
-				SYMROOT = ./build;
+				SYMROOT = ../build;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -618,9 +576,10 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SYMROOT = ../build;
 				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 			};
 			name = Debug;
@@ -635,9 +594,10 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SYMROOT = ../build;
 				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
 			};
 			name = Release;

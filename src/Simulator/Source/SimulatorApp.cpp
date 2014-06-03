@@ -82,7 +82,6 @@ class SimulatorApp : public AppNative {
   bool isRotate = false;
 };
 
-
 void SimulatorApp::setup()
 {
   // YarnBuilder::buildBraid();
@@ -476,6 +475,7 @@ void SimulatorApp::loadStdEnergies() {
   // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
   assert(y && "Tried to load evergies on a null yarn");
   energies.clear();
+  
   
   YarnEnergy* stretch = new Stretching(*y, Implicit);
   energies.push_back(stretch);
