@@ -27,7 +27,9 @@ class Segment
   /// Twist in radians from reference frame parallel transport through time.
   float refTwist = 0.0f;
   /// The number of full (2*pi) twists in the reference frame.
-  int numTwists = 0.0f;
+  int numTwists = 0;
+  /// The change to numTwists this frame. Use this to keep numTwists in sync between yarns.
+  int deltaTwists = 0;
   
 public:
   /// Default Segment constructor
@@ -66,7 +68,12 @@ public:
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
-  const float getRefTwist() const { return refTwist + 2.0f*constants::pi*numTwists; }
+  const float inline getRefTwist() const { return refTwist + 2.0f*constants::pi*numTwists; }
+  
+  /// Update numTwists this tick.
+  void inline updateTwists(const Segment& oldSeg) {
+    numTwists += oldSeg.deltaTwists;
+  }
   
   /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
   Vec3f static parallelTransport(const Vec3f vecPrev, const Vec3f vecCur, const Vec3f uPrev) {
@@ -115,9 +122,13 @@ public:
     // Account for twists >|pi|. Assumes that twists are not greater than pi between each transport.
     float diff = refTwist - oldTwist;
     if (diff < -constants::pi) {
+      deltaTwists = 1;
       numTwists += 1;
     } else if (diff > constants::pi) {
+      deltaTwists = -1;
       numTwists -= 1;
+    } else {
+      deltaTwists = 0;
     }
     
   }

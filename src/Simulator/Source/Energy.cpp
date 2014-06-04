@@ -595,6 +595,7 @@ Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
 #ifdef DRAW_TWIST
   frames.clear();
+  VecXf twist = VecXf::Zero(dqdot.rows());
 #endif // ifdef DRAW_TWIST
   assert(et == Explicit && "EvalType unsupported");
   for (int i=1; i<y.numCPs()-1; i++) {
@@ -603,15 +604,28 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     
     Vec3f tPrev = segPrev.vec().normalized();
     Vec3f tNext = segNext.vec().normalized();
-    float chi = 1.0f+tPrev.dot(tNext);
+    float chi = 1.0f + tPrev.dot(tNext);
     assert(chi > 0.0f && "Segments are pointing in exactly opposite directions!");
-    Vec3f curveBinorm = (2.0f*tPrev.cross(tNext))/chi;
+    Vec3f curveBinorm = (2.0f * tPrev.cross(tNext)) / chi;
     float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() - (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
-    Vec3f dxi = curveBinorm / y.rest().segments[i].length() - curveBinorm / y.rest().segments[i-1].length();
-    Fx.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * dxi;
+    
+    Vec3f dxPrev = curveBinorm / y.rest().segments[i-1].length();
+    Vec3f dxNext = -curveBinorm / y.rest().segments[i].length();
+    
+    Fx.block<3,1>(3*(i-1), 0) -= c.timestep() * dThetaHat * dxPrev;
+    Fx.block<3,1>(3*i, 0) -= c.timestep() * dThetaHat * -(dxPrev + dxNext);
+    Fx.block<3,1>(3*(i+1), 0) = c.timestep() * dxNext;
     
 #ifdef DRAW_TWIST
-    ci::Vec3f delta = toCi(c.timestep() * dThetaHat * dxi);
+    twist.block<3,1>(3*(i-1), 0) += c.timestep() * dThetaHat * dxPrev;
+    twist.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * -(dxPrev + dxNext);
+    twist.block<3,1>(3*(i+1), 0) += c.timestep() * dThetaHat * dxNext;
+#endif // ifdef DRAW_TWIST
+
+  }
+#ifdef DRAW_TWIST
+  for (int i=0; i<y.numCPs(); i++) {
+    ci::Vec3f delta = toCi(twist.block<3,1>(3*i, 0));
     const Yarn* yp = &y;
     if (delta.length() > 0.0f) frames.push_back([i, delta, yp] () {
       ci::Vec3f s = toCi(yp->cur().points[i].pos);
@@ -619,8 +633,8 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
       ci::gl::color(ci::Color(1.0f, 0.5f, 0.5f));
       ci::gl::drawVector(s, e);
     });
-#endif // ifdef DRAW_TWIST
   }
+#endif // ifdef DRAW_TWIST
   return true;
 }
 
@@ -710,6 +724,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       Vec3f e2mid = (e2p1 + e2p2) / 2.0f;
       
       if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) {
+        /*
         if (ptd) {
           std::pair<int, int> id = ptd->id();
           if (id.first == i && id.second == j) {
@@ -717,6 +732,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
             ptd = nullptr;
           }
         }
+        */
         continue;
       }
       
@@ -749,6 +765,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       float l2 = e2.length();
       float coeff = contactMod * l1 * l2;
       
+      /*
       Vec3f ref = e1mid - e2mid;
       float s1dot = e1.getU().dot(ref);
       float s2dot = e2.getU().dot(ref);
@@ -763,6 +780,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       } else {
         ptd = new PTDetector(i, j, s1dot, s2dot);
       }
+       */
       
       typedef Eigen::Matrix3f Mat3f;
       Mat3f hess[8][8];

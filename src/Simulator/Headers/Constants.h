@@ -25,7 +25,7 @@ namespace constants {
   const float radius = 0.15f;
   
   // The default shear modulus of the yarn.
-  const float shearModulus = 6e7f;
+  const float shearModulus = 1e2f;
 
   // the default Young's modulus of the yarn.
   const float youngsModulus = 2e7f;

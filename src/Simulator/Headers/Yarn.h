@@ -35,6 +35,8 @@ private:
   float xArea = constants::pi * r * r;
   float tCoeff = xArea * shearModulus * r * r / 2.0f;
   float sCoeff = xArea * youngsModulus;
+  // Young's modulus is too strong for the following formula to be accurate for both bending and
+  // stretching, so just use 1.0f instead.
   float bCoeff = 1.0f; // xArea * youngsModulus * r * r / 4.0f;
   
   /// The yarn at rest.

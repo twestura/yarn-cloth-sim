@@ -258,8 +258,8 @@
 		715D609218A95941008A9785 /* Simulator */ = {
 			isa = PBXGroup;
 			children = (
-				715D60C218ABE9E2008A9785 /* Source */,
 				715D60C118ABE9D6008A9785 /* Headers */,
+				715D60C218ABE9E2008A9785 /* Source */,
 			);
 			name = Simulator;
 			path = ../src/Simulator;

@@ -12,7 +12,7 @@
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 DECLARE_PROFILER();
 
-#define DRAW_INTEGRATOR
+// #define DRAW_INTEGRATOR
 // #define NEWMARK_BETA
 bool Integrator::integrate(Yarn& y, Clock& c) {
   Profiler::start("Total");
@@ -220,7 +220,7 @@ void static calcRotEqs(const Yarn& y, const VecXf& rot, const std::vector<Vec3f>
 }
 
 bool Integrator::setRotations(Yarn& y) const {
-  const float newtonThreshold = 0.025f * y.numSegs();
+  const float newtonThreshold = 1e-5; //should be able to get this almost exact
   std::vector<Triplet> triplets;
   Eigen::SparseMatrix<float> hess(y.numSegs()-2, y.numSegs()-2);
   VecXf rot(y.numSegs());
@@ -243,7 +243,7 @@ bool Integrator::setRotations(Yarn& y) const {
     calcRotEqs(y, rot, curveBinorm, grad, triplets);
     float resid = grad.norm();
     if (resid < newtonThreshold || newtonIterations > 4) {
-      if (resid > 0.625f * y.numSegs()) { return false; }
+      if (resid > 1e-5 * y.numSegs()) { return false; }
       newtonConverge = true;
       break;
     }

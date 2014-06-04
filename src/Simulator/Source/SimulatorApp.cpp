@@ -273,6 +273,11 @@ void SimulatorApp::keyDown(KeyEvent event)
       testSpring2->setClamp(testSpring2Clamp);
       break;
       
+    case event.KEY_t:
+      std::cout << "Last seg twist: " << y->cur().segments[y->numSegs()-1].getRot() << " + "
+        << y->cur().segments[y->numSegs()-1].getRefTwist() << "\n";
+      break;
+      
     default:;
   }
 }
@@ -322,6 +327,11 @@ void SimulatorApp::update()
   
   // Swap Yarns
   y->swapYarns();
+  
+  // Update twists in new yarn
+  for (int i=0; i<y->numSegs(); i++) {
+    y->next().segments[i].updateTwists(y->cur().segments[i]);
+  }
 
   c.increment();
 }
