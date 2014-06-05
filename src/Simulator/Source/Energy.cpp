@@ -115,7 +115,6 @@ void MouseSpring::setMouse(Vec3f newMouse, bool newDown) {
 
 Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
-// #define ENABLE_BEND_AUTODIFF
 bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
   Profiler::start("Bend Eval");
   const float h = c.timestep();
@@ -471,7 +470,6 @@ void Stretching::suggestTimestep(Clock& c) {
    */
 }
 
-//#define ENABLE_STRETCH_AUTODIFF
 bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
   Profiler::start("Stretch Eval");
   float h = c.timestep();
@@ -591,7 +589,6 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
 
 Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
-#define DRAW_TWIST
 bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
 #ifdef DRAW_TWIST
   frames.clear();
@@ -691,8 +688,6 @@ void IntContact::suggestTimestep(Clock& c) {
   YarnEnergy::suggestTimestep(c);
 }
 
-
-#define DRAW_INT_CONTACT
 bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
 #ifdef DRAW_INT_CONTACT
   frames.clear();

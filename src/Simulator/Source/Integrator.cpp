@@ -12,8 +12,6 @@
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 DECLARE_PROFILER();
 
-// #define DRAW_INTEGRATOR
-// #define NEWMARK_BETA
 bool Integrator::integrate(Yarn& y, Clock& c) {
   Profiler::start("Total");
   

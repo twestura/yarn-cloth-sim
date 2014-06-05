@@ -424,7 +424,6 @@ void SimulatorApp::draw()
   
   yarnProg.unbind();
   
-//#define DRAW_QUADRATURES
 #ifdef DRAW_QUADRATURES
   for (int i=1; i<y->numSegs()-1; i++) {
     const Segment& seg1 = y->cur().segments[i-1];

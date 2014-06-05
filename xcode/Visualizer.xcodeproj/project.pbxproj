@@ -100,6 +100,7 @@
 		71AAF9DE1896EB8D00710A16 /* Decompressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Decompressor.h; path = ../src/Visualizer/Headers/Decompressor.h; sourceTree = "<group>"; };
 		71AAF9E01898425100710A16 /* vis-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-frag.glsl"; path = "../resources/vis-frag.glsl"; sourceTree = "<group>"; };
 		71AAF9E11898425100710A16 /* vis-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-vert.glsl"; path = "../resources/vis-vert.glsl"; sourceTree = "<group>"; };
+		71CA57001940E6930076A3F2 /* Macros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Macros.h; path = Headers/Macros.h; sourceTree = "<group>"; };
 		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Simulator-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/resources/Simulator-Info.plist"; sourceTree = "<absolute>"; };
 		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = Headers/Simulator_Prefix.pch; sourceTree = "<group>"; };
@@ -281,6 +282,7 @@
 				719B0C5018BBDDC000FB1633 /* Clock.h */,
 				715D60CB18ABEC77008A9785 /* Yarn.h */,
 				715D60CE18AD553C008A9785 /* Constants.h */,
+				71CA57001940E6930076A3F2 /* Macros.h */,
 			);
 			name = Headers;
 			sourceTree = "<group>";
