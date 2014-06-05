@@ -607,14 +607,14 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     float chi = 1.0f + tPrev.dot(tNext);
     assert(chi > 0.0f && "Segments are pointing in exactly opposite directions!");
     Vec3f curveBinorm = (2.0f * tPrev.cross(tNext)) / chi;
-    float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() - (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
+    float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() + (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
     
-    Vec3f dxPrev = curveBinorm / y.rest().segments[i-1].length();
-    Vec3f dxNext = -curveBinorm / y.rest().segments[i].length();
+    Vec3f dxPrev = curveBinorm / y.cur().segments[i-1].length();
+    Vec3f dxNext = -curveBinorm / y.cur().segments[i].length();
     
     Fx.block<3,1>(3*(i-1), 0) -= c.timestep() * dThetaHat * dxPrev;
     Fx.block<3,1>(3*i, 0) -= c.timestep() * dThetaHat * -(dxPrev + dxNext);
-    Fx.block<3,1>(3*(i+1), 0) = c.timestep() * dxNext;
+    Fx.block<3,1>(3*(i+1), 0) -= c.timestep() * dxNext;
     
 #ifdef DRAW_TWIST
     twist.block<3,1>(3*(i-1), 0) += c.timestep() * dThetaHat * dxPrev;

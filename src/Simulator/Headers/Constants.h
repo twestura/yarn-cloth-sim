@@ -25,7 +25,7 @@ namespace constants {
   const float radius = 0.15f;
   
   // The default shear modulus of the yarn.
-  const float shearModulus = 1e2f;
+  const float shearModulus = 8e2f;
 
   // the default Young's modulus of the yarn.
   const float youngsModulus = 2e7f;
@@ -33,10 +33,14 @@ namespace constants {
   /// Pi. You know the one.
   const float pi = 3.1415926535f;
   
+  /// The spline basis for the Catmull-Rom spline, separated into 4 vectors for convenience.
   const Vec4f basis[4] = { Vec4f(-0.5f,  1.0f, -0.5f, 0.0f),
                            Vec4f( 1.5f, -2.5f,  0.0f, 1.0f),
                            Vec4f(-1.5f,  2.0f,  0.5f, 0.0f),
                            Vec4f( 0.5f, -0.5f,  0.0f, 0.0f) };
+  
+  /// The number of quadrature points per spline segment.
+  const int numQuadPoints = 6;
   
 }
 

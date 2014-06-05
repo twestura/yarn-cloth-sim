@@ -75,6 +75,8 @@ class SimulatorApp : public AppNative {
   Eigen::Vector3f testSpring2Clamp = Eigen::Vector3f(-10.0f, 15.0f, 5.0f);
   
   float twist = 0.0f;
+  float yarnTwist = 0.0f;
+  int numYarnTwists = 0;
   
   // Interactive stuff
   bool isMouseDown = false;
@@ -274,8 +276,13 @@ void SimulatorApp::keyDown(KeyEvent event)
       break;
       
     case event.KEY_t:
-      std::cout << "Last seg twist: " << y->cur().segments[y->numSegs()-1].getRot() << " + "
-        << y->cur().segments[y->numSegs()-1].getRefTwist() << "\n";
+      for(int i=1; i<y->numSegs(); i++) {
+        const Segment& s = y->cur().segments[i];
+        const Segment& sPrev = y->cur().segments[i-1];
+        std::cout << "seg " << i << " twist: " << (s.getRot() - sPrev.getRot() + s.getRefTwist())
+        << " (" << y->cur().segments[i].getRot() << " + " << y->cur().segments[i].getRefTwist() << ")\n";
+      }
+      std::cout << "numYarnTwists: " << numYarnTwists << "\n";
       break;
       
     default:;
@@ -320,7 +327,29 @@ void SimulatorApp::update()
   if (isRotate) {
     twist += 2.0f*constants::pi*c.timestep();
   }
-  y->next().segments[y->numSegs()-1].setRot(twist);
+  const Segment& sFirst = y->next().segments[0];
+  Segment& sLast = y->next().segments[y->numSegs()-1];
+  Eigen::Vector3f uRef = Segment::parallelTransport(sFirst.vec(), sLast.vec(), sFirst.getU());
+  float cosTwist = sLast.getU().normalized().dot(uRef.normalized());
+  float oldTwist = yarnTwist;
+  if (cosTwist >= 1.0f) { // Avoid values like 1.0000000012 that introduce NaNs
+    yarnTwist = 0.0f;
+  } else if (cosTwist <= -1.0f) {
+    yarnTwist = constants::pi;
+  } else {
+    yarnTwist = acos(cosTwist);
+  }
+  // Flip the sign if necessary
+  if (sLast.v().normalized().dot(uRef) > 0.0f) {
+    yarnTwist = -yarnTwist;
+  }
+  float diff = yarnTwist - oldTwist;
+  if (diff < -constants::pi) {
+    numYarnTwists += 1;
+  } else if (diff > constants::pi) {
+    numYarnTwists -= 1;
+  }
+  sLast.setRot(twist - (yarnTwist + 2*constants::pi*numYarnTwists));
   if (!integrator->setRotations(*y)) {
     std::cout << "rotations failed";
   }
@@ -393,8 +422,26 @@ void SimulatorApp::draw()
   gl::draw(floor);
   floorTex.disable();
   
-  yarnTex.enableAndBind();
+  yarnProg.unbind();
   
+//#define DRAW_QUADRATURES
+#ifdef DRAW_QUADRATURES
+  for (int i=1; i<y->numSegs()-1; i++) {
+    const Segment& seg1 = y->cur().segments[i-1];
+    const Segment& seg2 = y->cur().segments[i];
+    const Segment& seg3 = y->cur().segments[i+1];
+    Spline s(seg1.getFirst(), seg2.getFirst(), seg2.getSecond(), seg3.getSecond());
+    gl::color(0.8f, 0.8f, 0.8f, 0.4f);
+    
+    for (int j=0; j<constants::numQuadPoints; j++) {
+      float t = ((float) j) / (float) constants::numQuadPoints;
+      gl::drawSphere(toCi(s.eval(t)), constants::radius);
+    }
+  }
+#else //ifdef DRAW_QUADRATURES
+  // Draw yarn segments
+  yarnProg.bind();
+  yarnTex.enableAndBind();
   for (int i=0; i<y->numSegs(); i++) {
     gl::pushModelView();
     const Segment& s = y->cur().segments[i];
@@ -411,9 +458,9 @@ void SimulatorApp::draw()
     cylinderdl->draw();
     gl::popModelView();
   }
-
   yarnTex.unbind();
   yarnProg.unbind();
+#endif //ifdef DRAW_QUADRATURES
   
   
   for (YarnEnergy* e : energies) {

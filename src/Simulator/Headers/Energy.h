@@ -109,8 +109,8 @@ private:
     return d >= 1.0f ? 0.0f : 6.0f/d/d/d/d + 2.0f;
   }
   
-  const int nb = 24;
-  const float contactMod = 0.1f;
+  const int nb = constants::numQuadPoints;
+  const float contactMod = 0.6f;
 
   PTDetector* ptd = nullptr;
   
