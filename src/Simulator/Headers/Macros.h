@@ -11,6 +11,7 @@
 
 // SimulatorApp.cpp
 // #define DRAW_QUADRATURES
+// #define CONST_INTEGRATOR
 
 // Integrator.cpp
 // #define DRAW_INTEGRATOR

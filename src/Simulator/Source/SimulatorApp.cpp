@@ -22,6 +22,7 @@
 #include "Yarn.h"
 #include "Clock.h"
 #include "Integrator.h"
+#include "ConstraintIntegrator.h"
 #include "YarnBuilder.h"
 
 using namespace ci;
@@ -43,6 +44,7 @@ class SimulatorApp : public AppNative {
   void loadYarnFile(std::string filename);
   void loadDefaultYarn(int numPoints);
   void loadStdEnergies();
+  void loadStdEnergiesAndConsts();
   
   // Set to false to pause the simulation
   bool running = true;
@@ -66,8 +68,10 @@ class SimulatorApp : public AppNative {
   Yarn* y = nullptr;
   Clock c;
   Integrator* integrator = nullptr;
+  ConstraintIntegrator* cIntegrator = nullptr;
   std::vector<YarnEnergy*> energies;
   MouseSpring* mouseSpring;
+  std::vector<YarnConstraint*> constraints;
   
   Spring* testSpring1;
   Spring* testSpring2;
@@ -155,7 +159,11 @@ void SimulatorApp::setup()
   // Load the yarn
   loadDefaultYarn(42);
   // loadYarnFile("");
+#ifndef CONST_INTEGRATOR
   loadStdEnergies();
+#else
+  loadStdEnergiesAndConsts();
+#endif // ifndef CONST_INTEGRATOR
 }
 
 void SimulatorApp::mouseDown(MouseEvent event)
@@ -301,6 +309,7 @@ void SimulatorApp::update()
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
+#ifndef CONST_INTEGRATOR
   while (!integrator->integrate(c)) {
     if (c.canDecreaseTimestep()) {
       c.suggestTimestep(c.timestep() / 2.0f);
@@ -309,6 +318,13 @@ void SimulatorApp::update()
       running = false;
     }
   }
+#else
+  while (!cIntegrator->integrate(c)) {
+    std::cout << "wat\n";
+    throw;
+  }
+  
+#endif // ifdef CONST_INTEGRATOR
   
   /// Update Bishop frame
   for(int i=0; i<y->numSegs(); i++) {
@@ -323,6 +339,7 @@ void SimulatorApp::update()
     }
   }
   
+#ifndef CONST_INTEGRATOR
   /// Update material frame rotation
   if (isRotate) {
     twist += 2.0f*constants::pi*c.timestep();
@@ -353,6 +370,7 @@ void SimulatorApp::update()
   if (!integrator->setRotations()) {
     std::cout << "rotations failed";
   }
+#endif // ifndef CONST_INTEGRATOR
   
   // Swap Yarns
   y->swapYarns();
@@ -462,7 +480,9 @@ void SimulatorApp::draw() {
   for (YarnEnergy* e : energies) {
     e->draw();
   }
+#ifndef CONST_INTEGRATOR
   integrator->draw();
+#endif // ifndef CONST_INTEGRATOR
   
 }
 
@@ -573,6 +593,31 @@ void SimulatorApp::loadStdEnergies() {
   
   if (integrator) delete integrator;
   integrator = new Integrator(energies, *y);
+}
+
+void SimulatorApp::loadStdEnergiesAndConsts() {
+  assert(y && "Tried to load energies and constraints on a null yarn");
+  energies.clear();
+  constraints.clear();
+  
+  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
+  energies.push_back(gravity);
+  
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0f);
+  clamp1->setClamp(y->rest().points[0].pos);
+  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0f);
+  clamp2->setClamp(y->rest().points[1].pos);
+  energies.push_back(clamp1);
+  energies.push_back(clamp2);
+  
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
+  energies.push_back(mouseSpring);
+  
+  YarnConstraint* length = new Length(*y);
+  constraints.push_back(length);
+  
+  if (cIntegrator) delete cIntegrator;
+  cIntegrator = new ConstraintIntegrator(*y, energies, constraints);
 }
 
 

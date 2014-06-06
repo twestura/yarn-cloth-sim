@@ -36,6 +36,8 @@
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
 		71AAF9E21898425100710A16 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
 		71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
+		71CA570319420BD80076A3F2 /* ConstraintIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */; };
+		71CA570619420C960076A3F2 /* Constraint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570419420C960076A3F2 /* Constraint.cpp */; };
 		71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
 		71CAE63818C78B7A002C9FD3 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
 		71CAE63918C78B7A002C9FD3 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
@@ -101,6 +103,10 @@
 		71AAF9E01898425100710A16 /* vis-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-frag.glsl"; path = "../resources/vis-frag.glsl"; sourceTree = "<group>"; };
 		71AAF9E11898425100710A16 /* vis-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "vis-vert.glsl"; path = "../resources/vis-vert.glsl"; sourceTree = "<group>"; };
 		71CA57001940E6930076A3F2 /* Macros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Macros.h; path = Headers/Macros.h; sourceTree = "<group>"; };
+		71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConstraintIntegrator.cpp; sourceTree = "<group>"; };
+		71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConstraintIntegrator.h; path = Headers/ConstraintIntegrator.h; sourceTree = "<group>"; };
+		71CA570419420C960076A3F2 /* Constraint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Constraint.cpp; sourceTree = "<group>"; };
+		71CA570519420C960076A3F2 /* Constraint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constraint.h; path = Headers/Constraint.h; sourceTree = "<group>"; };
 		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Simulator-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/resources/Simulator-Info.plist"; sourceTree = "<absolute>"; };
 		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = Headers/Simulator_Prefix.pch; sourceTree = "<group>"; };
@@ -269,6 +275,8 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */,
+				71CA570519420C960076A3F2 /* Constraint.h */,
 				71A93CCB192A4FF70030A80B /* YarnBuilder.h */,
 				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
 				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
@@ -290,6 +298,8 @@
 		715D60C218ABE9E2008A9785 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				71CA570419420C960076A3F2 /* Constraint.cpp */,
+				71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */,
 				71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */,
 				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
 				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
@@ -415,8 +425,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				719F3A95193E71B30096FC24 /* SimulatorApp.cpp in Sources */,
+				71CA570319420BD80076A3F2 /* ConstraintIntegrator.cpp in Sources */,
 				719F3A96193E71B30096FC24 /* PTDetector.cpp in Sources */,
 				719F3A97193E71B30096FC24 /* Integrator.cpp in Sources */,
+				71CA570619420C960076A3F2 /* Constraint.cpp in Sources */,
 				719F3A98193E71B30096FC24 /* Energy.cpp in Sources */,
 				719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */,
 			);

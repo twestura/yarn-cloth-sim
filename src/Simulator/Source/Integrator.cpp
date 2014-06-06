@@ -192,8 +192,8 @@ bool Integrator::integrate(Clock& c) {
   }
   
   Profiler::stop("Total");
-  Profiler::printElapsed();
-  std::cout << "\n";
+//  Profiler::printElapsed();
+//  std::cout << "\n";
   Profiler::resetAll();
   
   return newtonConverge;
