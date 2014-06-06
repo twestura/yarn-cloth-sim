@@ -25,11 +25,13 @@ class Integrator {
 private:
   std::vector<YarnEnergy*>& energies;
   std::vector<std::function<void(void)>> frames;
+  Eigen::SparseMatrix<float> hessBase;
+  Yarn& y;
 public:
-  Integrator(std::vector<YarnEnergy*>& energies) : energies(energies) {}
+  Integrator(std::vector<YarnEnergy*>& energies, Yarn& y);
   
-  bool integrate(Yarn& y, Clock& c);
-  bool setRotations(Yarn& y) const;
+  bool integrate(Clock& c);
+  bool setRotations() const;
   void const draw();
   
 };

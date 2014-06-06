@@ -416,7 +416,8 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
       hess2.block<3,3>(6, 3) = totalcoeff*block[7];
       hess2.block<3,3>(6, 6) = totalcoeff*block[8];
       
-      std::cout << (hess - hess2).cwiseAbs().maxCoeff() << " / " << hess.cwiseAbs().maxCoeff() << "\n";
+      std::cout << (hess - hess2).cwiseAbs().maxCoeff() <<
+     " / " << hess.cwiseAbs().maxCoeff() << "\n";
     }
     */
     
@@ -473,6 +474,7 @@ void Stretching::suggestTimestep(Clock& c) {
 bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
   Profiler::start("Stretch Eval");
   float h = c.timestep();
+  float hessCoeff = h*h*y.stretchCoeff();
   
   for (int i=0; i<y.numSegs(); i++) {
     const Segment& seg = y.cur().segments[i];
@@ -566,14 +568,13 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       
       for (int j=0; j<3; j++) {
         for (int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     h*h*y.stretchCoeff()*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     -h*h*y.stretchCoeff()*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, -h*h*y.stretchCoeff()*myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, h*h*y.stretchCoeff()*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     hessCoeff*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     -hessCoeff*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, -hessCoeff*myHess(j,k)));
+          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, hessCoeff*myHess(j,k)));
         }
       }
     }
-    
     
 #endif // ifdef ENABLE_STRETCH_AUTODIFF
   }
@@ -590,6 +591,7 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
 Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+  Profiler::start("Twist Eval");
 #ifdef DRAW_TWIST
   frames.clear();
   VecXf twist = VecXf::Zero(dqdot.rows());
@@ -604,19 +606,21 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     float chi = 1.0f + tPrev.dot(tNext);
     assert(chi > 0.0f && "Segments are pointing in exactly opposite directions!");
     Vec3f curveBinorm = (2.0f * tPrev.cross(tNext)) / chi;
-    float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() + (segNext.getRot() - segPrev.getRot())) / y.restVoronoiLength(i);
+    float dThetaHat = y.twistCoeff() * (segNext.getRefTwist() +
+                                        (segNext.getRot() - segPrev.getRot()))
+                                       / y.restVoronoiLength(i);
     
     Vec3f dxPrev = curveBinorm / y.cur().segments[i-1].length();
     Vec3f dxNext = -curveBinorm / y.cur().segments[i].length();
     
     Fx.block<3,1>(3*(i-1), 0) -= c.timestep() * dThetaHat * dxPrev;
     Fx.block<3,1>(3*i, 0) -= c.timestep() * dThetaHat * -(dxPrev + dxNext);
-    Fx.block<3,1>(3*(i+1), 0) -= c.timestep() * dxNext;
+    Fx.block<3,1>(3*(i+1), 0) -= c.timestep() * dThetaHat * dxNext;
     
 #ifdef DRAW_TWIST
-    twist.block<3,1>(3*(i-1), 0) += c.timestep() * dThetaHat * dxPrev;
-    twist.block<3,1>(3*i, 0) += c.timestep() * dThetaHat * -(dxPrev + dxNext);
-    twist.block<3,1>(3*(i+1), 0) += c.timestep() * dThetaHat * dxNext;
+    twist.block<3,1>(3*(i-1), 0) -= c.timestep() * dThetaHat * dxPrev;
+    twist.block<3,1>(3*i, 0) -= c.timestep() * dThetaHat * -(dxPrev + dxNext);
+    twist.block<3,1>(3*(i+1), 0) -= c.timestep() * dThetaHat * dxNext;
 #endif // ifdef DRAW_TWIST
 
   }
@@ -632,6 +636,7 @@ bool Twisting::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet
     });
   }
 #endif // ifdef DRAW_TWIST
+  Profiler::stop("Twist Eval");
   return true;
 }
 
@@ -689,6 +694,7 @@ void IntContact::suggestTimestep(Clock& c) {
 }
 
 bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+  Profiler::start("Int Contact Eval");
 #ifdef DRAW_INT_CONTACT
   frames.clear();
 #endif // ifdef DRAW_INT_CONTACT
@@ -697,7 +703,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
   
   for (int i=0; i<y.numSegs(); i++) {
     for (int j=i+2; j<y.numSegs(); j++) {
-      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue; // FIXME: evaluate ends
+      if (i == 0 || j == 0 || i == y.numSegs()-1 || j == y.numSegs()-1) continue;// FIXME: eval ends
       if (i-j <= 3 && j-i <= 3) continue; // Don't evaluate close edges. FIXME: should be 1 ideally
 
       const Segment& e1 = y.cur().segments[i];
@@ -802,7 +808,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
           float t2 = ((float) m) / nb;
           Vec3f p1 = s1.eval(t1);
           Vec3f p2 = s2.eval(t2);
-          Vec3f v = p2 - p1; // FIXME: shouldn't this be p1 - p2??
+          Vec3f v = p2 - p1;
           float norm = v.norm();
           if (norm > 2*r) continue; // Quadratures are not touching, will eval to 0
           Vec4f u1(t1*t1*t1, t1*t1, t1, 1.0f);
@@ -901,20 +907,20 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       }
       
       if (et == Implicit && GradFx) {
-        for (int k=0; k<8; k++) {
-          for (int l=0; l<8; l++) {
-            hess[k][l] *= h * h * coeff;
-          }
-        }
+        float hessCoeff = h*h*coeff;
 
         for (int k=0; k<4; k++) {
           for (int l=0; l<4; l++) {
             for (int p=0; p<3; p++) {
               for (int q=0; q<3; q++) {
-                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(i-1+l)+q, hess[k][l](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(j-1+l)+q, hess[k+4][l](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(i-1+l)+q, hess[k][l+4](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(j-1+l)+q, hess[k+4][l+4](p, q)));
+                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(i-1+l)+q,
+                                                   hessCoeff*hess[k][l](p, q)));
+                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(j-1+l)+q,
+                                                   hessCoeff*hess[k+4][l](p, q)));
+                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(i-1+l)+q,
+                                                   hessCoeff*hess[k][l+4](p, q)));
+                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(j-1+l)+q,
+                                                   hessCoeff*hess[k+4][l+4](p, q)));
               }
             }
           }
@@ -937,5 +943,7 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
       
     }
   }
+  Profiler::stop("Int Contact Eval");
+  
   return true;
 }

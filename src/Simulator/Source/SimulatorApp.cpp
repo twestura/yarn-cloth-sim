@@ -301,7 +301,7 @@ void SimulatorApp::update()
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
-  while (!integrator->integrate(*y, c)) {
+  while (!integrator->integrate(c)) {
     if (c.canDecreaseTimestep()) {
       c.suggestTimestep(c.timestep() / 2.0f);
     } else {
@@ -350,7 +350,7 @@ void SimulatorApp::update()
     numYarnTwists -= 1;
   }
   sLast.setRot(twist - (yarnTwist + 2*constants::pi*numYarnTwists));
-  if (!integrator->setRotations(*y)) {
+  if (!integrator->setRotations()) {
     std::cout << "rotations failed";
   }
   
@@ -365,8 +365,7 @@ void SimulatorApp::update()
   c.increment();
 }
 
-void SimulatorApp::draw()
-{
+void SimulatorApp::draw() {
 	// Clear out the window with grey
 	gl::clear(Color(0.45f, 0.45f, 0.5f));
   
@@ -399,7 +398,6 @@ void SimulatorApp::draw()
     gl::drawLine((p0+p1)/2.0f, (p0+p1)/2.0f+u);
   }
   
-
   m.apply();
   
   l->setDiffuse(Color::white());
@@ -460,7 +458,6 @@ void SimulatorApp::draw()
   yarnTex.unbind();
   yarnProg.unbind();
 #endif //ifdef DRAW_QUADRATURES
-  
   
   for (YarnEnergy* e : energies) {
     e->draw();
@@ -575,7 +572,7 @@ void SimulatorApp::loadStdEnergies() {
 //  energies.push_back(testSpring2);
   
   if (integrator) delete integrator;
-  integrator = new Integrator(energies);
+  integrator = new Integrator(energies, *y);
 }
 
 
