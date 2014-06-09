@@ -68,7 +68,7 @@ public:
     return q * v();
   }
   /// Get twist in reference frame from previous frame.
-  const float inline getRefTwist() const { return refTwist + 2.0f*constants::pi*numTwists; }
+  const float inline getRefTwist() const { return refTwist; } // + 2.0f*constants::pi*numTwists; }
   
   /// Update numTwists this tick.
   void inline updateTwists(const Segment& oldSeg) {

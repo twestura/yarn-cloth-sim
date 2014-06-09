@@ -248,6 +248,11 @@ bool Integrator::setRotations() const {
   }
   int newtonIterations = 0;
   
+  // TESTING
+  // VecXf guess = VecXf::Zero(y.numSegs()-2);
+  // float totalTwist = y.next().segments[y.numSegs()-1].getRot() - y.next().segments[0].getRot();
+  
+  
   do {
     triplets.clear();
     calcRotEqs(y, rot, curveBinorm, grad, triplets);

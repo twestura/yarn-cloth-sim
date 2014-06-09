@@ -288,7 +288,8 @@ void SimulatorApp::keyDown(KeyEvent event)
         const Segment& s = y->cur().segments[i];
         const Segment& sPrev = y->cur().segments[i-1];
         std::cout << "seg " << i << " twist: " << (s.getRot() - sPrev.getRot() + s.getRefTwist())
-        << " (" << y->cur().segments[i].getRot() << " + " << y->cur().segments[i].getRefTwist() << ")\n";
+        << " (" << y->cur().segments[i].getRot() << " + " << y->cur().segments[i].getRefTwist() <<
+        " = " << y->cur().segments[i].getRot() + y->cur().segments[i].getRefTwist() << ")\n";
       }
       std::cout << "numYarnTwists: " << numYarnTwists << "\n";
       break;
@@ -366,7 +367,7 @@ void SimulatorApp::update()
   } else if (diff > constants::pi) {
     numYarnTwists -= 1;
   }
-  sLast.setRot(twist - (yarnTwist + 2*constants::pi*numYarnTwists));
+  sLast.setRot(twist - (yarnTwist)); // + 2*constants::pi*numYarnTwists));
   if (!integrator->setRotations()) {
     std::cout << "rotations failed";
   }
@@ -465,7 +466,7 @@ void SimulatorApp::draw() {
     gl::translate(toCi(s.getFirst().pos));
     Quatf q(ci::Vec3f(0.0f, 1.0f, 0.0f), v);
     float angle = acosf(std::max(-1.0f, std::min(1.0f, (q*ci::Vec3f(-1.0f, 0.0f, 0.0f)).dot(toCi(s.getU())))));
-    if ((q*ci::Vec3f(-1.0f, 0.0f, 0.0f)).dot(toCi(s.v())) > 0.0f) angle *= -1.0f;
+    if ((q*ci::Vec3f(-1.0f, 0.0f, 0.0f)).dot(toCi(s.v())) > 0.0f) angle = -angle;
     gl::rotate(Quatf(v, angle));
     gl::rotate(q);
     gl::rotate(ci::Vec3f(0.0f, s.getRot()*180.0f/constants::pi, 0.0f));
