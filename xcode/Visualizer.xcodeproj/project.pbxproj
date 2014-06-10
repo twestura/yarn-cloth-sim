@@ -19,6 +19,10 @@
 		71197EF31911758B003D1E8D /* sim-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* sim-vert.glsl */; };
 		71197EF6191175E6003D1E8D /* sim-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* sim-frag.glsl */; };
 		711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */; };
+		713EE1F219463DC30010304B /* RodSoundApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA573C19463A870076A3F2 /* RodSoundApp.cpp */; };
+		713EE1F4194643090010304B /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F3194643090010304B /* QuickTime.framework */; };
+		713EE1F6194643910010304B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F5194643910010304B /* Carbon.framework */; };
+		713EE1F8194644640010304B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F7194644640010304B /* QuartzCore.framework */; };
 		714D113A1914073F00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
 		714D113B1914073F00C8B1BD /* sim-vert-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11391914073F00C8B1BD /* sim-vert-tex.glsl */; };
 		714D113C191407FF00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
@@ -38,6 +42,28 @@
 		71AAF9E31898425100710A16 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
 		71CA570319420BD80076A3F2 /* ConstraintIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */; };
 		71CA570619420C960076A3F2 /* Constraint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570419420C960076A3F2 /* Constraint.cpp */; };
+		71CA574619463BC30076A3F2 /* yarnTex.png in Resources */ = {isa = PBXBuildFile; fileRef = 714D114119140FAC00C8B1BD /* yarnTex.png */; };
+		71CA574719463BC30076A3F2 /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
+		71CA574819463BC30076A3F2 /* sim-vert-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11391914073F00C8B1BD /* sim-vert-tex.glsl */; };
+		71CA574919463BC30076A3F2 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
+		71CA574A19463BC30076A3F2 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
+		71CA574B19463BC30076A3F2 /* sim-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF11911758B003D1E8D /* sim-vert.glsl */; };
+		71CA574C19463BC30076A3F2 /* sim-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71197EF4191175E6003D1E8D /* sim-frag.glsl */; };
+		71CA574D19463BC30076A3F2 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
+		71CA575019463BC30076A3F2 /* ConstraintIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */; };
+		71CA575119463BC30076A3F2 /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
+		71CA575219463BC30076A3F2 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
+		71CA575319463BC30076A3F2 /* Constraint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570419420C960076A3F2 /* Constraint.cpp */; };
+		71CA575419463BC30076A3F2 /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
+		71CA575519463BC30076A3F2 /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
+		71CA575719463BC30076A3F2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		71CA575819463BC30076A3F2 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0091D8F80E81B9330029341E /* OpenGL.framework */; };
+		71CA575919463BC30076A3F2 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
+		71CA575A19463BC30076A3F2 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
+		71CA575B19463BC30076A3F2 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784AF0FF439BC000DE1D7 /* Accelerate.framework */; };
+		71CA575C19463BC30076A3F2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B00FF439BC000DE1D7 /* AudioToolbox.framework */; };
+		71CA575D19463BC30076A3F2 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B10FF439BC000DE1D7 /* AudioUnit.framework */; };
+		71CA575E19463BC30076A3F2 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		71CAE63718C78B7A002C9FD3 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
 		71CAE63818C78B7A002C9FD3 /* vis-vert.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E11898425100710A16 /* vis-vert.glsl */; };
 		71CAE63918C78B7A002C9FD3 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
@@ -75,6 +101,9 @@
 		71197EF4191175E6003D1E8D /* sim-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag.glsl"; path = "../resources/sim-frag.glsl"; sourceTree = "<group>"; };
 		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = InfoPanel.cpp; path = ../src/Visualizer/Source/InfoPanel.cpp; sourceTree = "<group>"; };
 		711E97E8183DE8DF00BAFB0B /* InfoPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = InfoPanel.h; path = ../src/Visualizer/Headers/InfoPanel.h; sourceTree = "<group>"; };
+		713EE1F3194643090010304B /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = System/Library/Frameworks/QuickTime.framework; sourceTree = SDKROOT; };
+		713EE1F5194643910010304B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		713EE1F7194644640010304B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
 		714D11391914073F00C8B1BD /* sim-vert-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert-tex.glsl"; path = "../resources/sim-vert-tex.glsl"; sourceTree = "<group>"; };
 		714D113E1914094600C8B1BD /* yarnTex.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = yarnTex.tga; path = ../resources/yarnTex.tga; sourceTree = "<group>"; };
@@ -107,6 +136,13 @@
 		71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConstraintIntegrator.h; path = Headers/ConstraintIntegrator.h; sourceTree = "<group>"; };
 		71CA570419420C960076A3F2 /* Constraint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Constraint.cpp; sourceTree = "<group>"; };
 		71CA570519420C960076A3F2 /* Constraint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constraint.h; path = Headers/Constraint.h; sourceTree = "<group>"; };
+		71CA573A19463A870076A3F2 /* RodSoundApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RodSoundApp.h; sourceTree = "<group>"; };
+		71CA573C19463A870076A3F2 /* RodSoundApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RodSoundApp.cpp; sourceTree = "<group>"; };
+		71CA573E19463B830076A3F2 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		71CA574019463B9C0076A3F2 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		71CA574219463BA20076A3F2 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
+		71CA576219463BC30076A3F2 /* RodSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RodSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71CA576319463BC30076A3F2 /* RodSound-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "RodSound-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/resources/RodSound-Info.plist"; sourceTree = "<absolute>"; };
 		71CAE64D18C78B7A002C9FD3 /* Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Simulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Simulator-Info.plist"; path = "/Users/eschweickart/Research/Visualizer/resources/Simulator-Info.plist"; sourceTree = "<absolute>"; };
 		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = Headers/Simulator_Prefix.pch; sourceTree = "<group>"; };
@@ -119,6 +155,24 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		71CA575619463BC30076A3F2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71CA575719463BC30076A3F2 /* Cocoa.framework in Frameworks */,
+				71CA575819463BC30076A3F2 /* OpenGL.framework in Frameworks */,
+				713EE1F6194643910010304B /* Carbon.framework in Frameworks */,
+				71CA575919463BC30076A3F2 /* CoreVideo.framework in Frameworks */,
+				71CA575A19463BC30076A3F2 /* QTKit.framework in Frameworks */,
+				713EE1F4194643090010304B /* QuickTime.framework in Frameworks */,
+				71CA575B19463BC30076A3F2 /* Accelerate.framework in Frameworks */,
+				71CA575C19463BC30076A3F2 /* AudioToolbox.framework in Frameworks */,
+				71CA575D19463BC30076A3F2 /* AudioUnit.framework in Frameworks */,
+				71CA575E19463BC30076A3F2 /* CoreAudio.framework in Frameworks */,
+				713EE1F8194644640010304B /* QuartzCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		71CAE64118C78B7A002C9FD3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -202,6 +256,7 @@
 			children = (
 				8D1107320486CEB800E47090 /* Visualizer.app */,
 				71CAE64D18C78B7A002C9FD3 /* Simulator.app */,
+				71CA576219463BC30076A3F2 /* RodSound.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -209,6 +264,7 @@
 		29B97314FDCFA39411CA2CEA /* Visualizer */ = {
 			isa = PBXGroup;
 			children = (
+				71CA573819463A870076A3F2 /* RodSound */,
 				715D609218A95941008A9785 /* Simulator */,
 				719B0C4E18B7DE4A00FB1633 /* Visualizer */,
 				01B97315FEAEA392516A2CEA /* Blocks */,
@@ -236,6 +292,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				71CA576319463BC30076A3F2 /* RodSound-Info.plist */,
 				71CAE64E18C78B7B002C9FD3 /* Simulator-Info.plist */,
 				714D114119140FAC00C8B1BD /* yarnTex.png */,
 				714D113E1914094600C8B1BD /* yarnTex.tga */,
@@ -254,6 +311,12 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				713EE1F7194644640010304B /* QuartzCore.framework */,
+				713EE1F5194643910010304B /* Carbon.framework */,
+				713EE1F3194643090010304B /* QuickTime.framework */,
+				71CA574219463BA20076A3F2 /* QTKit.framework */,
+				71CA574019463B9C0076A3F2 /* CoreVideo.framework */,
+				71CA573E19463B830076A3F2 /* OpenGL.framework */,
 				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
 				715D608F18A95941008A9785 /* Cocoa.framework */,
 				715D60AB18A95941008A9785 /* XCTest.framework */,
@@ -318,9 +381,53 @@
 			name = Visualizer;
 			sourceTree = "<group>";
 		};
+		71CA573819463A870076A3F2 /* RodSound */ = {
+			isa = PBXGroup;
+			children = (
+				71CA573919463A870076A3F2 /* Headers */,
+				71CA573B19463A870076A3F2 /* Source */,
+			);
+			name = RodSound;
+			path = ../src/RodSound;
+			sourceTree = "<group>";
+		};
+		71CA573919463A870076A3F2 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				71CA573A19463A870076A3F2 /* RodSoundApp.h */,
+			);
+			path = Headers;
+			sourceTree = "<group>";
+		};
+		71CA573B19463A870076A3F2 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				71CA573C19463A870076A3F2 /* RodSoundApp.cpp */,
+			);
+			path = Source;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		71CA574419463BC30076A3F2 /* RodSound */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71CA575F19463BC30076A3F2 /* Build configuration list for PBXNativeTarget "RodSound" */;
+			buildPhases = (
+				71CA574519463BC30076A3F2 /* Resources */,
+				71CA574E19463BC30076A3F2 /* Sources */,
+				71CA575619463BC30076A3F2 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RodSound;
+			productInstallPath = "$(HOME)/Applications";
+			productName = Visualizer;
+			productReference = 71CA576219463BC30076A3F2 /* RodSound.app */;
+			productType = "com.apple.product-type.application";
+		};
 		71CAE63518C78B7A002C9FD3 /* Simulator */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Simulator" */;
@@ -383,11 +490,27 @@
 			targets = (
 				8D1107260486CEB800E47090 /* Visualizer */,
 				71CAE63518C78B7A002C9FD3 /* Simulator */,
+				71CA574419463BC30076A3F2 /* RodSound */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		71CA574519463BC30076A3F2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				71CA574619463BC30076A3F2 /* yarnTex.png in Resources */,
+				71CA574719463BC30076A3F2 /* sim-frag-tex.glsl in Resources */,
+				71CA574819463BC30076A3F2 /* sim-vert-tex.glsl in Resources */,
+				71CA574919463BC30076A3F2 /* CinderApp.icns in Resources */,
+				71CA574A19463BC30076A3F2 /* vis-vert.glsl in Resources */,
+				71CA574B19463BC30076A3F2 /* sim-vert.glsl in Resources */,
+				71CA574C19463BC30076A3F2 /* sim-frag.glsl in Resources */,
+				71CA574D19463BC30076A3F2 /* vis-frag.glsl in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		71CAE63618C78B7A002C9FD3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -420,6 +543,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		71CA574E19463BC30076A3F2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				713EE1F219463DC30010304B /* RodSoundApp.cpp in Sources */,
+				71CA575019463BC30076A3F2 /* ConstraintIntegrator.cpp in Sources */,
+				71CA575119463BC30076A3F2 /* PTDetector.cpp in Sources */,
+				71CA575219463BC30076A3F2 /* Integrator.cpp in Sources */,
+				71CA575319463BC30076A3F2 /* Constraint.cpp in Sources */,
+				71CA575419463BC30076A3F2 /* Energy.cpp in Sources */,
+				71CA575519463BC30076A3F2 /* YarnBuilder.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		71CAE63A18C78B7A002C9FD3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -450,6 +587,82 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		71CA576019463BC30076A3F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LIBRARY = "libc++";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = ../src/Simulator/headers/Simulator_Prefix.pch;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
+				INFOPLIST_FILE = "../resources/RodSound-Info.plist";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				OTHER_LDFLAGS = (
+					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
+					"\"$(CINDER_PATH)/lib/libcinder_d.a\"",
+				);
+				PRODUCT_NAME = RodSound;
+				SDKROOT = macosx;
+				SYMROOT = ../build;
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		71CA576119463BC30076A3F2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CINDER_PATH = /Users/eschweickart/cinder/cinder_master;
+				CLANG_CXX_LIBRARY = "libc++";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_FAST_MATH = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = ../src/Simulator/headers/Simulator_Prefix.pch;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/boost\"";
+				INFOPLIST_FILE = "../resources/RodSound-Info.plist";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "\"/Users/eschweickart/boost/lib\"";
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				OTHER_LDFLAGS = (
+					"\"/Users/eschweickart/boost/lib/libboost_system.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_chrono.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_date_time.a\"",
+					"\"/Users/eschweickart/boost/lib/libboost_thread.a\"",
+					"\"$(CINDER_PATH)/lib/libcinder.a\"",
+				);
+				PRODUCT_NAME = RodSound;
+				SDKROOT = macosx;
+				STRIP_INSTALLED_PRODUCT = YES;
+				SYMROOT = ../build;
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
 		71CAE64B18C78B7A002C9FD3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -619,6 +832,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		71CA575F19463BC30076A3F2 /* Build configuration list for PBXNativeTarget "RodSound" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71CA576019463BC30076A3F2 /* Debug */,
+				71CA576119463BC30076A3F2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		71CAE64A18C78B7A002C9FD3 /* Build configuration list for PBXNativeTarget "Simulator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
