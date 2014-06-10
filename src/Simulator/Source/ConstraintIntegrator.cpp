@@ -10,8 +10,8 @@
 
 
 ConstraintIntegrator::ConstraintIntegrator(Yarn& y, std::vector<YarnEnergy*> energies,
-                                           std::vector<YarnConstraint*> constraints) : y(y),
-energies(energies), constraints(constraints) {
+                                           std::vector<YarnConstraint*> constraints) :
+Integrator(y, energies), constraints(constraints) {
   
 }
 

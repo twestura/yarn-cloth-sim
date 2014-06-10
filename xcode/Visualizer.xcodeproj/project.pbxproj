@@ -23,6 +23,8 @@
 		713EE1F4194643090010304B /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F3194643090010304B /* QuickTime.framework */; };
 		713EE1F6194643910010304B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F5194643910010304B /* Carbon.framework */; };
 		713EE1F8194644640010304B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 713EE1F7194644640010304B /* QuartzCore.framework */; };
+		713EE1FD19477EBB0010304B /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 713EE1FA19477E7D0010304B /* Integrator.cpp */; };
+		713EE1FE19477EBC0010304B /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 713EE1FA19477E7D0010304B /* Integrator.cpp */; };
 		714D113A1914073F00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
 		714D113B1914073F00C8B1BD /* sim-vert-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11391914073F00C8B1BD /* sim-vert-tex.glsl */; };
 		714D113C191407FF00C8B1BD /* sim-frag-tex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 714D11381914073F00C8B1BD /* sim-frag-tex.glsl */; };
@@ -34,7 +36,7 @@
 		717DD768188EF95E00D3BFA2 /* Compressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 717DD766188EF95E00D3BFA2 /* Compressor.cpp */; };
 		719F3A95193E71B30096FC24 /* SimulatorApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */; };
 		719F3A96193E71B30096FC24 /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
-		719F3A97193E71B30096FC24 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
+		719F3A97193E71B30096FC24 /* IMEXIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */; };
 		719F3A98193E71B30096FC24 /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
 		71AAF9DF1896EB8D00710A16 /* Decompressor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71AAF9DD1896EB8D00710A16 /* Decompressor.cpp */; };
@@ -52,7 +54,7 @@
 		71CA574D19463BC30076A3F2 /* vis-frag.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 71AAF9E01898425100710A16 /* vis-frag.glsl */; };
 		71CA575019463BC30076A3F2 /* ConstraintIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */; };
 		71CA575119463BC30076A3F2 /* PTDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71197EED190ABB18003D1E8D /* PTDetector.cpp */; };
-		71CA575219463BC30076A3F2 /* Integrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* Integrator.cpp */; };
+		71CA575219463BC30076A3F2 /* IMEXIntegrator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */; };
 		71CA575319463BC30076A3F2 /* Constraint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71CA570419420C960076A3F2 /* Constraint.cpp */; };
 		71CA575419463BC30076A3F2 /* Energy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 715D32B518FC60490061154E /* Energy.cpp */; };
 		71CA575519463BC30076A3F2 /* YarnBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */; };
@@ -104,6 +106,8 @@
 		713EE1F3194643090010304B /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = System/Library/Frameworks/QuickTime.framework; sourceTree = SDKROOT; };
 		713EE1F5194643910010304B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		713EE1F7194644640010304B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		713EE1F91947792A0010304B /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Integrator.h; path = Headers/Integrator.h; sourceTree = "<group>"; };
+		713EE1FA19477E7D0010304B /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
 		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
 		714D11391914073F00C8B1BD /* sim-vert-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert-tex.glsl"; path = "../resources/sim-vert-tex.glsl"; sourceTree = "<group>"; };
 		714D113E1914094600C8B1BD /* yarnTex.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = yarnTex.tga; path = ../resources/yarnTex.tga; sourceTree = "<group>"; };
@@ -120,9 +124,9 @@
 		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = Headers/Constants.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Compressor.cpp; path = ../src/Visualizer/Source/Compressor.cpp; sourceTree = "<group>"; };
 		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Compressor.h; path = ../src/Visualizer/Headers/Compressor.h; sourceTree = "<group>"; };
-		719B0C4F18BBDD7100FB1633 /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Integrator.h; path = Headers/Integrator.h; sourceTree = "<group>"; };
+		719B0C4F18BBDD7100FB1633 /* IMEXIntegrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IMEXIntegrator.h; path = Headers/IMEXIntegrator.h; sourceTree = "<group>"; };
 		719B0C5018BBDDC000FB1633 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Clock.h; path = Headers/Clock.h; sourceTree = "<group>"; };
-		719B0C5118BBE9F200FB1633 /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
+		719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IMEXIntegrator.cpp; sourceTree = "<group>"; };
 		719B0C5318BBEB9400FB1633 /* Util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Util.h; path = Headers/Util.h; sourceTree = "<group>"; };
 		719B0C5718BD51CB00FB1633 /* autodiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = autodiff.h; path = Headers/autodiff.h; sourceTree = "<group>"; };
 		71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = YarnBuilder.cpp; sourceTree = "<group>"; };
@@ -349,7 +353,8 @@
 				719B0C5318BBEB9400FB1633 /* Util.h */,
 				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,
 				715D60C818ABEABA008A9785 /* Segment.h */,
-				719B0C4F18BBDD7100FB1633 /* Integrator.h */,
+				719B0C4F18BBDD7100FB1633 /* IMEXIntegrator.h */,
+				713EE1F91947792A0010304B /* Integrator.h */,
 				719B0C5018BBDDC000FB1633 /* Clock.h */,
 				715D60CB18ABEC77008A9785 /* Yarn.h */,
 				715D60CE18AD553C008A9785 /* Constants.h */,
@@ -361,11 +366,12 @@
 		715D60C218ABE9E2008A9785 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				713EE1FA19477E7D0010304B /* Integrator.cpp */,
 				71CA570419420C960076A3F2 /* Constraint.cpp */,
 				71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */,
 				71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */,
 				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
-				719B0C5118BBE9F200FB1633 /* Integrator.cpp */,
+				719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
 				71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */,
 			);
@@ -550,9 +556,10 @@
 				713EE1F219463DC30010304B /* RodSoundApp.cpp in Sources */,
 				71CA575019463BC30076A3F2 /* ConstraintIntegrator.cpp in Sources */,
 				71CA575119463BC30076A3F2 /* PTDetector.cpp in Sources */,
-				71CA575219463BC30076A3F2 /* Integrator.cpp in Sources */,
+				71CA575219463BC30076A3F2 /* IMEXIntegrator.cpp in Sources */,
 				71CA575319463BC30076A3F2 /* Constraint.cpp in Sources */,
 				71CA575419463BC30076A3F2 /* Energy.cpp in Sources */,
+				713EE1FE19477EBC0010304B /* Integrator.cpp in Sources */,
 				71CA575519463BC30076A3F2 /* YarnBuilder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -564,9 +571,10 @@
 				719F3A95193E71B30096FC24 /* SimulatorApp.cpp in Sources */,
 				71CA570319420BD80076A3F2 /* ConstraintIntegrator.cpp in Sources */,
 				719F3A96193E71B30096FC24 /* PTDetector.cpp in Sources */,
-				719F3A97193E71B30096FC24 /* Integrator.cpp in Sources */,
+				719F3A97193E71B30096FC24 /* IMEXIntegrator.cpp in Sources */,
 				71CA570619420C960076A3F2 /* Constraint.cpp in Sources */,
 				719F3A98193E71B30096FC24 /* Energy.cpp in Sources */,
+				713EE1FD19477EBB0010304B /* Integrator.cpp in Sources */,
 				719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

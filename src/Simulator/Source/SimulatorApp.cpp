@@ -22,6 +22,7 @@
 #include "Yarn.h"
 #include "Clock.h"
 #include "Integrator.h"
+#include "IMEXIntegrator.h"
 #include "ConstraintIntegrator.h"
 #include "YarnBuilder.h"
 
@@ -368,7 +369,7 @@ void SimulatorApp::update()
     numYarnTwists -= 1;
   }
   sLast.setRot(twist - (yarnTwist)); // + 2*constants::pi*numYarnTwists));
-  if (!integrator->setRotations()) {
+  if (!static_cast<IMEXIntegrator*>(integrator)->setRotations()) {
     std::cout << "rotations failed";
   }
 #endif // ifndef CONST_INTEGRATOR
@@ -593,7 +594,7 @@ void SimulatorApp::loadStdEnergies() {
 //  energies.push_back(testSpring2);
   
   if (integrator) delete integrator;
-  integrator = new Integrator(energies, *y);
+  integrator = new IMEXIntegrator(energies, *y);
 }
 
 void SimulatorApp::loadStdEnergiesAndConsts() {

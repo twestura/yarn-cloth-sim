@@ -13,8 +13,8 @@
 // #define DRAW_QUADRATURES
 // #define CONST_INTEGRATOR
 
-// Integrator.cpp
-// #define DRAW_INTEGRATOR
+// IMEXIntegrator.cpp
+// #define DRAW_IMEXINTEGRATOR
 // #define NEWMARK_BETA
 
 // Energy.cpp

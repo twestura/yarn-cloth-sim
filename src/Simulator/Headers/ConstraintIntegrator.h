@@ -9,13 +9,11 @@
 #ifndef __Visualizer__ConstraintIntegrator__
 #define __Visualizer__ConstraintIntegrator__
 
-#include <iostream>
-#include "Energy.h"
+#include "Integrator.h"
 #include "Constraint.h"
 
-class ConstraintIntegrator {
-  Yarn& y;
-  std::vector<YarnEnergy*> energies;
+class ConstraintIntegrator : public Integrator {
+private:
   std::vector<YarnConstraint*> constraints;
   
 public:
