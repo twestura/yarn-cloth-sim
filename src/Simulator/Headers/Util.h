@@ -45,6 +45,10 @@ const ci::Vec3f static inline toCi(const Eigen::Vector3f& v) {
   return ci::Vec3f(v.x(), v.y(), v.z());
 }
 
+const Eigen::Vector3f static inline toEig(const ci::Vec3f& v) {
+  return Eigen::Vector3f(v.x, v.y, v.z);
+}
+
 /// A class for profiling operations over several iterations.
 class Profiler {
   struct Stopwatch {

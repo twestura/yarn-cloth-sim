@@ -122,5 +122,14 @@ public:
   bool eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx = nullptr);
 };
 
+class PlaneContact : public YarnEnergy {
+  Vec3f normal;
+  Vec3f origin;
+  float stiffness;
+public:
+  PlaneContact(const Yarn& y, EvalType et, Vec3f normal, Vec3f origin, float stiffness);
+  bool eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx = nullptr);
+};
+
  
 #endif

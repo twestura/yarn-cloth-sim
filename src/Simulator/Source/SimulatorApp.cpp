@@ -549,6 +549,9 @@ void SimulatorApp::loadDefaultYarn(int numPoints) {
 void SimulatorApp::loadStdEnergies() {
   // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
   assert(y && "Tried to load evergies on a null yarn");
+  for (YarnEnergy* e : energies) {
+    delete e;
+  }
   energies.clear();
   
   
@@ -599,6 +602,12 @@ void SimulatorApp::loadStdEnergies() {
 
 void SimulatorApp::loadStdEnergiesAndConsts() {
   assert(y && "Tried to load energies and constraints on a null yarn");
+  for (YarnEnergy* e : energies) {
+    delete e;
+  }
+  for (YarnConstraint* c : constraints) {
+    delete c;
+  }
   energies.clear();
   constraints.clear();
   

@@ -13,7 +13,8 @@
 
 const int SampleRate = 44100;
 
-static uint16_t inline toSample(const float val, const float max) {
+template <typename T>
+static uint16_t inline toSample(const T val, const T max) {
   return (uint16_t) ((val / max) * INT16_MAX);
 }
 
@@ -59,6 +60,7 @@ void writeWAVData(
   stream.write("data", 4);
   stream.write((const char*)&bufSize, 4);
   stream.write((const char*)buf, bufSize);
+  stream.close();
 }
 
 

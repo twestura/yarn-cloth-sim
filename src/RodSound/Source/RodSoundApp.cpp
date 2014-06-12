@@ -21,8 +21,7 @@
 #include "Util.h"
 #include "Yarn.h"
 #include "Clock.h"
-#include "Integrator.h"
-#include "ConstraintIntegrator.h"
+#include "ExIntegrator.h"
 #include "YarnBuilder.h"
 
 using namespace ci;
@@ -44,7 +43,6 @@ class RodSoundApp : public AppNative {
   void loadYarnFile(std::string filename);
   void loadDefaultYarn(int numPoints);
   void loadStdEnergies();
-  void loadStdEnergiesAndConsts();
   
   // Set to false to pause the simulation
   bool running = true;
@@ -68,10 +66,8 @@ class RodSoundApp : public AppNative {
   Yarn* y = nullptr;
   Clock c;
   Integrator* integrator = nullptr;
-  ConstraintIntegrator* cIntegrator = nullptr;
   std::vector<YarnEnergy*> energies;
   MouseSpring* mouseSpring;
-  std::vector<YarnConstraint*> constraints;
   
   Spring* testSpring1;
   Spring* testSpring2;
@@ -86,18 +82,23 @@ class RodSoundApp : public AppNative {
   bool isMouseDown = false;
   ci::Vec3f mousePosition;
   bool isRotate = false;
+  
+  // Sound stuff
+  constexpr static float SimulationLength = 3.0f; // in seconds
+  constexpr static size_t BufferSize = (size_t)(SampleRate * SimulationLength);
+  double sampleBuffer[BufferSize];
+  const float c0 = 340.0f; // speed of sound in air
+  const float rho0 = 1.23f; // density of air
+  
+  double tAtLastDraw = 0.0f;
+  bool stopNow = false;
+  Eigen::Vector3f ear2Pos = Eigen::Vector3f(28.0f, 10.0f, 28.0f);
+  double sampleBuffer2[BufferSize];
+
 };
 
 void RodSoundApp::setup()
 {
-  
-  // TEST - write 1 second of A440 to disk.
-  uint16_t buffer[SampleRate];
-  for (int i = 0; i < SampleRate; i++) {
-    buffer[i] = toSample(0.7 * sinf(i * 440.0f / SampleRate * 2 * constants::pi) , 1.0f);
-  }
-  writeWAVData("./test.wav", buffer, SampleRate * sizeof(uint16_t), SampleRate, 1);
-  
   
   // Setup scene
   cam.setPerspective(40.0f, getWindowAspectRatio(), 0.1f, 1000.0f);
@@ -166,11 +167,7 @@ void RodSoundApp::setup()
   // Load the yarn
   loadDefaultYarn(42);
   // loadYarnFile("");
-#ifndef CONST_INTEGRATOR
   loadStdEnergies();
-#else
-  loadStdEnergiesAndConsts();
-#endif // ifndef CONST_INTEGRATOR
 }
 
 void RodSoundApp::mouseDown(MouseEvent event)
@@ -284,10 +281,13 @@ void RodSoundApp::keyDown(KeyEvent event)
       testSpring2->setClamp(testSpring2Clamp);
       break;
     case event.KEY_s:
+      /*
       testSpring1Clamp.z() -= 1.0f;
       testSpring2Clamp.z() -= 1.0f;
       testSpring1->setClamp(testSpring1Clamp);
       testSpring2->setClamp(testSpring2Clamp);
+       */
+      stopNow = true;
       break;
       
     case event.KEY_t:
@@ -313,11 +313,47 @@ void RodSoundApp::update()
 {
   if (!running) return;
   
+  if (c.getTicks() % 5000 == 0) {
+    std::cout << c.getTicks() << " / " << BufferSize << " (" << (c.getTicks()*100.0f)/BufferSize << "%)\n";
+  }
+  
+  if (c.getTicks() >= BufferSize || stopNow) { // We're done!
+    sampleBuffer[0] = 0.0f; // To prevent the click of forces suddenly being applied
+    double max = 0;
+    for (int i=0; i<BufferSize; i++) {
+      max = std::max(max, std::fabs(sampleBuffer[i]));
+    }
+    std::cout << "Max: " << max << "\n";
+    uint16_t buffer[BufferSize];
+    for (int i=0; i<BufferSize; i++) {
+      buffer[i] = toSample(sampleBuffer[i], max);
+    }
+    writeWAVData("./result.wav", buffer, c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+    
+    sampleBuffer2[0] = 0.0f;
+    max = 0;
+    for (int i=0; i<BufferSize; i++) {
+      max = std::max(max, std::fabs(sampleBuffer2[i]));
+    }
+    for (int i=0; i<BufferSize; i++) {
+      buffer[i] = toSample(sampleBuffer2[i], max);
+    }
+    writeWAVData("./result2.wav", buffer, c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+    
+    running = false;
+    return;
+  }
+  
+  // c.suggestTimestep(1.0f / 5000.0f);
+  c.suggestTimestep(1.0f / (float) SampleRate);
+  
   Eigen::Vector3f mp;
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
-#ifndef CONST_INTEGRATOR
+  if (!integrator->integrate(c)) throw;
+  
+  /*
   while (!integrator->integrate(c)) {
     if (c.canDecreaseTimestep()) {
       c.suggestTimestep(c.timestep() / 2.0f);
@@ -326,13 +362,7 @@ void RodSoundApp::update()
       running = false;
     }
   }
-#else
-  while (!cIntegrator->integrate(c)) {
-    std::cout << "wat\n";
-    throw;
-  }
-  
-#endif // ifdef CONST_INTEGRATOR
+  */
   
   /// Update Bishop frame
   for(int i=0; i<y->numSegs(); i++) {
@@ -347,8 +377,8 @@ void RodSoundApp::update()
     }
   }
   
-#ifndef CONST_INTEGRATOR
-  /// Update material frame rotation
+  /*
+  // Update material frame rotation
   if (isRotate) {
     twist += 2.0f*constants::pi*c.timestep();
   }
@@ -378,20 +408,50 @@ void RodSoundApp::update()
   if (!integrator->setRotations()) {
     std::cout << "rotations failed";
   }
-#endif // ifndef CONST_INTEGRATOR
+   */
+  
+  // Sound Calculations
+  // WARNING: assumes the mass matrix is the identity
+  float sample = 0;
+  float sample2 = 0;
+  for (int i=1; i<y->numCPs()-1; i++) {
+    // calculate jerk
+    Eigen::Vector3f jerk = y->next().points[i].accel - y->cur().points[i].accel;
+    // project it to transverse plane
+    Eigen::Vector3f tPlaneNormal = (y->next().segments[i-1].vec() + y->next().segments[i].vec()).normalized();
+    jerk = jerk - jerk.dot(tPlaneNormal) * tPlaneNormal; // Vector rejection of jerk from tPlaneNormal
+
+    Eigen::Vector3f earVec = toEig(eyePos) - y->next().points[i].pos;
+    // calculate sample contribution
+    sample += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
+    * (earVec.dot(jerk));
+    
+    earVec = ear2Pos - y->next().points[i].pos;
+    sample2 += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
+    * (earVec.dot(jerk));
+  }
+  sampleBuffer[c.getTicks()] = sample;
+  sampleBuffer2[c.getTicks()] = sample2;
   
   // Swap Yarns
   y->swapYarns();
   
+  /*
   // Update twists in new yarn
   for (int i=0; i<y->numSegs(); i++) {
     y->next().segments[i].updateTwists(y->cur().segments[i]);
   }
+   */
 
   c.increment();
 }
 
 void RodSoundApp::draw() {
+  while (app::getElapsedSeconds() - tAtLastDraw < 1.0f/60.0f) {
+    update();
+  }
+  tAtLastDraw = app::getElapsedSeconds();
+  
 	// Clear out the window with grey
 	gl::clear(Color(0.45f, 0.45f, 0.5f));
   
@@ -488,9 +548,7 @@ void RodSoundApp::draw() {
   for (YarnEnergy* e : energies) {
     e->draw();
   }
-#ifndef CONST_INTEGRATOR
   integrator->draw();
-#endif // ifndef CONST_INTEGRATOR
   
 }
 
@@ -539,9 +597,16 @@ void RodSoundApp::loadYarnFile(std::string filename) {
 void RodSoundApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
+  Eigen::Vector3f start = Eigen::Vector3f(-5.0f, 4.0f, 3.0f);
+  Eigen::Vector3f end   = Eigen::Vector3f(5.0f, 3.0f, -3.0f);
+  // WARNING: invalid of start is directly above end or vice-versa
+  Eigen::Vector3f u     = (end-start).cross(Eigen::Vector3f(0.0f, 0.1f, 0.0f)).normalized();
+  
   std::vector<Eigen::Vector3f> yarnPoints;
   for(int i=0; i < numPoints; i++) {
-    Eigen::Vector3f p(0.0f, (numPoints-i)*20.0f/numPoints, 0.0f);
+//    Eigen::Vector3f p(0.0f, (numPoints-i)*20.0f/numPoints, 0.0f);
+    float t = ((float) i) / (float) (numPoints -1);
+    Eigen::Vector3f p = (1-t)*start + t*end;
     yarnPoints.push_back(p);
   }
   
@@ -549,29 +614,38 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   targetPos = ci::Vec3f(0.0f, 10.0f, 0.0f);
   cam.lookAt(eyePos, targetPos, ci::Vec3f(0.0f, 1.0f, 0.0f));
   
-  y = new Yarn(yarnPoints, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+  y = new Yarn(yarnPoints, u); // Eigen::Vector3f(0.0f, 0.0f, 1.0f));
 }
 
 void RodSoundApp::loadStdEnergies() {
   // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
   assert(y && "Tried to load evergies on a null yarn");
+  for (YarnEnergy* e : energies) {
+    delete e;
+  }
   energies.clear();
   
   
-  YarnEnergy* stretch = new Stretching(*y, Implicit);
+  YarnEnergy* stretch = new Stretching(*y, Explicit);
   energies.push_back(stretch);
   
   YarnEnergy* bending = new Bending(*y, Explicit);
   energies.push_back(bending);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
-  energies.push_back(twisting);
+//  energies.push_back(twisting);
   
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
   energies.push_back(gravity);
   
   mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
   energies.push_back(mouseSpring);
+  
+  YarnEnergy* floor = new PlaneContact(*y, Explicit, Eigen::Vector3f(0.0f, 1.0f, 0.0f),
+                                       Eigen::Vector3f::Zero(), 5000.0f);
+  energies.push_back(floor);
+  
+  /*
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
   energies.push_back(intContact);
@@ -598,34 +672,10 @@ void RodSoundApp::loadStdEnergies() {
   testSpring2->setClamp(testSpring2Clamp);
 //  energies.push_back(testSpring1);
 //  energies.push_back(testSpring2);
+   */
   
   if (integrator) delete integrator;
-  integrator = new Integrator(energies, *y);
-}
-
-void RodSoundApp::loadStdEnergiesAndConsts() {
-  assert(y && "Tried to load energies and constraints on a null yarn");
-  energies.clear();
-  constraints.clear();
-  
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
-  energies.push_back(gravity);
-  
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0f);
-  clamp1->setClamp(y->rest().points[0].pos);
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0f);
-  clamp2->setClamp(y->rest().points[1].pos);
-  energies.push_back(clamp1);
-  energies.push_back(clamp2);
-  
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
-  energies.push_back(mouseSpring);
-  
-  YarnConstraint* length = new Length(*y);
-  constraints.push_back(length);
-  
-  if (cIntegrator) delete cIntegrator;
-  cIntegrator = new ConstraintIntegrator(*y, energies, constraints);
+  integrator = new ExIntegrator(*y, energies);
 }
 
 

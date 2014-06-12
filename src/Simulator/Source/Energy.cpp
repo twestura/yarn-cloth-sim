@@ -525,39 +525,6 @@ bool Stretching::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
     Vec3f ej = nextPoint - prevPoint;
     float l = ej.norm();
     Vec3f myGrad = ((1.0f/restSegLength) - (1.0f/l)) * ej; // Verified
-     
-    /*
-    typedef DScalar2<float, 3, Vec3f, Mat3f> TDS;
-    typedef TDS::DVector3 TVec3;
-    typedef TDS::DVector2 TVec2;
-    TVec3 te(TDS(0, ej.x()), TDS(1, ej.y()), TDS(2, ej.z()));
-    TDS tas = te.norm() / restSegLength - 1.0f;
-    Vec3f diff = tas.getGradient() - ej/ej.norm()/restSegLength;
-    if (diff.norm() > 1e-5f) {
-      std::cout << "axial strain badness: " << diff << "\n";
-    }
-    */
-    
-    /*
-    Gradient graddiff = grad;
-    graddiff.block<3,1>(0, 0) += myGrad;
-    graddiff.block<3,1>(3, 0) -= myGrad;
-    if (graddiff.norm() > 1e-7f) std::cout << "stretch error: " << graddiff << "\n\n";
-     */
-    
-    /*
-    Hessian diff = hess;
-    diff.block<3,3>(0,0) -= myHess;
-    diff.block<3,3>(3,0) += myHess;
-    diff.block<3,3>(0,3) += myHess;
-    diff.block<3,3>(3,3) -= myHess;
-    if (diff.norm() > .005f) {
-      std::cout << "stretch error:\n" << diff << "\n\n";
-    } else {
-      std::cout << "success!\n";
-    }
-     */
-    
     
     Fx.block<3,1>(3*i, 0) -= h * y.stretchCoeff() * myGrad;
     Fx.block<3,1>(3*(i+1), 0) += h * y.stretchCoeff() * myGrad;
@@ -944,6 +911,32 @@ bool IntContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tripl
     }
   }
   Profiler::stop("Int Contact Eval");
+  
+  return true;
+}
+
+
+// PLANAR CONTACT
+
+PlaneContact::PlaneContact(const Yarn& y, EvalType et, Vec3f normal, Vec3f origin, float stiffness)
+: YarnEnergy(y, et), normal(normal.normalized()), origin(origin), stiffness(stiffness) { }
+
+bool PlaneContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+  frames.clear();
+  
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3f pos = y.cur().points[i].pos;
+    if (et == Implicit) {
+      pos += c.timestep()*(dqdot.block<3,1>(3*i, 0) + y.cur().points[i].vel);
+    }
+    if ((pos-origin).dot(normal) >= 0) continue;
+    // else project onto the normal
+    Vec3f force = (pos-origin).dot(normal)*normal;
+    Fx.block<3,1>(3*i, 0) += force * stiffness * c.timestep();
+    if (et == Implicit && GradFx) {
+      assert(false && "Unsupported EvalType");
+    }
+  }
   
   return true;
 }
