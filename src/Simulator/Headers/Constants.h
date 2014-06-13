@@ -42,6 +42,10 @@ namespace constants {
   /// The number of quadrature points per spline segment.
   const int numQuadPoints = 6;
   
+  /// The path for outputting media files
+  const std::string ResultPath = "../../result/";
+
+  
 }
 
 #endif

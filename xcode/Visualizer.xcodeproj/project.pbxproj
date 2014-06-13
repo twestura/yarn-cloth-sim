@@ -110,7 +110,9 @@
 		713EE1F91947792A0010304B /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Integrator.h; path = Headers/Integrator.h; sourceTree = "<group>"; };
 		713EE1FA19477E7D0010304B /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
 		713EE1FF1947884E0010304B /* ExIntegrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExIntegrator.cpp; sourceTree = "<group>"; };
-		713EE2001947884E0010304B /* ExIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ExIntegrator.h; path = ../Source/ExIntegrator.h; sourceTree = "<group>"; };
+		713EE2001947884E0010304B /* ExIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExIntegrator.h; sourceTree = "<group>"; };
+		713EE202194A10340010304B /* FrameExporter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FrameExporter.h; sourceTree = "<group>"; };
+		713EE203194A24980010304B /* MovieMaker.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = MovieMaker.sh; sourceTree = "<group>"; };
 		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
 		714D11391914073F00C8B1BD /* sim-vert-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert-tex.glsl"; path = "../resources/sim-vert-tex.glsl"; sourceTree = "<group>"; };
 		714D113E1914094600C8B1BD /* yarnTex.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = yarnTex.tga; path = ../resources/yarnTex.tga; sourceTree = "<group>"; };
@@ -404,6 +406,7 @@
 			isa = PBXGroup;
 			children = (
 				71CA573A19463A870076A3F2 /* RodSoundApp.h */,
+				713EE202194A10340010304B /* FrameExporter.h */,
 				713EE2001947884E0010304B /* ExIntegrator.h */,
 			);
 			path = Headers;
@@ -414,6 +417,7 @@
 			children = (
 				71CA573C19463A870076A3F2 /* RodSoundApp.cpp */,
 				713EE1FF1947884E0010304B /* ExIntegrator.cpp */,
+				713EE203194A24980010304B /* MovieMaker.sh */,
 			);
 			path = Source;
 			sourceTree = "<group>";

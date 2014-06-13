@@ -20,7 +20,7 @@
 #include "Resources.h"
 #include "Util.h"
 #include "Yarn.h"
-#include "Clock.h"
+#include "FrameExporter.h"
 #include "ExIntegrator.h"
 #include "YarnBuilder.h"
 
@@ -94,12 +94,12 @@ class RodSoundApp : public AppNative {
   bool stopNow = false;
   Eigen::Vector3f ear2Pos = Eigen::Vector3f(28.0f, 10.0f, 28.0f);
   double sampleBuffer2[BufferSize];
-
+  
+  FrameExporter fe;
 };
 
 void RodSoundApp::setup()
 {
-  
   // Setup scene
   cam.setPerspective(40.0f, getWindowAspectRatio(), 0.1f, 1000.0f);
   cam.lookAt(eyePos, targetPos, ci::Vec3f(0.0f, 1.0f, 0.0f));
@@ -328,7 +328,8 @@ void RodSoundApp::update()
     for (int i=0; i<BufferSize; i++) {
       buffer[i] = toSample(sampleBuffer[i], max);
     }
-    writeWAVData("./result.wav", buffer, c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+    writeWAVData((constants::ResultPath+"result.wav").data(), buffer,
+                 c.getTicks() * sizeof(uint16_t), SampleRate, 1);
     
     sampleBuffer2[0] = 0.0f;
     max = 0;
@@ -338,31 +339,26 @@ void RodSoundApp::update()
     for (int i=0; i<BufferSize; i++) {
       buffer[i] = toSample(sampleBuffer2[i], max);
     }
-    writeWAVData("./result2.wav", buffer, c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+    writeWAVData((constants::ResultPath+"result2.wav").data(), buffer,
+                 c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+    
+    fe.writeMPEG("result");
     
     running = false;
     return;
   }
   
-  // c.suggestTimestep(1.0f / 5000.0f);
   c.suggestTimestep(1.0f / (float) SampleRate);
+  // FIXME: Normally the frame exporter would suggest a timestep, but this interferes with the audio
+  // recording, as it assumes all timesteps are 1/SampleRate. However, any error the frame exporter
+  // experiences is small since 1/60 >> 1/SampleRate.
+  // fe.suggestTimestep(c);
   
   Eigen::Vector3f mp;
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
   if (!integrator->integrate(c)) throw;
-  
-  /*
-  while (!integrator->integrate(c)) {
-    if (c.canDecreaseTimestep()) {
-      c.suggestTimestep(c.timestep() / 2.0f);
-    } else {
-      std::cout << "Simulation Failed!\n";
-      running = false;
-    }
-  }
-  */
   
   /// Update Bishop frame
   for(int i=0; i<y->numSegs(); i++) {
@@ -447,7 +443,8 @@ void RodSoundApp::update()
 }
 
 void RodSoundApp::draw() {
-  while (app::getElapsedSeconds() - tAtLastDraw < 1.0f/60.0f) {
+  while (app::getElapsedSeconds() - tAtLastDraw < 1.0f/app::getFrameRate() &&
+         fe.nextTimestep(c) > 1.0f / (float) SampleRate) {
     update();
   }
   tAtLastDraw = app::getElapsedSeconds();
@@ -549,7 +546,8 @@ void RodSoundApp::draw() {
     e->draw();
   }
   integrator->draw();
-  
+ 
+  fe.record(c);
 }
 
 void RodSoundApp::loadYarnFile(std::string filename) {
