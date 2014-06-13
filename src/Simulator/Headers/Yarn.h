@@ -37,7 +37,7 @@ private:
   float sCoeff = xArea * youngsModulus;
   // Young's modulus is too strong for the following formula to be accurate for both bending and
   // stretching, so just use 1.0f instead.
-  float bCoeff = 1.0f; // xArea * youngsModulus * r * r / 4.0f;
+  float bCoeff = 1.0f; // xArea * youngsModulus * r * r / 50.0f; // 4.0f;
   
   /// The yarn at rest.
   YarnStr  restYS;

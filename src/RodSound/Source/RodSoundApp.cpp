@@ -443,7 +443,8 @@ void RodSoundApp::update()
 }
 
 void RodSoundApp::draw() {
-  while (app::getElapsedSeconds() - tAtLastDraw < 1.0f/app::getFrameRate() &&
+  while (running &&
+         // app::getElapsedSeconds() - tAtLastDraw < 1.0f/app::getFrameRate() &&
          fe.nextTimestep(c) > 1.0f / (float) SampleRate) {
     update();
   }
