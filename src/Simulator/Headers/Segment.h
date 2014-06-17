@@ -79,7 +79,7 @@ public:
   Vec3f static parallelTransport(const Vec3f vecPrev, const Vec3f vecCur, const Vec3f uPrev) {
     Vec3f cross = vecPrev.cross(vecCur).normalized();
     float twist = acos(vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm()));
-    if (cross.allFinite() && twist > .00001f) {
+    if (cross.allFinite() && twist > 1e-7f) {
       Eigen::Quaternionf q(Eigen::AngleAxisf(twist, cross));
       return q * uPrev;
     }

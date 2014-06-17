@@ -16,16 +16,18 @@ class Clock
 private:
   /// Current time of the simulation.
   float t = 0.0f;
+  /// Default (maximum) timestep for this clock.
+  float defaultTimestep;
   /// Timestep of the model for the next step.
-  float h = constants::INITIAL_TIMESTEP;
+  float h;
   /// Number of times the clock has been incremented.
   size_t ticks = 0;
   
 public:
+  Clock(float defaultTimestep = constants::INITIAL_TIMESTEP) : defaultTimestep(defaultTimestep),
+  h(defaultTimestep) { }
   /// The timestep will not decrease beyond this value.
   const float minTimestep = 1e-5f;
-  /// The timestep cannot be larger than this value.
-  const float maxTimestep = constants::INITIAL_TIMESTEP;
   
   /// Get the current time of the simulation.
   const float inline time() const { return t; }
@@ -40,7 +42,7 @@ public:
   void inline increment() {
     if (h <= 0.0f) throw;
     t += h;
-    h = constants::INITIAL_TIMESTEP;
+    h = defaultTimestep;
     ticks++;
   }
   /// Returns true if the timestep can be made smaller.

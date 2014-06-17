@@ -26,7 +26,6 @@ void const YarnEnergy::draw() {
 Gravity::Gravity(const Yarn& y, EvalType et, Vec3f dir) : YarnEnergy(y, et), dir(dir) {}
 
 bool Gravity::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
-  assert(et == Explicit && "Unsupported EvalType");
   for (int i=0; i<y.numCPs(); i++) {
     Fx.block<3,1>(3*i, 0) -= dir * c.timestep();
   }
@@ -253,7 +252,72 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
     Vec3f gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff); // Verified
     Vec3f gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff); // Verified
     
+    Fx.block<3,1>(3*(i-1), 0) += h*-gradePrev;
+    Fx.block<3,1>(3*i,     0) += h*(gradePrev - gradeNext);
+    Fx.block<3,1>(3*(i+1), 0) += h*gradeNext;
+    
     if (et == Implicit && GradFx) {
+#define NUM_VARS 9
+      typedef Eigen::Matrix<float, NUM_VARS, 1> Gradient;
+      typedef Eigen::Matrix<float, NUM_VARS, NUM_VARS> Hessian;
+      typedef DScalar2<float, NUM_VARS, Gradient, Hessian> DScalar;
+      typedef DScalar::DVector3 DVector3;
+      typedef DScalar::DVector2 DVector2;
+      
+      DVector3 dvPrevPoint(DScalar(0, prevPoint.x()),
+                           DScalar(1, prevPoint.y()),
+                           DScalar(2, prevPoint.z()));
+      
+      DVector3 dvCurPoint(DScalar(3, curPoint.x()),
+                          DScalar(4, curPoint.y()),
+                          DScalar(5, curPoint.z()));
+      
+      DVector3 dvNextPoint(DScalar(6, nextPoint.x()),
+                           DScalar(7, nextPoint.y()),
+                           DScalar(8, nextPoint.z()));
+      
+      
+      DVector3 dvPrevSeg = dvCurPoint - dvPrevPoint;
+      DVector3 dvNextSeg = dvNextPoint - dvCurPoint;
+      assert(dvPrevSeg.norm() != 0.0f && dvNextSeg.norm() != 0.0f && "Edge length is 0");
+      
+      DVector3 dvPrevSegN = dvPrevSeg.normalized();
+      DVector3 dvNextSegN = dvNextSeg.normalized();
+      DScalar dotProd = dvPrevSegN.dot(dvNextSegN);
+      assert(dotProd > -1.0f && "Segments are pointing in exactly opposite directions");
+      
+      DVector3 dvcurveBinorm = (DScalar(2.0f)*dvPrevSegN.cross(dvNextSegN))/(1.0f+dotProd);
+      
+      Vec3f prevm1 = prevSeg.m1();
+      Vec3f prevm2 = prevSeg.m2();
+      Vec3f nextm1 = nextSeg.m1();
+      Vec3f nextm2 = nextSeg.m2();
+      
+      DVector3 d1prev(DScalar(prevm1.x()), DScalar(prevm1.y()), DScalar(prevm1.z()));
+      DVector3 d2prev(DScalar(prevm2.x()), DScalar(prevm2.y()), DScalar(prevm2.z()));
+      DVector3 d1next(DScalar(nextm1.x()), DScalar(nextm1.y()), DScalar(nextm1.z()));
+      DVector3 d2next(DScalar(nextm2.x()), DScalar(nextm2.y()), DScalar(nextm2.z()));
+      
+      DVector2 matCurvePrev(dvcurveBinorm.dot(d2prev), -dvcurveBinorm.dot(d1prev));
+      DVector2 matCurveNext(dvcurveBinorm.dot(d2next), -dvcurveBinorm.dot(d1next));
+      DVector2 dvmatCurve = DScalar(0.5f)*(matCurvePrev + matCurveNext);
+      
+      DVector2 restMatCurve(DScalar(y.restCurve(i).x()), DScalar(y.restCurve(i).y()));
+      
+      // TODO: bending matrix may not be I
+      DVector2 curveDiff = dvmatCurve - restMatCurve;
+      DScalar bendEnergy = (0.5f/y.restVoronoiLength(i))*curveDiff.dot(curveDiff);
+
+      Hessian hess = bendEnergy.getHessian();
+      for (int j=0; j<NUM_VARS; j++) {
+        for (int k=0; k<NUM_VARS; k++) {
+          float val = h*h*y.bendCoeff()*hess(j,k);
+          CHECK_NAN(val);
+          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, val));
+        }
+      }
+      
+#ifdef NOTDEF
       typedef Eigen::Matrix3f Mat3f;
       
       Mat3f tTilde2 = tTilde*tTilde.transpose();
@@ -302,29 +366,29 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
       hessK2ePreveNext /= (nextVec.norm() * prevVec.norm());
       
       
-      /*
        typedef DScalar2<float, 3, Vec3f, Mat3f> TDS;
        typedef TDS::DVector3 TVec3;
        typedef TDS::DVector2 TVec2;
        
-       TVec3 teprev = TVec3(TDS(0, dPrevSeg.x()), TDS(1, dPrevSeg.y()), TDS(2, dPrevSeg.z()));
+       TVec3 teprev = TVec3(TDS(0, prevVec.x()), TDS(1, prevVec.y()), TDS(2, prevVec.z()));
        //    TVec3 teprev = TVec3(TDS(dPrevSeg.x()), TDS(dPrevSeg.y()), TDS(dPrevSeg.z()));
-       TVec3 tenext = TVec3(TDS(dNextSeg.x()), TDS(dNextSeg.y()), TDS(dNextSeg.z()));
-       //    TVec3 tenext = TVec3(TDS(0, dNextSeg.x()), TDS(1, dNextSeg.y()), TDS(3, dNextSeg.z()));
+       TVec3 tenext = TVec3(TDS(nextVec.x()), TDS(nextVec.y()), TDS(nextVec.z()));
+       //    TVec3 tenext = TVec3(TDS(0, dNextSeg.x()), TDS(1, dNextSeg.y()), TDS(2, dNextSeg.z()));
        TVec3 ttprev = teprev.normalized();
        TVec3 ttnext = tenext.normalized();
        TDS tchi = ttprev.dot(ttnext) + 1.0f;
        TVec3 tkb = TDS(2.0f)*(ttprev.cross(ttnext)) / tchi;
-       TDS tk1 = TDS(0.5)*TVec3(TDS(d2.x()), TDS(d2.y()), TDS(d2.z())).dot(tkb);
-       TDS tk2 = TDS(-.5)*TVec3(TDS(d1.x()), TDS(d1.y()), TDS(d1.z())).dot(tkb);
+       TDS tk1 = TDS(0.5f)*TVec3(TDS(d2.x()), TDS(d2.y()), TDS(d2.z())).dot(tkb);
+       TDS tk2 = TDS(-.5f)*TVec3(TDS(d1.x()), TDS(d1.y()), TDS(d1.z())).dot(tkb);
        //    Eigen::Matrix<float, 3, 2> t;
        //    t << tk2.getGradient(), gradK2eNext;
        //    std::cout << t << "\n\n";
-       Mat3f tdiff = tk1.getHessian() - hessK1ePrev2;
-       if (tdiff.cwiseAbs().maxCoeff() >= 1.0f)
-       std::cout << tdiff << "\n\n";
+       Mat3f tdiff = hessK1ePrev2 - tk1.getHessian();
+       if (tdiff.cwiseAbs().maxCoeff() >= 1e-5)
+         std::cout << hessK1ePrev2 << "\n" << tk1.getHessian() << "\n\n";
+       // std::cout << tdiff << "\n\n";
        // std::cout << tdiff.norm() << " / " << tk1.getHessian().cwiseAbs().maxCoeff() << "\n";
-       */
+      
       
       
       /// Populate the 3x3 block matrix:
@@ -388,11 +452,8 @@ bool Bending::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>
            */
         }
       }
+#endif // ifdef NOTDEF
     }
-    
-    Fx.block<3,1>(3*(i-1), 0) += h*-gradePrev;
-    Fx.block<3,1>(3*i,     0) += h*(gradePrev - gradeNext);
-    Fx.block<3,1>(3*(i+1), 0) += h*gradeNext;
     
     /*
     test2.block<3,1>(3*(i-1), 0) += -gradePrev;
@@ -938,5 +999,18 @@ bool PlaneContact::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Tri
     }
   }
   
+  return true;
+}
+
+// IMPULSE
+
+Impulse::Impulse(const Yarn& y, EvalType et, float start, float end, Vec3f force, size_t index) :
+YarnEnergy(y, et), start(start), end(end), force(force), index(index) { }
+
+bool Impulse::eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx) {
+  frames.clear();
+  if (c.time() < start || c.time() > end) return true;
+  float t = sinf((c.time() - start) * constants::pi / (end - start));
+  Fx.block<3,1>(3*index, 0) -= force * t * c.timestep();
   return true;
 }

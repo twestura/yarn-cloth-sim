@@ -34,6 +34,7 @@ public:
   virtual bool eval(const VecXf&, Clock&, VecXf&, std::vector<Triplet>* = nullptr) =0;
   virtual void suggestTimestep(Clock&) { }
   const EvalType inline evalType() const { return et; }
+  void inline setEvalType(EvalType newET) { et = newET; }
   virtual void const draw();
 };
 
@@ -114,8 +115,6 @@ private:
 
   PTDetector* ptd = nullptr;
   
-  
-  
 public:
   IntContact(const Yarn& y, EvalType et);
   void suggestTimestep(Clock&);
@@ -131,5 +130,14 @@ public:
   bool eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx = nullptr);
 };
 
- 
+class Impulse : public YarnEnergy {
+  float start, end;
+  Vec3f force;
+  size_t index;
+public:
+  Impulse(const Yarn& y, EvalType et, float start, float end, Vec3f force, size_t index);
+  bool eval(const VecXf& dqdot, Clock& c, VecXf& Fx, std::vector<Triplet>* GradFx = nullptr);
+};
+
+
 #endif

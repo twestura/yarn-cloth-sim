@@ -94,6 +94,7 @@ class RodSoundApp : public AppNative {
   bool stopNow = false;
   Eigen::Vector3f ear2Pos = Eigen::Vector3f(28.0f, 10.0f, 28.0f);
   double sampleBuffer2[BufferSize];
+  size_t curSample = 0;
   
   FrameExporter fe;
 };
@@ -313,11 +314,11 @@ void RodSoundApp::update()
 {
   if (!running) return;
   
-  if (c.getTicks() % 5000 == 0) {
-    std::cout << c.getTicks() << " / " << BufferSize << " (" << (c.getTicks()*100.0f)/BufferSize << "%)\n";
+  if (curSample % 5000 == 0) {
+    std::cout << curSample << " / " << BufferSize << " (" << (curSample*100.0f)/BufferSize << "%)\n";
   }
   
-  if (c.getTicks() >= BufferSize || stopNow) { // We're done!
+  if (curSample >= BufferSize || stopNow) { // We're done!
     sampleBuffer[0] = 0.0f; // To prevent the click of forces suddenly being applied
     double max = 0;
     for (int i=0; i<BufferSize; i++) {
@@ -329,7 +330,7 @@ void RodSoundApp::update()
       buffer[i] = toSample(sampleBuffer[i], max);
     }
     writeWAVData((constants::ResultPath+"result.wav").data(), buffer,
-                 c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+                 curSample * sizeof(uint16_t), SampleRate, 1);
     
     sampleBuffer2[0] = 0.0f;
     max = 0;
@@ -340,7 +341,7 @@ void RodSoundApp::update()
       buffer[i] = toSample(sampleBuffer2[i], max);
     }
     writeWAVData((constants::ResultPath+"result2.wav").data(), buffer,
-                 c.getTicks() * sizeof(uint16_t), SampleRate, 1);
+                 curSample * sizeof(uint16_t), SampleRate, 1);
     
     fe.writeMPEG("result");
     
@@ -408,26 +409,29 @@ void RodSoundApp::update()
   
   // Sound Calculations
   // WARNING: assumes the mass matrix is the identity
-  float sample = 0;
-  float sample2 = 0;
-  for (int i=1; i<y->numCPs()-1; i++) {
-    // calculate jerk
-    Eigen::Vector3f jerk = y->next().points[i].accel - y->cur().points[i].accel;
-    // project it to transverse plane
-    Eigen::Vector3f tPlaneNormal = (y->next().segments[i-1].vec() + y->next().segments[i].vec()).normalized();
-    jerk = jerk - jerk.dot(tPlaneNormal) * tPlaneNormal; // Vector rejection of jerk from tPlaneNormal
+  if (c.getTicks() % 1 == 0) {
+    float sample = 0;
+    float sample2 = 0;
+    for (int i=1; i<y->numCPs()-1; i++) {
+      // calculate jerk
+      Eigen::Vector3f jerk = y->next().points[i].accel - y->cur().points[i].accel;
+      // project it to transverse plane
+      Eigen::Vector3f tPlaneNormal = (y->next().segments[i-1].vec() + y->next().segments[i].vec()).normalized();
+      jerk = jerk - jerk.dot(tPlaneNormal) * tPlaneNormal; // Vector rejection of jerk from tPlaneNormal
 
-    Eigen::Vector3f earVec = toEig(eyePos) - y->next().points[i].pos;
-    // calculate sample contribution
-    sample += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
-    * (earVec.dot(jerk));
+      Eigen::Vector3f earVec = toEig(eyePos) - y->next().points[i].pos;
+      // calculate sample contribution
+      sample += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
+      * (earVec.dot(jerk));
     
-    earVec = ear2Pos - y->next().points[i].pos;
-    sample2 += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
-    * (earVec.dot(jerk));
+      earVec = ear2Pos - y->next().points[i].pos;
+      sample2 += (rho0*y->radius()*y->radius()*y->radius() / (2.0f*c0*earVec.norm()*earVec.norm()))
+      * (earVec.dot(jerk));
+    }
+    sampleBuffer[curSample] = sample;
+    sampleBuffer2[curSample] = sample2;
+    curSample++;
   }
-  sampleBuffer[c.getTicks()] = sample;
-  sampleBuffer2[c.getTicks()] = sample2;
   
   // Swap Yarns
   y->swapYarns();
@@ -596,10 +600,13 @@ void RodSoundApp::loadYarnFile(std::string filename) {
 void RodSoundApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
-  Eigen::Vector3f start = Eigen::Vector3f(-5.0f, 4.0f, 3.0f);
-  Eigen::Vector3f end   = Eigen::Vector3f(5.0f, 3.0f, -3.0f);
-  // WARNING: invalid of start is directly above end or vice-versa
+  Eigen::Vector3f start = Eigen::Vector3f(0.0f, 20.0f, 0.0f);    // -5.0f, 4.0f, 3.0f);
+  Eigen::Vector3f end   = Eigen::Vector3f(0.0f, 1.0f, 0.0f);    // 5.0f, 3.0f, -3.0f);
+
   Eigen::Vector3f u     = (end-start).cross(Eigen::Vector3f(0.0f, 0.1f, 0.0f)).normalized();
+  if (!u.allFinite() || u.norm() < 0.7) {
+    u << 1.0f, 0.0f, 0.0f;
+  }
   
   std::vector<Eigen::Vector3f> yarnPoints;
   for(int i=0; i < numPoints; i++) {
@@ -635,14 +642,20 @@ void RodSoundApp::loadStdEnergies() {
 //  energies.push_back(twisting);
   
   YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
-  energies.push_back(gravity);
+//  energies.push_back(gravity);
   
   mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
   energies.push_back(mouseSpring);
   
   YarnEnergy* floor = new PlaneContact(*y, Explicit, Eigen::Vector3f(0.0f, 1.0f, 0.0f),
                                        Eigen::Vector3f::Zero(), 5000.0f);
-  energies.push_back(floor);
+//  energies.push_back(floor);
+  
+  
+  YarnEnergy* imp1 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), 0);
+  YarnEnergy* imp2 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, 500.0f), y->numCPs()/2);
+  YarnEnergy* imp3 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), y->numCPs()-1);
+  energies.push_back(imp1); energies.push_back(imp2); energies.push_back(imp3);
   
   /*
   
