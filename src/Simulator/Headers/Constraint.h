@@ -12,20 +12,18 @@
 #include <iostream>
 #include "Yarn.h"
 
-typedef Eigen::VectorXf VecXf;
-
 class YarnConstraint {
 protected:
   Yarn& y;
 public:
   YarnConstraint(Yarn& y) : y(y) { }
-  virtual bool eval(VecXf&, float)=0;
+  virtual bool eval(VecXe&, real)=0;
 };
 
 class Length : public YarnConstraint {
 public:
   Length(Yarn& y) : YarnConstraint(y) { }
-  bool eval(VecXf&, float);
+  bool eval(VecXe&, real);
 };
 
 #endif /* defined(__Visualizer__Constraint__) */

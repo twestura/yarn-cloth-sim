@@ -28,7 +28,6 @@
 
 using namespace ci;
 using namespace ci::app;
-using namespace Eigen;
 
 class SimulatorApp : public AppNative {
   public:
@@ -52,8 +51,8 @@ class SimulatorApp : public AppNative {
   
   // Camera for the scene, along with its position and orientation
   CameraPersp cam;
-  ci::Vec3f eyePos = ci::Vec3f(50.0f, 0.0f, 0.0f);
-  ci::Vec3f targetPos = ci::Vec3f(0.0f, 0.0f, 0.0f);
+  Vec3c eyePos = Vec3c(50.0, 0.0, 0.0);
+  Vec3c targetPos = Vec3c(0.0, 0.0, 0.0);
   
   // Rendering stuff
   gl::GlslProg yarnProg;
@@ -62,7 +61,7 @@ class SimulatorApp : public AppNative {
   gl::Texture floorTex;
   gl::DisplayList* spheredl;
   gl::DisplayList* cylinderdl;
-  gl::Material m = gl::Material(Color(0.3f, 0.3f, 0.3f), Color(0.8f, 0.9f, 0.9f));
+  gl::Material m = gl::Material(Color(0.3, 0.3, 0.3), Color(0.8, 0.9, 0.9));
   gl::Light* l;
   TriMesh floor;
   
@@ -76,16 +75,16 @@ class SimulatorApp : public AppNative {
   
   Spring* testSpring1;
   Spring* testSpring2;
-  Eigen::Vector3f testSpring1Clamp = Eigen::Vector3f(10.0f, 15.0f, 5.0f);
-  Eigen::Vector3f testSpring2Clamp = Eigen::Vector3f(-10.0f, 15.0f, 5.0f);
+  Vec3e testSpring1Clamp = Vec3e(10.0, 15.0, 5.0);
+  Vec3e testSpring2Clamp = Vec3e(-10.0, 15.0, 5.0);
   
-  float twist = 0.0f;
-  float yarnTwist = 0.0f;
+  real twist = 0.0;
+  real yarnTwist = 0.0;
   int numYarnTwists = 0;
   
   // Interactive stuff
   bool isMouseDown = false;
-  ci::Vec3f mousePosition;
+  Vec3c mousePosition;
   bool isRotate = false;
 };
 
@@ -94,18 +93,18 @@ void SimulatorApp::setup()
   // YarnBuilder::buildBraid();
   
   // Setup scene
-  cam.setPerspective(40.0f, getWindowAspectRatio(), 0.1f, 1000.0f);
-  cam.lookAt(eyePos, targetPos, ci::Vec3f(0.0f, 1.0f, 0.0f));
+  cam.setPerspective(40.0, getWindowAspectRatio(), 0.1, 1000.0);
+  cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
   // Setup rendering stuff
   spheredl = new gl::DisplayList(GL_COMPILE);
   spheredl->newList();
-  gl::drawSphere(ci::Vec3f::zero(), constants::radius);
+  gl::drawSphere(Vec3c::zero(), constants::radius);
   spheredl->endList();
   
   cylinderdl = new gl::DisplayList(GL_COMPILE);
   cylinderdl->newList();
-  gl::drawCylinder(constants::radius, constants::radius, 1.0f);
+  gl::drawCylinder(constants::radius, constants::radius, 1.0);
   cylinderdl->endList();
   
   l = new gl::Light(gl::Light::POINT, 0);
@@ -129,18 +128,18 @@ void SimulatorApp::setup()
     exit(1);
   }
   
-  floor.appendVertex(ci::Vec3f(-100.0f, 0.0f, -100.0f));
-  floor.appendNormal(ci::Vec3f(0.0f, 1.0f, 0.0f));
-  floor.appendTexCoord(ci::Vec2f(-12.0f, -12.0f));
-  floor.appendVertex(ci::Vec3f(100.0f, 0.0f, -100.0f));
-  floor.appendNormal(ci::Vec3f(0.0f, 1.0f, 0.0f));
-  floor.appendTexCoord(ci::Vec2f(12.0f, -12.0f));
-  floor.appendVertex(ci::Vec3f(100.0f, 0.0f, 100.0f));
-  floor.appendNormal(ci::Vec3f(0.0f, 1.0f, 0.0f));
-  floor.appendTexCoord(ci::Vec2f(12.0f, 12.0f));
-  floor.appendVertex(ci::Vec3f(-100.0f, 0.0f, 100.0f));
-  floor.appendNormal(ci::Vec3f(0.0f, 1.0f, 0.0f));
-  floor.appendTexCoord(ci::Vec2f(-12.0f, 12.0f));
+  floor.appendVertex(Vec3c(-100.0, 0.0, -100.0));
+  floor.appendNormal(Vec3c(0.0, 1.0, 0.0));
+  floor.appendTexCoord(Vec2c(-12.0, -12.0));
+  floor.appendVertex(Vec3c(100.0, 0.0, -100.0));
+  floor.appendNormal(Vec3c(0.0, 1.0, 0.0));
+  floor.appendTexCoord(Vec2c(12.0, -12.0));
+  floor.appendVertex(Vec3c(100.0, 0.0, 100.0));
+  floor.appendNormal(Vec3c(0.0, 1.0, 0.0));
+  floor.appendTexCoord(Vec2c(12.0, 12.0));
+  floor.appendVertex(Vec3c(-100.0, 0.0, 100.0));
+  floor.appendNormal(Vec3c(0.0, 1.0, 0.0));
+  floor.appendTexCoord(Vec2c(-12.0, 12.0));
   floor.appendTriangle(0, 1, 2);
   floor.appendTriangle(0, 3, 2);
   
@@ -174,13 +173,13 @@ void SimulatorApp::mouseDown(MouseEvent event)
     if (!y) return;
     Vec2i mouse = event.getPos();
     Vec2i windowSize = getWindowSize();
-    Ray r = cam.generateRay((float)mouse.x/windowSize.x,
-                            1.0f - (float)mouse.y/windowSize.y,
+    Ray r = cam.generateRay((real)mouse.x/windowSize.x,
+                            1.0 - (real)mouse.y/windowSize.y,
                             getWindowAspectRatio());
-    float tmin = INFINITY;
+    real tmin = INFINITY;
     bool any = false;
     for (const CtrlPoint& p : y->cur().points) { // A bit slow, but beats keeping a KD-Tree updated
-      Sphere s(toCi(p.pos), constants::radius * 1.5f);
+      Sphere s(EtoC(p.pos), constants::radius * 1.5);
       float t;
       if (s.intersect(r, &t) && t < tmin) {
         any = true;
@@ -203,8 +202,8 @@ void SimulatorApp::mouseDrag(MouseEvent event)
   Vec2i mouse = event.getPos();
   Vec2i windowSize = getWindowSize();
   
-  Ray r = cam.generateRay((float)mouse.x/windowSize.x,
-                          1.0f - (float)mouse.y/windowSize.y,
+  Ray r = cam.generateRay((real)mouse.x/windowSize.x,
+                          1.0 - (real)mouse.y/windowSize.y,
                           getWindowAspectRatio());
   
   float t;
@@ -222,7 +221,7 @@ void SimulatorApp::mouseUp(MouseEvent event)
 }
 
 void SimulatorApp::mouseWheel(MouseEvent event) {
-  float scroll = event.getWheelIncrement();
+  real scroll = event.getWheelIncrement();
   eyePos += (targetPos - eyePos).normalized() * scroll;
   cam.lookAt(eyePos, targetPos);
 }
@@ -232,7 +231,7 @@ void SimulatorApp::keyDown(KeyEvent event)
   switch (event.getCode()) {
     case event.KEY_r:
       if (event.isShiftDown()) {
-        twist = 0.0f;
+        twist = 0.0;
       } else {
         isRotate = !isRotate;
       }
@@ -247,39 +246,39 @@ void SimulatorApp::keyDown(KeyEvent event)
       break;
     case event.KEY_LEFT:
     {
-      ci::Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
-      eyePos.x = v.x*cosf(0.2f) - v.y*sinf(0.2f) + targetPos.x;
-      eyePos.z = v.x*sinf(0.2f) + v.y*cosf(0.2f) + targetPos.z;
+      Vec2c v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
+      eyePos.x = v.x*cosf(0.2) - v.y*sinf(0.2) + targetPos.x;
+      eyePos.z = v.x*sinf(0.2) + v.y*cosf(0.2) + targetPos.z;
       cam.lookAt(eyePos, targetPos);
     }
       break;
     case event.KEY_RIGHT:
     {
-      ci::Vec2f v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
-      eyePos.x = v.x*cosf(0.2f) + v.y*sinf(0.2f) + targetPos.x;
-      eyePos.z = - v.x*sinf(0.2f) + v.y*cosf(0.2f) + targetPos.z;
+      Vec2c v(eyePos.x - targetPos.x, eyePos.z - targetPos.z);
+      eyePos.x = v.x*cosf(0.2) + v.y*sinf(0.2) + targetPos.x;
+      eyePos.z = - v.x*sinf(0.2) + v.y*cosf(0.2) + targetPos.z;
       cam.lookAt(eyePos, targetPos);
     }
       break;
     case event.KEY_UP:
-      eyePos.y += 1.0f;
+      eyePos.y += 1.0;
       cam.lookAt(eyePos, targetPos);
       break;
       case event.KEY_DOWN:
-      eyePos.y -= 1.0f;
+      eyePos.y -= 1.0;
       cam.lookAt(eyePos, targetPos);
       break;
       
       
     case event.KEY_w:
-      testSpring1Clamp.z() += 1.0f;
-      testSpring2Clamp.z() += 1.0f;
+      testSpring1Clamp.z() += 1.0;
+      testSpring2Clamp.z() += 1.0;
       testSpring1->setClamp(testSpring1Clamp);
       testSpring2->setClamp(testSpring2Clamp);
       break;
     case event.KEY_s:
-      testSpring1Clamp.z() -= 1.0f;
-      testSpring2Clamp.z() -= 1.0f;
+      testSpring1Clamp.z() -= 1.0;
+      testSpring2Clamp.z() -= 1.0;
       testSpring1->setClamp(testSpring1Clamp);
       testSpring2->setClamp(testSpring2Clamp);
       break;
@@ -307,14 +306,14 @@ void SimulatorApp::update()
 {
   if (!running) return;
   
-  Eigen::Vector3f mp;
+  Vec3e mp;
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
   mouseSpring->setMouse(mp, isMouseDown);
   
 #ifndef CONST_INTEGRATOR
   while (!integrator->integrate(c)) {
     if (c.canDecreaseTimestep()) {
-      c.suggestTimestep(c.timestep() / 2.0f);
+      c.suggestTimestep(c.timestep() / 2.0);
       std::cout << "Decreasing timestep: " << c.timestep() << "\n";
     } else {
       std::cout << "Simulation Failed!\n";
@@ -346,25 +345,25 @@ void SimulatorApp::update()
 #ifndef CONST_INTEGRATOR
   /// Update material frame rotation
   if (isRotate) {
-    twist += 2.0f*constants::pi*c.timestep();
+    twist += 2.0*constants::pi*c.timestep();
   }
   const Segment& sFirst = y->next().segments[0];
   Segment& sLast = y->next().segments[y->numSegs()-1];
-  Eigen::Vector3f uRef = Segment::parallelTransport(sFirst.vec(), sLast.vec(), sFirst.getU());
-  float cosTwist = sLast.getU().normalized().dot(uRef.normalized());
-  float oldTwist = yarnTwist;
-  if (cosTwist >= 1.0f) { // Avoid values like 1.0000000012 that introduce NaNs
-    yarnTwist = 0.0f;
-  } else if (cosTwist <= -1.0f) {
+  Vec3e uRef = Segment::parallelTransport(sFirst.vec(), sLast.vec(), sFirst.getU());
+  real cosTwist = sLast.getU().normalized().dot(uRef.normalized());
+  real oldTwist = yarnTwist;
+  if (cosTwist >= 1.0) { // Avoid values like 1.0000000012 that introduce NaNs
+    yarnTwist = 0.0;
+  } else if (cosTwist <= -1.0) {
     yarnTwist = constants::pi;
   } else {
     yarnTwist = acos(cosTwist);
   }
   // Flip the sign if necessary
-  if (sLast.v().normalized().dot(uRef) > 0.0f) {
+  if (sLast.v().normalized().dot(uRef) > 0.0) {
     yarnTwist = -yarnTwist;
   }
-  float diff = yarnTwist - oldTwist;
+  real diff = yarnTwist - oldTwist;
   if (diff < -constants::pi) {
     numYarnTwists += 1;
   } else if (diff > constants::pi) {
@@ -389,7 +388,7 @@ void SimulatorApp::update()
 
 void SimulatorApp::draw() {
 	// Clear out the window with grey
-	gl::clear(Color(0.45f, 0.45f, 0.5f));
+	gl::clear(Color(0.45, 0.45, 0.5));
   
   // Enable alpha blending and depth testing
   gl::enableAlphaBlending();
@@ -402,8 +401,8 @@ void SimulatorApp::draw() {
   std::stringstream ss;
   ss << getAverageFps();
   gl::drawStringRight(ss.str(),
-                      ci::Vec2f(getWindowWidth()-toPixels(10), getWindowHeight()-toPixels(20)),
-                      Color(0.0f, 0.0f, 0.0f),
+                      Vec2c(getWindowWidth()-toPixels(10), getWindowHeight()-toPixels(20)),
+                      Color(0.0, 0.0, 0.0),
                       Font("Arial", toPixels(12)));
   
   // Set projection/modelview matrices
@@ -411,26 +410,26 @@ void SimulatorApp::draw() {
   
   // Draw the rod and the normal of the bishop frame
   for(int i=0; i<y->numSegs(); i++) {
-    ci::Vec3f p0 = toCi(y->cur().points[i].pos);
-    ci::Vec3f p1 = toCi(y->cur().points[i+1].pos);
+    Vec3c p0 = EtoC(y->cur().points[i].pos);
+    Vec3c p1 = EtoC(y->cur().points[i+1].pos);
     gl::drawLine(p0, p1);
-    gl::color(1.0f, 1.0f, 0.0f);
-    gl::lineWidth(1.0f);
-    ci::Vec3f u = toCi(y->cur().segments[i].getU());
-    gl::drawLine((p0+p1)/2.0f, (p0+p1)/2.0f+u);
+    gl::color(1.0, 1.0, 0.0);
+    gl::lineWidth(1.0);
+    Vec3c u = EtoC(y->cur().segments[i].getU());
+    gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u);
   }
   
   m.apply();
   
   l->setDiffuse(Color::white());
   l->setAmbient(Color::white());
-  l->setPosition(ci::Vec3f(0.0f, 50.0f, 0.0f));
+  l->setPosition(Vec3c(0.0, 50.0, 0.0));
   l->enable();
   
   diffuseProg.bind();
   for (int i=0; i<y->numCPs(); i++) {
     gl::pushModelView();
-    gl::translate(toCi(y->cur().points[i].pos));
+    gl::translate(EtoC(y->cur().points[i].pos));
     spheredl->draw();
     gl::popModelView();
   }
@@ -450,11 +449,11 @@ void SimulatorApp::draw() {
     const Segment& seg2 = y->cur().segments[i];
     const Segment& seg3 = y->cur().segments[i+1];
     Spline s(seg1.getFirst(), seg2.getFirst(), seg2.getSecond(), seg3.getSecond());
-    gl::color(0.8f, 0.8f, 0.8f, 0.4f);
+    gl::color(0.8, 0.8, 0.8, 0.4);
     
     for (int j=0; j<constants::numQuadPoints; j++) {
-      float t = ((float) j) / (float) constants::numQuadPoints;
-      gl::drawSphere(toCi(s.eval(t)), constants::radius);
+      real t = ((real) j) / (real) constants::numQuadPoints;
+      gl::drawSphere(EtoC(s.eval(t)), constants::radius);
     }
   }
 #else //ifdef DRAW_QUADRATURES
@@ -464,16 +463,16 @@ void SimulatorApp::draw() {
   for (int i=0; i<y->numSegs(); i++) {
     gl::pushModelView();
     const Segment& s = y->cur().segments[i];
-    ci::Vec3f v = toCi(s.vec().normalized());
+    Vec3c v = EtoC(s.vec().normalized());
     
-    gl::translate(toCi(s.getFirst().pos));
-    Quatf q(ci::Vec3f(0.0f, 1.0f, 0.0f), v);
-    float angle = acosf(std::max(-1.0f, std::min(1.0f, (q*ci::Vec3f(-1.0f, 0.0f, 0.0f)).dot(toCi(s.getU())))));
-    if ((q*ci::Vec3f(-1.0f, 0.0f, 0.0f)).dot(toCi(s.v())) > 0.0f) angle = -angle;
-    gl::rotate(Quatf(v, angle));
+    gl::translate(EtoC(s.getFirst().pos));
+    Quaternion<real> q(Vec3c(0.0, 1.0, 0.0), v);
+    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.getU())))));
+    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.v())) > 0.0) angle = -angle;
+    gl::rotate(Quaternion<real>(v, angle));
     gl::rotate(q);
-    gl::rotate(ci::Vec3f(0.0f, s.getRot()*180.0f/constants::pi, 0.0f));
-    gl::scale(1.0f, s.length(), 1.0f);
+    gl::rotate(Vec3c(0.0, s.getRot()*180.0/constants::pi, 0.0));
+    gl::scale(1.0, s.length(), 1.0);
     cylinderdl->draw();
     gl::popModelView();
   }
@@ -505,11 +504,11 @@ void SimulatorApp::loadYarnFile(std::string filename) {
   std::getline(yarnFile, line);
   const int numPoints = std::stoi(line);
   
-  std::vector<Eigen::Vector3f> yarnPoints;
+  std::vector<Vec3e> yarnPoints;
   yarnPoints.reserve(numPoints);
   
   for (int j=0; j<numPoints; j++) {
-    Eigen::Vector3f p;
+    Vec3e p;
     for (int i=0; i<3; i++) {
       std::string line;
       std::getline(yarnFile, line);
@@ -519,13 +518,13 @@ void SimulatorApp::loadYarnFile(std::string filename) {
     }
     yarnPoints.push_back(p);
   }
-  Eigen::Vector3f u;
+  Vec3e u;
   for (int i=0; i<3; i++) {
     std::string line;
     std::getline(yarnFile, line);
     u(i) = std::stof(line);
   }
-  assert((yarnPoints[1] - yarnPoints[0]).dot(u) < 5e-6f);
+  assert((yarnPoints[1] - yarnPoints[0]).dot(u) < 5.0e-6);
   
   yarnFile.close();
   if (y) delete y;
@@ -535,17 +534,17 @@ void SimulatorApp::loadYarnFile(std::string filename) {
 void SimulatorApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
-  std::vector<Eigen::Vector3f> yarnPoints;
+  std::vector<Vec3e> yarnPoints;
   for(int i=0; i < numPoints; i++) {
-    Eigen::Vector3f p(0.0f, (numPoints-i)*20.0f/numPoints, 0.0f);
+    Vec3e p(0.0, (numPoints-i)*20.0/numPoints, 0.0);
     yarnPoints.push_back(p);
   }
   
-  eyePos = ci::Vec3f(40.0f, 10.0f, 0.0f);
-  targetPos = ci::Vec3f(0.0f, 10.0f, 0.0f);
-  cam.lookAt(eyePos, targetPos, ci::Vec3f(0.0f, 1.0f, 0.0f));
+  eyePos = Vec3c(40.0, 10.0, 0.0);
+  targetPos = Vec3c(0.0, 10.0, 0.0);
+  cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPoints, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+  y = new Yarn(yarnPoints, Vec3e(0.0, 0.0, 1.0));
 }
 
 void SimulatorApp::loadStdEnergies() {
@@ -562,38 +561,41 @@ void SimulatorApp::loadStdEnergies() {
   
   YarnEnergy* bending = new Bending(*y, Explicit);
   energies.push_back(bending);
+  // Young's modulus is too strong for the following formula to be accurate for both bending and
+  // stretching, so just use 1.0 instead.
+  y->setBendingCoeff(1.0);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
   energies.push_back(twisting);
   
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
+  YarnEnergy* gravity = new Gravity(*y, Explicit, Vec3e(0.0, -9.8, 0.0));
   energies.push_back(gravity);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
   energies.push_back(intContact);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0f);
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
   clamp1->setClamp(y->rest().points[0].pos);
-//  clamp1->setClamp(y->rest().points[0].pos + Eigen::Vector3f(0.0f, 6.0f, 2.0f));
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0f);
+//  clamp1->setClamp(y->rest().points[0].pos + Vec3e(0.0, 6.0, 2.0));
+  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
   clamp2->setClamp(y->rest().points[1].pos);
-//  Spring* clamp2 = new Spring(*y, Implicit, 14, 500.0f);
-//  clamp2->setClamp(y->rest().points[14].pos + Eigen::Vector3f(0.0f, -6.0f, 2.0f));
-  Spring* clamp3 = new Spring(*y, Implicit, 28, 500.0f);
-  clamp3->setClamp(y->rest().points[28].pos + Eigen::Vector3f(0.0f, 6.0f, -2.0f));
-  Spring* clamp4 = new Spring(*y, Implicit, 42, 500.0f);
-  clamp4->setClamp(y->rest().points[42].pos + Eigen::Vector3f(0.0f, -6.0f, -2.0f));
+//  Spring* clamp2 = new Spring(*y, Implicit, 14, 500.0);
+//  clamp2->setClamp(y->rest().points[14].pos + Vec3e(0.0, -6.0, 2.0));
+  Spring* clamp3 = new Spring(*y, Implicit, 28, 500.0);
+  clamp3->setClamp(y->rest().points[28].pos + Vec3e(0.0, 6.0, -2.0));
+  Spring* clamp4 = new Spring(*y, Implicit, 42, 500.0);
+  clamp4->setClamp(y->rest().points[42].pos + Vec3e(0.0, -6.0, -2.0));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
 //  energies.push_back(clamp3);
 //  energies.push_back(clamp4);
   
-  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50.0f);
+  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50.0);
   testSpring1->setClamp(testSpring1Clamp);
-  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50.0f);
+  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50.0);
   testSpring2->setClamp(testSpring2Clamp);
 //  energies.push_back(testSpring1);
 //  energies.push_back(testSpring2);
@@ -613,17 +615,17 @@ void SimulatorApp::loadStdEnergiesAndConsts() {
   energies.clear();
   constraints.clear();
   
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Eigen::Vector3f(0.0f, -9.8f, 0.0f));
+  YarnEnergy* gravity = new Gravity(*y, Explicit, Vec3e(0.0, -9.8, 0.0));
   energies.push_back(gravity);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0f);
+  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
   clamp1->setClamp(y->rest().points[0].pos);
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0f);
+  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
   clamp2->setClamp(y->rest().points[1].pos);
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0f);
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
   YarnConstraint* length = new Length(*y);

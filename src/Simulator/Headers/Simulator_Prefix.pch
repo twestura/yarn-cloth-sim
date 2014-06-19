@@ -29,6 +29,20 @@
 #include "cinder/Matrix.h"
 #include "cinder/Vector.h"
 #include "cinder/Quaternion.h"
+
+#include "Eigen/dense"
+
+// Global typedefs
+typedef double real;
+
+typedef Eigen::Matrix<real, 3, 3> Mat3e;
+typedef Eigen::Matrix<real, Eigen::Dynamic, 1> VecXe;
+typedef Eigen::Matrix<real, 4, 1> Vec4e;
+typedef Eigen::Matrix<real, 3, 1> Vec3e;
+typedef Eigen::Matrix<real, 2, 1> Vec2e;
+
+typedef ci::Vec2<real> Vec2c;
+typedef ci::Vec3<real> Vec3c;
 #endif
 
 #endif

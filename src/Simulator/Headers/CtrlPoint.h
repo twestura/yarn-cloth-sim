@@ -11,16 +11,14 @@
 
 #include "Eigen/Dense"
 
-typedef Eigen::Vector3f Vec3f;
-
 struct CtrlPoint
 {
   /// Position of the control point in space.
-  Vec3f pos;
+  Vec3e pos;
   /// Velocity of the control point.
-  Vec3f vel;
+  Vec3e vel;
   /// Acceleration of the control point.
-  Vec3f accel;
+  Vec3e accel;
 };
 
 #endif

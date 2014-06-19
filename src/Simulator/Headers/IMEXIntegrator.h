@@ -20,7 +20,7 @@
 
 class IMEXIntegrator : public Integrator {
 private:
-  Eigen::SparseMatrix<float> hessBase;
+  Eigen::SparseMatrix<real> hessBase;
 public:
   IMEXIntegrator(std::vector<YarnEnergy*>& energies, Yarn& y);
   

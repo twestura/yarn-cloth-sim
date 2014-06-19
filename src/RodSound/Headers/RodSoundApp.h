@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-const int SampleRate = 44100;
+const size_t SampleRate = 44100;
 
 template <typename T>
 static uint16_t inline toSample(const T val, const T max) {

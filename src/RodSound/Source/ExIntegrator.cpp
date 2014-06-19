@@ -8,11 +8,9 @@
 
 #include "ExIntegrator.h"
 
-typedef Eigen::VectorXf VecXf;
-
 ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integrator(y, energies) {
-  const float alpha1 = 1.5e-11;
-  const float alpha2 = 2e-5;
+  const real alpha1 = 1.5e-11;
+  const real alpha2 = 2e-5;
   
   std::vector<Triplet> triplets;
   size_t NumEqs = y.numCPs() * 3;
@@ -22,9 +20,9 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integr
     }
   }
   
-  Eigen::SparseMatrix<float> stiffness(NumEqs, NumEqs);
+  Eigen::SparseMatrix<real> stiffness(NumEqs, NumEqs);
   stiffness.setFromTriplets(triplets.begin(), triplets.end());
-  Eigen::SparseMatrix<float> mass(NumEqs, NumEqs);
+  Eigen::SparseMatrix<real> mass(NumEqs, NumEqs);
   // WARNING: assumes the mass matrix is the identity
   mass.setIdentity();
   
@@ -35,7 +33,7 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integr
 bool ExIntegrator::integrate(Clock& c) {
   
   size_t NumEqs = y.numCPs() * 3;
-  VecXf forces = VecXf::Zero(NumEqs);
+  VecXe forces = VecXe::Zero(NumEqs);
   
   for (YarnEnergy* e : energies) {
     if (!e->eval(&forces)) return false;
@@ -43,7 +41,7 @@ bool ExIntegrator::integrate(Clock& c) {
   forces *= c.timestep();
   
   // Damping calculations
-  VecXf vel(NumEqs);
+  VecXe vel(NumEqs);
   for (int i=0; i<y.numCPs(); i++) {
     vel.block<3,1>(3*i, 0) = y.cur().points[i].vel;
   }
@@ -51,7 +49,7 @@ bool ExIntegrator::integrate(Clock& c) {
   
   for (int i=0; i<y.numCPs(); i++) {
     // WARNING: assumes the mass matrix is the identity
-    Vec3f dqdot = forces.block<3,1>(3*i, 0);
+    Vec3e dqdot = forces.block<3,1>(3*i, 0);
     y.next().points[i].accel = dqdot;
     y.next().points[i].vel = y.cur().points[i].vel + dqdot;
     y.next().points[i].pos = y.cur().points[i].pos + c.timestep() * y.next().points[i].vel;

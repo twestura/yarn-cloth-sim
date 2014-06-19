@@ -13,18 +13,18 @@
 #include "Clock.h"
 
 class FrameExporter {
-  float fr;
-  float lastFrame;
+  real fr;
+  real lastFrame;
   size_t frameCount = 0;
 public:
-  FrameExporter(float framerate = 1.0f/60.0f) : fr(framerate), lastFrame(-fr) { }
+  FrameExporter(real framerate = 1.0/60.0) : fr(framerate), lastFrame(-fr) { }
   
   void const inline suggestTimestep(Clock& c) const {
     // NOTE: this may be negative, but clock accounts for this.
     c.suggestTimestep(nextTimestep(c));
   }
   
-  float const inline nextTimestep(const Clock& c) const {
+  real const inline nextTimestep(const Clock& c) const {
     return fr - (c.time() - lastFrame);
   }
   

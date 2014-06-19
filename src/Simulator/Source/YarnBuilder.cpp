@@ -11,16 +11,16 @@
 #include <fstream>
 
 void YarnBuilder::buildBraid() {
-  const float height = 20.0f;
-  const float width = 8.0f;
-  const float depth = 3.0f;
+  const real height = 20.0;
+  const real width = 8.0;
+  const real depth = 3.0;
   const int depthLevels = 3;
   const int vertLevels = 15;
   const int horizLevels = 7;
   const int totalPoints = 43;
-  const ci::Vec3f origin(0.0f, 10.0f, 0.0f);
+  const Vec3c origin(0.0, 10.0, 0.0);
   
-  std::vector<ci::Vec3f> points;
+  std::vector<Vec3c> points;
   points.reserve(totalPoints);
   
   int vert = 14;
@@ -30,7 +30,7 @@ void YarnBuilder::buildBraid() {
   bool right = false;
   bool front = false;
   while (points.size() < totalPoints) {
-    ci::Vec3f out;
+    Vec3c out;
     
     out.x = dep * (depth / depthLevels);
     dep += front ? 1 : -1;
@@ -58,7 +58,7 @@ void YarnBuilder::buildBraid() {
     points.push_back(out);
   }
   
-  ci::Vec3f u = (points[1] - points[0]).cross(ci::Vec3f(1.0f, 0.0f, 0.0f)).normalized();
+  Vec3c u = (points[1] - points[0]).cross(Vec3c(1.0, 0.0, 0.0)).normalized();
   
   std::string filename = ci::app::getAppPath().string() + "braid.yarn";
   std::ofstream out(filename, std::ios::trunc);

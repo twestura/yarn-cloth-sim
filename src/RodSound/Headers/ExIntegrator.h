@@ -12,7 +12,7 @@
 #include "Integrator.h"
 
 class ExIntegrator : public Integrator {
-  Eigen::SparseMatrix<float> damping;
+  Eigen::SparseMatrix<real> damping;
 public:
   ExIntegrator(Yarn&, std::vector<YarnEnergy*>&);
   bool integrate(Clock&);

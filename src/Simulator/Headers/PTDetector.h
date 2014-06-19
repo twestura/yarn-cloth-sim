@@ -14,19 +14,19 @@
 
 /*
 class PTDetector {
-  Eigen::SparseMatrix<float> mat;
+  Eigen::SparseMatrix<real> mat;
   
 public:
   
-  PTDetector(size_t size) : mat(Eigen::SparseMatrix<float>(size, size)) {}
+  PTDetector(size_t size) : mat(Eigen::SparseMatrix<real>(size, size)) {}
   
-  void contact(size_t i, size_t j, float priority) {
+  void contact(size_t i, size_t j, real priority) {
     if (i > j) { // store upper half
       size_t temp = i;
       i = j;
       j = temp;
     }
-    assert(mat.coeff(i, j) == 0.0f && "You forgot to reset!");
+    assert(mat.coeff(i, j) == 0.0 && "You forgot to reset!");
     mat.insert(i, j) = priority;
   }
   
@@ -34,7 +34,7 @@ public:
     
   }
   
-  float topPriority() {
+  real topPriority() {
     return mat.toDense().maxCoeff(); // not great...
   }
   
@@ -49,18 +49,18 @@ class PTDetector {
   int i;
   int j;
   
-  float s1dot;
-  float s2dot;
+  real s1dot;
+  real s2dot;
 public:
   
-  PTDetector(int i, int j, float s1dot, float s2dot) :
+  PTDetector(int i, int j, real s1dot, real s2dot) :
     i(i), j(j), s1dot(s1dot), s2dot(s2dot) { }
   
   std::pair<int, int> id() { return std::pair<int, int>(i, j); }
   
-  bool pass(float s1dotnew, float s2dotnew) {
-    bool ret = ((s1dotnew > 0.0f && s1dot < 0.0f) || (s1dotnew < 0 && s1dot > 0.0f)) &&
-               ((s2dotnew > 0.0f && s2dot < 0.0f) || (s2dotnew < 0 && s2dot > 0.0f));
+  bool pass(real s1dotnew, real s2dotnew) {
+    bool ret = ((s1dotnew > 0.0 && s1dot < 0.0) || (s1dotnew < 0.0 && s1dot > 0.0)) &&
+               ((s2dotnew > 0.0 && s2dot < 0.0) || (s2dotnew < 0.0 && s2dot > 0.0));
     s1dot = s1dotnew;
     s2dot = s2dotnew;
     return ret;

@@ -35,18 +35,19 @@ struct Threadpool
   boost::thread_group threads;
 };
 
-/// Convenience method for checking if two floats are within some epsilon of each other.
-static inline bool is_approx(float f1, float f2, float eps = 1e-5f) {
+/// Convenience method for checking if two reals are within some epsilon of each other.
+static inline bool is_approx(real f1, real f2, real eps = 1.0e-5) {
   return std::abs(f1 - f2) < eps;
 }
 
-/// Convenience method for converting an Eigen Vec3f to a Cinder Vec3f. Useful for draw-time ops.
-const ci::Vec3f static inline toCi(const Eigen::Vector3f& v) {
-  return ci::Vec3f(v.x(), v.y(), v.z());
+/// Convenience method for converting a Vec3e to a Vec3c. Useful for draw-time ops.
+const Vec3c static inline EtoC(const Vec3e& v) {
+  return Vec3c(v.x(), v.y(), v.z());
 }
 
-const Eigen::Vector3f static inline toEig(const ci::Vec3f& v) {
-  return Eigen::Vector3f(v.x, v.y, v.z);
+/// Convenience method for converting a Vec3c to a Vec3e.
+const Vec3e static inline CtoE(const Vec3c& v) {
+  return Vec3e(v.x, v.y, v.z);
 }
 
 /// A class for profiling operations over several iterations.
