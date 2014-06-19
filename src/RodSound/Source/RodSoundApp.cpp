@@ -548,7 +548,7 @@ void RodSoundApp::draw() {
 #endif //ifdef DRAW_QUADRATURES
   
   for (YarnEnergy* e : energies) {
-    e->draw();
+    e->draw(c.timestep());
   }
   integrator->draw();
  
@@ -652,9 +652,9 @@ void RodSoundApp::loadStdEnergies() {
 //  energies.push_back(floor);
   
   
-  YarnEnergy* imp1 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), 0);
-  YarnEnergy* imp2 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, 500.0f), y->numCPs()/2);
-  YarnEnergy* imp3 = new Impulse(*y, Explicit, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), y->numCPs()-1);
+  YarnEnergy* imp1 = new Impulse(*y, Explicit, c, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), 0);
+  YarnEnergy* imp2 = new Impulse(*y, Explicit, c, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, 500.0f), y->numCPs()/2);
+  YarnEnergy* imp3 = new Impulse(*y, Explicit, c, 0.2f, 0.21f, Eigen::Vector3f(0.0f, 0.0f, -500.0f), y->numCPs()-1);
   energies.push_back(imp1); energies.push_back(imp2); energies.push_back(imp3);
   
   /*

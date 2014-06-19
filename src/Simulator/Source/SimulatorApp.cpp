@@ -315,9 +315,11 @@ void SimulatorApp::update()
   while (!integrator->integrate(c)) {
     if (c.canDecreaseTimestep()) {
       c.suggestTimestep(c.timestep() / 2.0f);
+      std::cout << "Decreasing timestep: " << c.timestep() << "\n";
     } else {
       std::cout << "Simulation Failed!\n";
       running = false;
+      return;
     }
   }
 #else
@@ -480,7 +482,7 @@ void SimulatorApp::draw() {
 #endif //ifdef DRAW_QUADRATURES
   
   for (YarnEnergy* e : energies) {
-    e->draw();
+    e->draw(c.timestep());
   }
 #ifndef CONST_INTEGRATOR
   integrator->draw();

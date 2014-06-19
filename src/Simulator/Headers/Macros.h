@@ -19,7 +19,9 @@
 
 // Energy.cpp
 // #define ENABLE_BEND_AUTODIFF
-// #define ENABLE_STRETCH_AUTODIFF
+#define DRAW_SPRING
+#define DRAW_MOUSE_SPRING
+#define DRAW_BENDING
 #define DRAW_TWIST
 #define DRAW_INT_CONTACT
 

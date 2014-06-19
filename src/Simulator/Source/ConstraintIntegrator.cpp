@@ -18,17 +18,17 @@ Integrator(y, energies), constraints(constraints) {
 bool ConstraintIntegrator::integrate(Clock& c) {
   // Evaluate all (explicit) forces
   size_t numEqs = 3*y.numCPs();
-  VecXf dqdot = VecXf::Zero(numEqs);
+  VecXf forces = VecXf::Zero(numEqs);
   
   for (YarnEnergy* e : energies) {
-    e->eval(VecXf::Zero(numEqs), c, dqdot);
+    e->eval(&forces);
   }
   
-  // TODO: mass matrix may not be the Identity
+  // WARNING: assumes the mass matrix is the identity
   // Find candidate positions
   VecXf xStar = VecXf(numEqs);
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3f velStar = y.cur().points[i].vel - dqdot.block<3,1>(3*i, 0);
+    Vec3f velStar = y.cur().points[i].vel + forces.block<3,1>(3*i, 0) * c.timestep();
     xStar.block<3,1>(3*i, 0) = y.cur().points[i].pos + c.timestep() * velStar;
   }
   

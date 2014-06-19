@@ -59,7 +59,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
     // (these do not change between Newton iterations)
     for (YarnEnergy* e : energies) {
       if (e->evalType() == Explicit) {
-        evalSuccess = e->eval(dqdot, c, FxEx); // Ignores dqdot
+        evalSuccess = e->eval(&FxEx);
         CHECK_NAN_VEC(FxEx);
         if (!evalSuccess) break;
       }
@@ -69,41 +69,76 @@ bool IMEXIntegrator::integrate(Clock& c) {
     
     // Perform Newton iteration to solve IMEX equations
     while (!newtonConverge) {
-      if (newtonIterations != 0) {
-        triplets.clear();
-        Fx.setZero();
-      }
-      
+      triplets.clear();
       triplets.reserve(numTriplets);
-      newtonIterations++;
+      Fx = FxEx;
+      
+      // Find offset for implicit evaluation
+      VecXf offset(NumEqs);
+      for (int i=0; i<y.numCPs(); i++) {
+        offset.block<3,1>(3*i, 0) = c.timestep()*(y.cur().points[i].vel + dqdot.block<3,1>(3*i, 0));
+      }
       
       // Add up energies
       for (YarnEnergy* e : energies) {
         if (e->evalType() == Implicit) {
-          evalSuccess = e->eval(dqdot, c, Fx, &triplets);
+          evalSuccess = e->eval(&Fx, &triplets, &offset);
           if (!evalSuccess) break;
         }
       }
       if (!evalSuccess) break;
       
-      // TODO: Mass matrix may not be I
+      // WARNING: assumes the mass matrix is the identity
       for (int i=0; i<NumEqs; i++) {
-        Fx(i) += dqdot(i) + FxEx(i);
-        triplets.push_back(Triplet(i, i, 1.0f));
+        Fx(i) = dqdot(i) + (-c.timestep()*Fx(i));
+//        triplets.push_back(Triplet(i, i, -1.0f / c.timestep() / c.timestep()));
       }
       
-      // Solve equations for updates to changes in position and velocity using Conjugate Gradient
-      GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
-      
       CHECK_NAN_VEC(Fx);
+      
+      // Test for convergence
+      float residual = Fx.norm();
+      if (residual < ConvergenceThreshold) {
+        newtonConverge = true;
+        break;
+      } else if (newtonIterations > 4) {
+        std::cout << "resid: " << residual << "\n";
+        if (residual < ConvergenceTolerance) {
+          newtonConverge = true;
+        }
+#ifdef DRAW_IMEX_INTEGRATOR
+        float maxcoeff = error.maxCoeff();
+        Yarn* yp = &y;
+        for (int i=0; i<y.numCPs(); i++) {
+          Vec3f curerror = error.block<3,1>(3*i, 0);
+          frames.push_back([yp, i, maxcoeff, curerror] () {
+            ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7f);
+            ci::gl::drawSphere(toCi(yp->cur().points[i].pos), constants::radius*2.0f);
+          });
+        }
+#endif // ifdef DRAW_IMEX_INTEGRATOR
+        break;
+      }
+      
+      // Error too high; perform one Newton iteration to update dqdot
+      newtonIterations++;
+      
+      // Create sparse Jacobian of Fx
+      GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
+      GradFx *= -c.timestep() * c.timestep();
+      // WARNING: assumes the mass matrix is the identity
+      Eigen::SparseMatrix<float> id(NumEqs, NumEqs);
+      id.setIdentity();
+      GradFx += id;
+      
       CHECK_NAN_VEC(GradFx.toDense());
       
       Profiler::start("CG Solver");
       Eigen::ConjugateGradient<Eigen::SparseMatrix<float>, Eigen::Upper,
-        Eigen::IncompleteLUT<float>> cg;
+                               Eigen::IncompleteLUT<float>> cg;
       cg.compute(GradFx);
-      Eigen::VectorXf temp = sol;
-      sol = cg.solveWithGuess(Fx, temp);
+      Eigen::VectorXf guess = sol;
+      sol = cg.solveWithGuess(-Fx, guess); // H(x_n) (x_n+1 - x_n) = -F(x_n)
       
       if (cg.info() == Eigen::NoConvergence) {
         if (c.canDecreaseTimestep()) {
@@ -121,42 +156,9 @@ bool IMEXIntegrator::integrate(Clock& c) {
         assert(false);
       }
       
-      dqdot -= sol;
+      dqdot += sol;
       Profiler::stop("CG Solver");
-      
-      VecXf FxIm = VecXf::Zero(NumEqs);
-      for (YarnEnergy* e : energies) {
-        if (e->evalType() == Implicit) {
-          e->eval(dqdot, c, FxIm);
-        }
-      }
-      
-      
-      VecXf error = dqdot + FxIm + FxEx;
-      float residual = error.norm();
-      if (residual < ConvergenceThreshold) {
-        newtonConverge = true;
-      } else if (newtonIterations > 4) {
-        std::cerr << "resid: " << residual << "\n";
-        
-        if (residual < ConvergenceTolerance) newtonConverge = true;
-        
-#ifdef DRAW_IMEX_INTEGRATOR
-        float maxcoeff = error.maxCoeff();
-        Yarn* yp = &y;
-        for (int i=0; i<y.numCPs(); i++) {
-          Vec3f curerror = error.block<3,1>(3*i, 0);
-          frames.push_back([yp, i, maxcoeff, curerror] () {
-            ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7f);
-            ci::gl::drawSphere(toCi(yp->cur().points[i].pos), constants::radius*2.0f);
-          });
-        }
-#endif // ifdef DRAW_IMEX_INTEGRATOR
-        
-        break;
-      }
     }
-    if (!evalSuccess) continue;
     
     // Update yarn positions
     if (newtonConverge) {

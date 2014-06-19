@@ -27,7 +27,7 @@ public:
   Clock(float defaultTimestep = constants::INITIAL_TIMESTEP) : defaultTimestep(defaultTimestep),
   h(defaultTimestep) { }
   /// The timestep will not decrease beyond this value.
-  const float minTimestep = 1e-5f;
+  const float minTimestep = 1e-6f;
   
   /// Get the current time of the simulation.
   const float inline time() const { return t; }
