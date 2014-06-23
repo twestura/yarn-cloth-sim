@@ -9,12 +9,14 @@
 #ifndef __Visualizer__Yarn__
 #define __Visualizer__Yarn__
 
+#include "Eigen/Sparse"
 #include "Segment.h"
 #include <vector>
 
+typedef Eigen::Triplet<real> Triplet;
+
 /// A Yarn at a specific point in time.
-struct YarnStr
-{
+struct YarnStr {
 public:
   /// Control points (n+1 total) that define the yarn's position.
   std::vector<CtrlPoint> points;
@@ -22,9 +24,16 @@ public:
   std::vector<Segment> segments;
 };
 
+struct Mass {
+public:
+  VecXe diag;
+  Eigen::SparseMatrix<real> sparse;
+  real total;
+};
+
+
 /// A Yarn stepped though points in time.
-class Yarn
-{
+class Yarn {
 private:
   real r = constants::radius;
   real shearModulus = constants::shearModulus;
@@ -34,6 +43,15 @@ private:
   real tCoeff = xArea * shearModulus * r * r / 2.0;
   real sCoeff = xArea * youngsModulus;
   real bCoeff = xArea * youngsModulus * r * r / 4.0 * 100.0;
+  
+  /// The mass matrix.
+  Mass mass;
+  /// The inverse of the mass matrix, cached here to save on computation.
+  Mass invMass;
+  /// The 2x2 bending matrices of the internal control points. If empty, the bending matrix for each
+  /// is assumed to be bCoeff * I_2 instead.
+  std::vector<Mat2e> bendingMatrix;
+  // TODO: edit energies to use this.
   
   /// The yarn at rest.
   YarnStr  restYS;
@@ -49,11 +67,13 @@ private:
   std::vector<Vec2e> rcn;
   /// The rest curvature defined at each internal control point of the yarn.
   std::vector<Vec2e> rc;
+  
+  
 public:
   /// Constructs a yarn that is initially at rest given a vector of initial positions.
   /// The U vector for the first segment is then propagated down the yarn by parallel transport
   /// through space.
-  Yarn(std::vector<Vec3e>& points, Vec3e u0) {
+  Yarn(std::vector<Vec3e>& points, Vec3e u0, VecXe* masses = nullptr) {
     for (Vec3e p : points) {
       CtrlPoint cp;
       cp.pos = p;
@@ -97,6 +117,32 @@ public:
       rc.push_back(restMatCurve);
       rvl.push_back(0.5*(ePrev.length()+eNext.length()));
     }
+    
+    // Set mass matrix
+    if (masses && masses->rows() == numCPs()) {
+      mass.diag = *masses;
+      mass.total = mass.diag.sum();
+      std::vector<Triplet> triplets;
+      triplets.reserve(3*numCPs());
+      for (int i=0; i<3*numCPs(); i++) {
+        triplets.push_back(Triplet(i, i, (*masses)(i/3)));
+      }
+      mass.sparse.resize(3*numCPs(), 3*numCPs());
+      mass.sparse.setFromTriplets(triplets.begin(), triplets.end());
+      
+      invMass.diag = mass.diag.cwiseInverse();
+      invMass.sparse = mass.sparse.cwiseInverse();
+    } else {
+      std::cout << "Warning: Mass matrix set to identity.\n";
+      mass.diag = VecXe::Ones(numCPs());
+      mass.total = numCPs();
+      mass.sparse.resize(3*points.size(), 3*points.size());
+      mass.sparse.setIdentity();
+      
+      invMass.diag = VecXe::Ones(numCPs());
+      invMass.sparse.resize(3*points.size(), 3*points.size());
+      invMass.sparse.setIdentity();
+    }
   }
   
   // WARNING: The following methods are safe as long as curYS and nextYS are always allocated upon
@@ -111,11 +157,11 @@ public:
   const YarnStr& rest() const { return restYS; }
   
   /// Get the number of control points on the yarn.
-  const size_t inline numCPs() const { return restYS.points.size(); }
+  const inline size_t numCPs() const { return restYS.points.size(); }
   /// Get the number of control points associated with 2 edges.
-  const size_t inline numIntCPs() const { return std::max((int)restYS.points.size()-2, 0); }
+  const inline size_t numIntCPs() const { return std::max((int)restYS.points.size()-2, 0); }
   /// Get the number of segments in the yarn.
-  const size_t inline numSegs() const { return restYS.segments.size(); }
+  const inline size_t numSegs() const { return restYS.segments.size(); }
   
   /// Swaps the current and next yarns, e.g. at the end of a timestep.
   void inline swapYarns() {
@@ -125,46 +171,60 @@ public:
   }
   
   // Get the rest Voronoi length for an internal control point.
-  const real inline restVoronoiLength(size_t index) const {
+  const inline real restVoronoiLength(size_t index) const {
     assert(index > 0 && "Voronoi length undifined at this control point.");
     return rvl[index-1];
   }
   
   // Get the rest curvature for an internal control point.
-  const Vec2e inline restCurvePrev(size_t index) const {
+  const inline Vec2e& restCurvePrev(size_t index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rcp[index-1];
   }
   
   // Get the rest curvature for an internal control point.
-  const Vec2e inline restCurveNext(size_t index) const {
+  const inline Vec2e& restCurveNext(size_t index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rcn[index-1];
   }
   
   // Get the rest curvature for an internal control point.
-  const Vec2e inline restCurve(size_t index) const {
+  const inline Vec2e& restCurve(size_t index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rc[index-1];
   }
   
   /// Get the yarn's radius
-  const real inline radius() const { return r; }
+  const inline real radius() const { return r; }
   
   /// Get the twist coefficient
-  const real inline twistCoeff() const { return tCoeff; }
+  const inline real twistCoeff() const { return tCoeff; }
   /// Set the twist coefficient
   void inline setTwistCoeff(real newCoeff) { tCoeff = newCoeff; }
   
   /// Get the stretch coefficient
-  const real inline stretchCoeff() const { return sCoeff; }
+  const inline real stretchCoeff() const { return sCoeff; }
   /// Set the stretch coefficient
   void inline setStretchCoeff(real newCoeff) { sCoeff = newCoeff; }
   
   /// Get the bend coefficient (multiply by the identity matrix to get the bending matrix)
-  const real inline bendCoeff() const { return bCoeff; }
+  const inline real bendCoeff() const { return bCoeff; }
   /// Set the bending coefficient
   void inline setBendingCoeff(real newCoeff) { bCoeff = newCoeff; }
+  
+  /// Get the yarn's mass matrix.
+  const inline Mass& getMass() const { return mass; }
+  /// Get the yarn's inverse mass matrix.
+  const inline Mass& getInvMass() const { return invMass; }
+  
+  /// Get the center of mass of the current yarn.
+  const Vec3e getCurCoM() const {
+    Vec3e com = Vec3e::Zero();
+    for (int i=0; i<numCPs(); i++) {
+      com += getMass().diag(i) * cur().points[i].pos;
+    }
+    return com / getMass().total;
+  }
   
   ~Yarn() {
     delete curYS;

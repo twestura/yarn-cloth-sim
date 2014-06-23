@@ -86,8 +86,8 @@ class RodSoundApp : public AppNative {
   constexpr static real SimulationLength = 3.0; // in seconds
   constexpr static size_t BufferSize = (size_t)(SampleRate * SimulationLength);
   double sampleBuffer[BufferSize];
-  const real c0 = 340.0; // speed of sound in air
-  const real rho0 = 1.23; // density of air
+  const real c0 = 340.0; // speed of sound in air, m/s
+  const real rho0 = 1.23; // density of air, kg/m^3
   
   real tAtLastDraw = 0.0;
   bool stopNow = false;
@@ -600,11 +600,11 @@ void RodSoundApp::loadYarnFile(std::string filename) {
 void RodSoundApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
-  Vec3e start = Vec3e(0.0, 20.0, 0.0);    // -5.0, 4.0, 3.0);
-  Vec3e end   = Vec3e(0.0, 1.0, 0.0);    // 5.0, 3.0, -3.0);
+  Vec3e start = Vec3e(0.0, 20.0, 0.0); // Vec3e(-5.0, 4.0, 3.0);
+  Vec3e end   = Vec3e(0.0, 1.0, 0.0); // Vec3e(5.0, 3.0, -3.0);
 
   Vec3e u     = (end-start).cross(Vec3e(0.0, 0.1, 0.0)).normalized();
-  if (!u.allFinite() || u.norm() < 0.7) {
+  if (!u.allFinite() || u.norm() < 0.95) {
     u << 1.0, 0.0, 0.0;
   }
   
@@ -620,7 +620,7 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   targetPos = Vec3c(0.0, 10.0, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPoints, u); // Vec3e(0.0, 0.0, 1.0));
+  y = new Yarn(yarnPoints, u);
 }
 
 void RodSoundApp::loadStdEnergies() {
@@ -647,8 +647,7 @@ void RodSoundApp::loadStdEnergies() {
   mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
-  YarnEnergy* floor = new PlaneContact(*y, Explicit, Vec3e(0.0, 1.0, 0.0),
-                                       Vec3e::Zero(), 5000.0);
+  YarnEnergy* floor = new PlaneContact(*y, Explicit, Vec3e(0.0, 1.0, 0.0), Vec3e::Zero(), 5000.0);
 //  energies.push_back(floor);
   
   

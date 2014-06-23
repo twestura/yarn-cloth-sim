@@ -88,11 +88,8 @@ bool IMEXIntegrator::integrate(Clock& c) {
       }
       if (!evalSuccess) break;
       
-      // WARNING: assumes the mass matrix is the identity
-      for (int i=0; i<NumEqs; i++) {
-        Fx(i) = dqdot(i) + (-c.timestep()*Fx(i));
-//        triplets.push_back(Triplet(i, i, -1.0 / c.timestep() / c.timestep()));
-      }
+      Fx *= -c.timestep();
+      Fx += y.getMass().sparse * dqdot;
       
       CHECK_NAN_VEC(Fx);
       
@@ -126,10 +123,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       // Create sparse Jacobian of Fx
       GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
       GradFx *= -c.timestep() * c.timestep();
-      // WARNING: assumes the mass matrix is the identity
-      Eigen::SparseMatrix<real> id(NumEqs, NumEqs);
-      id.setIdentity();
-      GradFx += id;
+      GradFx += y.getMass().sparse;
       
       CHECK_NAN_VEC(GradFx.toDense());
       
@@ -137,6 +131,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       Eigen::ConjugateGradient<Eigen::SparseMatrix<real>, Eigen::Upper,
                                Eigen::IncompleteLUT<real>> cg;
       cg.compute(GradFx);
+      assert(cg.preconditioner().info() == Eigen::ComputationInfo::Success);
       VecXe guess = sol;
       sol = cg.solveWithGuess(-Fx, guess); // H(x_n) (x_n+1 - x_n) = -F(x_n)
       

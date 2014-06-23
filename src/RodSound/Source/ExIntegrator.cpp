@@ -9,8 +9,8 @@
 #include "ExIntegrator.h"
 
 ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integrator(y, energies) {
-  const real alpha1 = 1.5e-11;
-  const real alpha2 = 2e-5;
+  const real alpha1 = 6.615e-7;
+  const real alpha2 = 0.882;
   
   std::vector<Triplet> triplets;
   size_t NumEqs = y.numCPs() * 3;
@@ -21,13 +21,13 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integr
   }
   
   Eigen::SparseMatrix<real> stiffness(NumEqs, NumEqs);
-  stiffness.setFromTriplets(triplets.begin(), triplets.end());
-  Eigen::SparseMatrix<real> mass(NumEqs, NumEqs);
-  // WARNING: assumes the mass matrix is the identity
-  mass.setIdentity();
+  stiffness.setFromTriplets(triplets.begin(), triplets.end()); // Remember to negate this!
+  
+  // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic>> saes(-stiffness.toDense());
+  // std::cout << saes.eigenvalues() << "\n\n";
   
   // Rayleigh damping matrix
-  damping = -alpha1 * stiffness + alpha2 * mass;
+  damping = -alpha1 * stiffness + alpha2 * y.getMass().sparse;
 }
 
 bool ExIntegrator::integrate(Clock& c) {
@@ -38,7 +38,6 @@ bool ExIntegrator::integrate(Clock& c) {
   for (YarnEnergy* e : energies) {
     if (!e->eval(&forces)) return false;
   }
-  forces *= c.timestep();
   
   // Damping calculations
   VecXe vel(NumEqs);
@@ -46,13 +45,13 @@ bool ExIntegrator::integrate(Clock& c) {
     vel.block<3,1>(3*i, 0) = y.cur().points[i].vel;
   }
   forces -= damping * vel;
+  forces = y.getInvMass().sparse * forces;
   
   for (int i=0; i<y.numCPs(); i++) {
-    // WARNING: assumes the mass matrix is the identity
-    Vec3e dqdot = forces.block<3,1>(3*i, 0);
+    Vec3e dqdot = forces.block<3,1>(3*i, 0) * c.timestep();
     y.next().points[i].accel = dqdot;
     y.next().points[i].vel = y.cur().points[i].vel + dqdot;
-    y.next().points[i].pos = y.cur().points[i].pos + c.timestep() * y.next().points[i].vel;
+    y.next().points[i].pos = y.cur().points[i].pos + y.next().points[i].vel * c.timestep();
   }
   
   return true;

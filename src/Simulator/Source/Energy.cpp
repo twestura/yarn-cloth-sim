@@ -19,6 +19,7 @@ void const YarnEnergy::draw(real scale) {
   for (std::function<void(real)> f : frames) {
     f(scale);
   }
+  frames.clear();
 }
 
 // GRAVITY
@@ -28,7 +29,7 @@ Gravity::Gravity(const Yarn& y, EvalType et, Vec3e dir) : YarnEnergy(y, et), dir
 bool Gravity::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   if (Fx) {
     for (int i=0; i<y.numCPs(); i++) {
-      Fx->block<3,1>(3*i, 0) += dir;
+      Fx->block<3,1>(3*i, 0) += dir * y.getMass().diag(i);
     }
   }
   return true;
@@ -42,7 +43,6 @@ Spring::Spring(const Yarn& y, EvalType et, size_t index, real stiffness) :
 bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   // Drawing ops
 #ifdef DRAW_SPRING
-  frames.clear();
   Vec3c ciclamp = EtoC(clamp);
   Vec3c ciindex = EtoC(y.cur().points[index].pos);
   frames.push_back([ciclamp, ciindex] (real scale) {
@@ -76,7 +76,6 @@ MouseSpring::MouseSpring(const Yarn& y, EvalType et, size_t index, real stiffnes
   YarnEnergy(y, et), index(index), stiffness(stiffness) {}
 
 bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  frames.clear();
   if (!mouseDown) return true;
   assert(mouseSet && "Set the mouse position each time you call eval()!");
 
@@ -120,7 +119,6 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   Profiler::start("Bend Eval");
   
 #ifdef DRAW_BENDING
-  frames.clear();
   VecXe forces = VecXe::Zero(3*y.numCPs());
 #endif //ifdef DRAW_BENDING
   
@@ -209,9 +207,6 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     Vec3e prevVec = curPoint - prevPoint;
     Vec3e nextVec = nextPoint - curPoint;
     assert(prevVec.norm() > 0.0 && nextVec.norm() > 0.0 && "Segment length is zero!");
-    
-    // WARNING: assumes that twist in the material curvature changes minimally
-    // between Newton iterations. This may not be the case.
     
     Vec3e tPrev = prevVec.normalized();
     Vec3e tNext = nextVec.normalized();
@@ -512,7 +507,6 @@ Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   Profiler::start("Twist Eval");
 #ifdef DRAW_TWIST
-  frames.clear();
   VecXe twist = VecXe::Zero(y.numCPs()*3);
 #endif // ifdef DRAW_TWIST
   for (int i=1; i<y.numCPs()-1; i++) {
@@ -630,9 +624,6 @@ IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
 bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   Profiler::start("Int Contact Eval");
-#ifdef DRAW_INT_CONTACT
-  frames.clear();
-#endif // ifdef DRAW_INT_CONTACT
   const real r = y.radius();
   
   for (int i=0; i<y.numSegs(); i++) {
@@ -798,8 +789,6 @@ PlaneContact::PlaneContact(const Yarn& y, EvalType et, Vec3e normal, Vec3e origi
 : YarnEnergy(y, et), normal(normal.normalized()), origin(origin), stiffness(stiffness) { }
 
 bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  frames.clear();
-  
   for (int i=0; i<y.numCPs(); i++) {
     Vec3e pos = y.cur().points[i].pos;
     if (offset) {
@@ -831,8 +820,6 @@ Impulse::Impulse(const Yarn& y, EvalType et, const Clock& c, real start, real en
 index(index) { }
 
 bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  frames.clear();
-  
   if (c.time() < start || c.time() > end) return true;
   real t = sinf((c.time() - start) * constants::pi / (end - start));
   if (Fx) {

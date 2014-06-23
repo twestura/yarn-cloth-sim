@@ -24,12 +24,11 @@ bool ConstraintIntegrator::integrate(Clock& c) {
     e->eval(&forces);
   }
   
-  // WARNING: assumes the mass matrix is the identity
   // Find candidate positions
   VecXe xStar = VecXe(numEqs);
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3e velStar = y.cur().points[i].vel + forces.block<3,1>(3*i, 0) * c.timestep();
-    xStar.block<3,1>(3*i, 0) = y.cur().points[i].pos + c.timestep() * velStar;
+    Vec3e velStar = y.cur().points[i].vel + y.getInvMass().diag(i)*c.timestep()*forces.block<3,1>(3*i, 0);
+    xStar.block<3,1>(3*i, 0) = y.cur().points[i].pos + c.timestep()*velStar;
   }
   
   // TODO: apply mass scaling (??)

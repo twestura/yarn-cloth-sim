@@ -9,14 +9,11 @@
 #ifndef Visualizer_Energy_h
 #define Visualizer_Energy_h
 
-#include "Eigen/Sparse"
 #include "autodiff.h"
 #include "Yarn.h"
 #include "Constants.h"
 #include "Clock.h"
 #include "PTDetector.h"
-
-typedef Eigen::Triplet<real> Triplet;
 
 enum EvalType {
   Implicit,
