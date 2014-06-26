@@ -610,7 +610,6 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   
   std::vector<Vec3e> yarnPoints;
   for(int i=0; i < numPoints; i++) {
-//    Vec3e p(0.0, (numPoints-i)*20.0/numPoints, 0.0);
     real t = ((real) i) / (real) (numPoints -1);
     Vec3e p = (1-t)*start + t*end;
     yarnPoints.push_back(p);
@@ -620,7 +619,8 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   targetPos = Vec3c(0.0, 10.0, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPoints, u);
+//  VecXe mass = VecXe::Constant(numPoints, 0.2);
+  y = new Yarn(yarnPoints, u); //, &mass);
 }
 
 void RodSoundApp::loadStdEnergies() {

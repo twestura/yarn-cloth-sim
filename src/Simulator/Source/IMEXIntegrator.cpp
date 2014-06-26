@@ -76,7 +76,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       // Find offset for implicit evaluation
       VecXe offset(NumEqs);
       for (int i=0; i<y.numCPs(); i++) {
-        offset.block<3,1>(3*i, 0) = c.timestep()*(y.cur().points[i].vel + dqdot.block<3,1>(3*i, 0));
+        offset.segment<3>(3*i) = c.timestep()*(y.cur().points[i].vel + dqdot.segment<3>(3*i));
       }
       
       // Add up energies
@@ -107,7 +107,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
         real maxcoeff = error.maxCoeff();
         Yarn* yp = &y;
         for (int i=0; i<y.numCPs(); i++) {
-          Vec3e curerror = error.block<3,1>(3*i, 0);
+          Vec3e curerror = error.segment<3>(3*i);
           frames.push_back([yp, i, maxcoeff, curerror] () {
             ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7);
             ci::gl::drawSphere(EtoC(yp->cur().points[i].pos), constants::radius*2.0);
@@ -162,7 +162,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       const real gamma = 0.5;
       const real beta = 0.25;
       for (int i=0; i<y.numCPs(); i++) {
-        Vec3e curdqdot = dqdot.block<3, 1>(3*i, 0);
+        Vec3e curdqdot = dqdot.segment<3>(3*i);
         y.next().points[i].vel = y.cur().points[i].vel +
                                  (1.0-gamma)*y.cur().points[i].accel + gamma*curdqdot;
         y.next().points[i].pos = y.cur().points[i].pos +
@@ -176,7 +176,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
     
       // Update changes to position and velocity
       for (int i=0; i<y.numCPs(); i++) {
-        Vec3e curdqdot = dqdot.block<3, 1>(3*i, 0);
+        Vec3e curdqdot = dqdot.segment<3>(3*i);
         y.next().points[i].vel = y.cur().points[i].vel + curdqdot;
         y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*y.next().points[i].vel;
       }

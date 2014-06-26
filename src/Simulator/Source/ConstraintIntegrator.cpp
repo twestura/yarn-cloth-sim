@@ -27,8 +27,8 @@ bool ConstraintIntegrator::integrate(Clock& c) {
   // Find candidate positions
   VecXe xStar = VecXe(numEqs);
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3e velStar = y.cur().points[i].vel + y.getInvMass().diag(i)*c.timestep()*forces.block<3,1>(3*i, 0);
-    xStar.block<3,1>(3*i, 0) = y.cur().points[i].pos + c.timestep()*velStar;
+    Vec3e velStar = y.cur().points[i].vel + y.getInvMass().diag(i)*c.timestep()*forces.segment<3>(3*i);
+    xStar.segment<3>(3*i) = y.cur().points[i].pos + c.timestep()*velStar;
   }
   
   // TODO: apply mass scaling (??)
@@ -48,13 +48,13 @@ bool ConstraintIntegrator::integrate(Clock& c) {
   
   // Update positions/velocities
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3e delta = xStar.block<3,1>(3*i, 0) - y.cur().points[i].pos;
+    Vec3e delta = xStar.segment<3>(3*i) - y.cur().points[i].pos;
     if (delta.norm() < 1.0e-4) { // FIXME
       y.next().points[i].vel = Vec3e::Zero();
       y.next().points[i].pos = y.cur().points[i].pos;
     } else {
       y.next().points[i].vel = delta / c.timestep();
-      y.next().points[i].pos = xStar.block<3,1>(3*i, 0);
+      y.next().points[i].pos = xStar.segment<3>(3*i);
     }
   }
   

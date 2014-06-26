@@ -29,7 +29,7 @@ Gravity::Gravity(const Yarn& y, EvalType et, Vec3e dir) : YarnEnergy(y, et), dir
 bool Gravity::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   if (Fx) {
     for (int i=0; i<y.numCPs(); i++) {
-      Fx->block<3,1>(3*i, 0) += dir * y.getMass().diag(i);
+      Fx->segment<3>(3*i) += dir * y.getMass().diag(i);
     }
   }
   return true;
@@ -53,10 +53,10 @@ bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) 
   
   Vec3e yPoint = y.cur().points[index].pos;
   if (offset) {
-    yPoint += offset->block<3,1>(3*index, 0);
+    yPoint += offset->segment<3>(3*index);
   }
   if (Fx) {
-    Fx->block<3,1>(3*index, 0) += stiffness * (clamp - yPoint);
+    Fx->segment<3>(3*index) += stiffness * (clamp - yPoint);
   }
   if (GradFx) {
     GradFx->push_back(Triplet(3*index,   3*index,   -stiffness));
@@ -81,10 +81,10 @@ bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* off
 
   Vec3e yPoint = y.cur().points[index].pos;
   if (offset) {
-    yPoint += offset->block<3,1>(3*index, 0);
+    yPoint += offset->segment<3>(3*index);
   }
   if (Fx) {
-    Fx->block<3,1>(3*index, 0) += stiffness * (mouse - yPoint);
+    Fx->segment<3>(3*index) += stiffness * (mouse - yPoint);
   }
   if (GradFx) {
     GradFx->push_back(Triplet(3*index,   3*index,   -stiffness));
@@ -130,9 +130,9 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     Vec3e nextPoint = y.cur().points[i+1].pos;
     
     if (offset) {
-      prevPoint += offset->block<3,1>(3*(i-1), 0);
-      curPoint  += offset->block<3,1>(3*i,     0);
-      nextPoint += offset->block<3,1>(3*(i+1), 0);
+      prevPoint += offset->segment<3>(3*(i-1));
+      curPoint  += offset->segment<3>(3*i);
+      nextPoint += offset->segment<3>(3*(i+1));
     }
     
 #ifdef ENABLE_BEND_AUTODIFF
@@ -188,7 +188,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     
     if (Fx) {
       Gradient grad = bendEnergy.getGradient();
-      Fx->block<9,1>(3*(i-1), 0) += y.bendCoeff()*grad;
+      Fx->segment<9>(3*(i-1)) += y.bendCoeff()*grad;
     }
     
     if (GradFx) {
@@ -239,14 +239,14 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
       Vec3e gradePrev = totalcoeff * (gradK1ePrev * k1coeff + gradK2ePrev * k2coeff); // Verified
       Vec3e gradeNext = totalcoeff * (gradK1eNext * k1coeff + gradK2eNext * k2coeff); // Verified
     
-      Fx->block<3,1>(3*(i-1), 0) += gradePrev;
-      Fx->block<3,1>(3*i,     0) += (gradeNext - gradePrev);
-      Fx->block<3,1>(3*(i+1), 0) += -gradeNext;
+      Fx->segment<3>(3*(i-1)) += gradePrev;
+      Fx->segment<3>(3*i)     += (gradeNext - gradePrev);
+      Fx->segment<3>(3*(i+1)) += -gradeNext;
       
 #ifdef DRAW_BENDING
-      forces.block<3,1>(3*(i-1), 0) += gradePrev;
-      forces.block<3,1>(3*i,     0) += (gradeNext - gradePrev);
-      forces.block<3,1>(3*(i+1), 0) += -gradeNext;
+      forces.segment<3>(3*(i-1)) += gradePrev;
+      forces.segment<3>(3*i)     += (gradeNext - gradePrev);
+      forces.segment<3>(3*(i+1)) += -gradeNext;
 #endif //ifdef DRAW_BENDING
     }
     
@@ -438,7 +438,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   
 #ifdef DRAW_BENDING
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3c f = EtoC(forces.block<3,1>(3*i, 0));
+    Vec3c f = EtoC(forces.segment<3>(3*i));
     Vec3c p = EtoC(y.cur().points[i].pos);
     frames.push_back([f, p] (real scale) {
       ci::gl::color(0.4, 1.0, 1.0);
@@ -466,8 +466,8 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
     Vec3e nextPoint = seg.getSecond().pos;
     
     if (offset) {
-      prevPoint += offset->block<3,1>(3*i, 0);
-      nextPoint += offset->block<3,1>(3*(i+1), 0);
+      prevPoint += offset->segment<3>(3*i);
+      nextPoint += offset->segment<3>(3*(i+1));
     }
     
     Vec3e ej = nextPoint - prevPoint;
@@ -475,8 +475,8 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
     
     if (Fx) {
       Vec3e grad = ((1.0/restSegLength) - (1.0/l)) * ej; // Verified
-      Fx->block<3,1>(3*i, 0) += y.stretchCoeff() * grad;
-      Fx->block<3,1>(3*(i+1), 0) -= y.stretchCoeff() * grad;
+      Fx->segment<3>(3*i) += y.stretchCoeff() * grad;
+      Fx->segment<3>(3*(i+1)) -= y.stretchCoeff() * grad;
     }
     
     if (GradFx) {
@@ -518,9 +518,9 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
     Vec3e nextPoint = y.cur().points[i+1].pos;
     
     if (offset) {
-      prevPoint += offset->block<3,1>(3*(i-1), 0);
-      curPoint  += offset->block<3,1>(3*i,     0);
-      nextPoint += offset->block<3,1>(3*(i+1), 0);
+      prevPoint += offset->segment<3>(3*(i-1));
+      curPoint  += offset->segment<3>(3*i);
+      nextPoint += offset->segment<3>(3*(i+1));
     }
     
     Vec3e ePrev = curPoint - prevPoint;
@@ -539,14 +539,14 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
       Vec3e dxPrev = curveBinorm / lPrev;
       Vec3e dxNext = -curveBinorm / lNext;
       
-      Fx->block<3,1>(3*(i-1), 0) += dThetaHat * dxPrev;
-      Fx->block<3,1>(3*i, 0) += dThetaHat * -(dxPrev + dxNext);
-      Fx->block<3,1>(3*(i+1), 0) += dThetaHat * dxNext;
+      Fx->segment<3>(3*(i-1)) += dThetaHat * dxPrev;
+      Fx->segment<3>(3*i) += dThetaHat * -(dxPrev + dxNext);
+      Fx->segment<3>(3*(i+1)) += dThetaHat * dxNext;
       
 #ifdef DRAW_TWIST
-      twist.block<3,1>(3*(i-1), 0) += dThetaHat * dxPrev;
-      twist.block<3,1>(3*i, 0) += dThetaHat * -(dxPrev + dxNext);
-      twist.block<3,1>(3*(i+1), 0) += dThetaHat * dxNext;
+      twist.segment<3>(3*(i-1)) += dThetaHat * dxPrev;
+      twist.segment<3>(3*i) += dThetaHat * -(dxPrev + dxNext);
+      twist.segment<3>(3*(i+1)) += dThetaHat * dxNext;
 #endif // ifdef DRAW_TWIST
     }
     
@@ -604,7 +604,7 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
   }
 #ifdef DRAW_TWIST
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3c delta = EtoC(twist.block<3,1>(3*i, 0));
+    Vec3c delta = EtoC(twist.segment<3>(3*i));
     const Yarn* yp = &y;
     if (delta.length() > 0.0) frames.push_back([i, delta, yp] (real scale) {
       Vec3c s = EtoC(yp->cur().points[i].pos);
@@ -640,10 +640,10 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       Vec3e e2p2 = e2.getSecond().pos;
       
       if (offset) {
-        e1p1 += offset->block<3,1>(3*i,     0);
-        e1p2 += offset->block<3,1>(3*(i+1), 0);
-        e2p1 += offset->block<3,1>(3*j,     0);
-        e2p2 += offset->block<3,1>(3*(j+1), 0);
+        e1p1 += offset->segment<3>(3*i);
+        e1p2 += offset->segment<3>(3*(i+1));
+        e2p1 += offset->segment<3>(3*j);
+        e2p2 += offset->segment<3>(3*(j+1));
       }
       
       Vec3e e1mid = (e1p1 + e1p2) / 2.0;
@@ -660,10 +660,10 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       Vec3e e2p3 = y.cur().points[j+2].pos;
       
       if (offset) {
-        e1p0 += offset->block<3,1>(3*(i-1), 0);
-        e1p3 += offset->block<3,1>(3*(i+2), 0);
-        e2p0 += offset->block<3,1>(3*(j-1), 0);
-        e2p3 += offset->block<3,1>(3*(j+2), 0);
+        e1p0 += offset->segment<3>(3*(i-1));
+        e1p3 += offset->segment<3>(3*(i+2));
+        e2p0 += offset->segment<3>(3*(j-1));
+        e2p3 += offset->segment<3>(3*(j+2));
       }
       
       Spline s1(e1p0, e1p1, e1p2, e1p3);
@@ -713,8 +713,8 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
               real c = u1.dot(constants::basis[k]);
               real d = u2.dot(constants::basis[k]);
               
-              Fx->block<3,1>(3*(i-1+k), 0) += coeff * c * gradBase; // Verified
-              Fx->block<3,1>(3*(j-1+k), 0) -= coeff * d * gradBase; // Verified
+              Fx->segment<3>(3*(i-1+k)) += coeff * c * gradBase; // Verified
+              Fx->segment<3>(3*(j-1+k)) -= coeff * d * gradBase; // Verified
 #ifdef DRAW_INT_CONTACT
               s1draw[k] += coeff * c * gradBase;
               s2draw[k] -= coeff * d * gradBase;
@@ -792,13 +792,13 @@ bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* of
   for (int i=0; i<y.numCPs(); i++) {
     Vec3e pos = y.cur().points[i].pos;
     if (offset) {
-      pos += offset->block<3,1>(3*i, 0);
+      pos += offset->segment<3>(3*i);
     }
     if ((pos-origin).dot(normal) >= 0) continue;
     // else project onto the normal
     Vec3e force = (origin-pos).dot(normal)*normal;
     if (Fx) {
-      Fx->block<3,1>(3*i, 0) += force * stiffness;
+      Fx->segment<3>(3*i) += force * stiffness;
     }
     if (GradFx) {
       Mat3e hess = -stiffness * normal * normal.transpose();
@@ -823,7 +823,7 @@ bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   if (c.time() < start || c.time() > end) return true;
   real t = sinf((c.time() - start) * constants::pi / (end - start));
   if (Fx) {
-    Fx->block<3,1>(3*index, 0) += force * t;
+    Fx->segment<3>(3*index) += force * t;
   }
   return true;
 }

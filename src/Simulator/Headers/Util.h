@@ -126,6 +126,33 @@ public:
   }
 };
 
+
+template <typename T>
+struct NewTypeStruct {
+protected:
+  T t;
+public:
+  NewTypeStruct(T t) : t(t) {}
+  inline T& operator*() { return t; }
+  inline const T& operator*() const { return t; }
+  inline T& operator->() { return t; }
+  inline const T& operator->() const { return t; }
+};
+
+struct Millimeter;
+
+struct Meter : public NewTypeStruct<real> {
+public:
+  Meter(real r) : NewTypeStruct<real>(r) {}
+  Millimeter toMillimeters(); // { return Millimeter(t * 1000.0); }
+};
+
+struct Millimeter : public NewTypeStruct<real> {
+  Millimeter(real r) : NewTypeStruct<real>(r) {}
+  Meter toMeters() { return Meter(t / 1000.0); }
+};
+
+
 /// Call this in a .cpp file to initialize the static profiler struct.
 #define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
 
