@@ -31,6 +31,12 @@ namespace constants {
   /// Pi. You know the one.
   const real pi = 3.1415926535;
   
+  /// The speed of sound in air, measured in m/s.
+  const real cAir = 340.0;
+  
+  /// The density of air, measured in kg/m^3.
+  const real rhoAir = 1.23;
+  
   /// The spline basis for the Catmull-Rom spline, separated into 4 vectors for convenience.
   const Vec4e basis[4] = { Vec4e(-0.5,  1.0, -0.5, 0.0),
                            Vec4e( 1.5, -2.5,  0.0, 1.0),

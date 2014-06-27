@@ -16,10 +16,11 @@
 class Integrator {
 protected:
   Yarn& y;
-  std::vector<YarnEnergy*> energies;
+  std::vector<YarnEnergy*>& energies;
   std::vector<std::function<void(void)>> frames;
 public:
   Integrator(Yarn&, std::vector<YarnEnergy*>&);
+  virtual ~Integrator() { }
   virtual bool integrate(Clock&)=0;
   virtual void draw();
   

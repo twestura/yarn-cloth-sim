@@ -86,8 +86,6 @@ class RodSoundApp : public AppNative {
   constexpr static real SimulationLength = 3.0; // in seconds
   constexpr static size_t BufferSize = (size_t)(SampleRate * SimulationLength);
   double sampleBuffer[BufferSize];
-  const real c0 = 340.0; // speed of sound in air, m/s
-  const real rho0 = 1.23; // density of air, kg/m^3
   
   real tAtLastDraw = 0.0;
   bool stopNow = false;
@@ -420,12 +418,12 @@ void RodSoundApp::update()
 
       Vec3e earVec = CtoE(eyePos) - y->next().points[i].pos;
       // calculate sample contribution
-      sample += (rho0*y->radius()*y->radius()*y->radius() / (2.0*c0*earVec.norm()*earVec.norm()))
-      * (earVec.dot(jerk));
+      sample += (constants::rhoAir*y->radius()*y->radius()*y->radius() /
+                 (2.0*constants::cAir*earVec.norm()*earVec.norm())) * (earVec.dot(jerk));
     
       earVec = ear2Pos - y->next().points[i].pos;
-      sample2 += (rho0*y->radius()*y->radius()*y->radius() / (2.0*c0*earVec.norm()*earVec.norm()))
-      * (earVec.dot(jerk));
+      sample2 += (constants::rhoAir*y->radius()*y->radius()*y->radius() /
+                  (2.0*constants::cAir*earVec.norm()*earVec.norm())) * (earVec.dot(jerk));
     }
     sampleBuffer[curSample] = sample;
     sampleBuffer2[curSample] = sample2;

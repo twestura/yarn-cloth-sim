@@ -32,6 +32,7 @@ protected:
   std::vector<std::function<void(real)>> frames;
 public:
   YarnEnergy(const Yarn& y, EvalType et) : y(y), et(et) { }
+  virtual ~YarnEnergy() { }
   virtual bool eval(VecXe*, std::vector<Triplet>* = nullptr, const VecXe* = nullptr) =0;
   virtual void suggestTimestep(Clock&) { }
   const EvalType inline evalType() const { return et; }
