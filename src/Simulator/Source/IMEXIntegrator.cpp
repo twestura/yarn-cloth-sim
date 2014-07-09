@@ -144,8 +144,8 @@ bool IMEXIntegrator::integrate(Clock& c) {
           break;
         }
         std::cerr << "No convergence!! Newton iterate: " << newtonIterations << "\n";
-        std::cerr << "Fx all finite: " << Fx.allFinite() << "\n";
-        std::cerr << "GradFx all finite: " << GradFx.toDense().allFinite() << "\n";
+        std::cerr << "Fx has NaN: " << Fx.hasNaN() << "\n";
+        std::cerr << "GradFx has NaN: " << GradFx.toDense().hasNaN() << "\n";
         std::cerr << "Fx max coeff: " << Fx.maxCoeff() << "\n";
         std::cerr << "GradFx max coeff: " << GradFx.toDense().maxCoeff() << "\n";
         assert(false);

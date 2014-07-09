@@ -204,26 +204,29 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     
 #else // ifdef ENABLE_BEND_AUTODIFF
     
-    Vec3e prevVec = curPoint - prevPoint;
-    Vec3e nextVec = nextPoint - curPoint;
+    prevVec = curPoint - prevPoint;
+    nextVec = nextPoint - curPoint;
     assert(prevVec.norm() > 0.0 && nextVec.norm() > 0.0 && "Segment length is zero!");
     
-    Vec3e tPrev = prevVec.normalized();
-    Vec3e tNext = nextVec.normalized();
+    real prevNorm = prevVec.norm();
+    real nextNorm = nextVec.norm();
+    tPrev = prevVec / prevNorm;
+    tNext = nextVec / nextNorm;
     real chi = 1.0 + (tPrev.dot(tNext));
     assert(chi > 0.0 && "Segments are pointing in exactly opposite directions!");
-    Vec3e tTilde = (tPrev + tNext)/chi;
-    Vec3e d1 = prevSeg.m1() + nextSeg.m1();
-    Vec3e d1tilde = d1/chi;
-    Vec3e d2 = prevSeg.m2() + nextSeg.m2();
-    Vec3e d2tilde = d2/chi;
-    Vec3e curveBinorm = (2.0*tPrev.cross(tNext))/chi; // Verified
-    Vec2e matCurve = 0.5*Vec2e(d2.dot(curveBinorm), -d1.dot(curveBinorm)); // Verified
     
-    Vec3e gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / prevVec.norm(); // Verified
-    Vec3e gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / nextVec.norm(); // Verified
-    Vec3e gradK2ePrev = (-matCurve.y()*tTilde - tNext.cross(d1tilde)) / prevVec.norm(); // Verified
-    Vec3e gradK2eNext = (-matCurve.y()*tTilde + tPrev.cross(d1tilde)) / nextVec.norm(); // Verified
+    tTilde = (tPrev + tNext)/chi;
+    d1 = prevSeg.m1() + nextSeg.m1();
+    d1tilde = d1/chi;
+    d2 = prevSeg.m2() + nextSeg.m2();
+    d2tilde = d2/chi;
+    curveBinorm = (tPrev.cross(tNext))/(0.5*chi); // Verified
+    Vec2e matCurve(0.5*d2.dot(curveBinorm), -0.5*d1.dot(curveBinorm)); // Verified
+    
+    gradK1ePrev = (-matCurve.x()*tTilde + tNext.cross(d2tilde)) / prevNorm; // Verified
+    gradK1eNext = (-matCurve.x()*tTilde - tPrev.cross(d2tilde)) / nextNorm; // Verified
+    gradK2ePrev = (-matCurve.y()*tTilde - tNext.cross(d1tilde)) / prevNorm; // Verified
+    gradK2eNext = (-matCurve.y()*tTilde + tPrev.cross(d1tilde)) / nextNorm; // Verified
     
     
     // WARNING: assumes that the bending matrix is the identity.
@@ -272,7 +275,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
       
       DVector3 dvPrevSeg = dvCurPoint - dvPrevPoint;
       DVector3 dvNextSeg = dvNextPoint - dvCurPoint;
-      assert(dvPrevSeg.norm() != 0.0 && dvNextSeg.norm() != 0.0 && "Edge length is 0");
+      assert(dvPrevSeg.norm() > 0.0 && dvNextSeg.norm() > 0.0 && "Edge length is 0");
       
       DVector3 dvPrevSegN = dvPrevSeg.normalized();
       DVector3 dvNextSegN = dvNextSeg.normalized();

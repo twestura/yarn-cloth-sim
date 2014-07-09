@@ -78,7 +78,8 @@ public:
 
 class Bending : public YarnEnergy {
 private:
-  
+  Vec3e prevVec, nextVec, tPrev, tNext, tTilde, d1, d1tilde, d2, d2tilde, curveBinorm,
+  gradK1ePrev, gradK1eNext, gradK2ePrev, gradK2eNext;
 public:
   Bending(const Yarn& y, EvalType et);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);

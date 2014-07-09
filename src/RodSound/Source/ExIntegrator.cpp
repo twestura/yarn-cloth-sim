@@ -39,6 +39,7 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integr
 }
 
 bool ExIntegrator::integrate(Clock& c) {
+  Profiler::start("Integrate");
   
   size_t NumEqs = y.numCPs() * 3;
   VecXe forces = VecXe::Zero(NumEqs);
@@ -59,7 +60,7 @@ bool ExIntegrator::integrate(Clock& c) {
   Eigen::SelfAdjointEigenSolver<Mat3e> saes;
   saes.compute(Apq.transpose() * Apq);
   Mat3e invSqrt = saes.operatorInverseSqrt();
-  if (!invSqrt.allFinite()) { // Polar decomposition failed; matrix is singular.
+  if (invSqrt.hasNaN()) { // Polar decomposition failed; matrix is singular.
     forces -= damping * vel;
     if (c.getTicks() % 1000 == 0) {
       std::vector<Triplet> triplets;
@@ -129,5 +130,7 @@ bool ExIntegrator::integrate(Clock& c) {
     y.next().points[i].pos = y.cur().points[i].pos + y.next().points[i].vel * c.timestep();
   }
   
+  
+  Profiler::stop("Integrate");
   return true;
 }

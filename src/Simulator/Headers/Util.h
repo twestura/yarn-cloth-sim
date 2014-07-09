@@ -19,7 +19,7 @@
 
 #ifdef ENABLE_CHECK_NAN
 #define CHECK_NAN(f) assert(!isnan(f) && "NaN Detected.")
-#define CHECK_NAN_VEC(v) assert(v.allFinite() && "NaN or Inf Detected.")
+#define CHECK_NAN_VEC(v) assert(!v.hasNaN() && "NaN Detected.")
 #else
 #define CHECK_NAN(f) // NOP
 #define CHECK_NAN_VEC(v) // NOP
@@ -115,12 +115,20 @@ public:
     }
   }
   
-  /// Prints the amount of time recorded by each timer. Not that timers are not stopped if they are
+  /// Prints the amount of time recorded by each timer. Note that timers are not stopped if they are
   /// currently running.
   void static printElapsed() {
-    TimerMap::iterator it = map.begin();
+    TimerMap::iterator it = map.find("Total");
+    bool hasTotal = it != map.end();
+    double total = hasTotal ? it->second.e + it->second.t.elapsed() : 0.0;
+    it = map.begin();
     while (it != map.end()) {
-      std::cout << it->first << ": " << elapsed(it->first) << "\n";
+      double e = elapsed(it->first);
+      std::cout << it->first << ": " << e;
+      if (hasTotal) {
+        std::cout << " (" << 100.0 * e / total << "%)";
+      }
+      std::cout << "\n";
       ++it;
     }
   }

@@ -75,6 +75,7 @@ public:
   /// through space.
   Yarn(std::vector<Vec3e>& points, Vec3e u0, VecXe* masses = nullptr) {
     for (Vec3e p : points) {
+      CHECK_NAN_VEC(p);
       CtrlPoint cp;
       cp.pos = p;
       cp.vel.setZero();
@@ -97,6 +98,10 @@ public:
       restYS.segments[i].parallelTransport(restYS.segments[i-1]);
       curYS->segments[i].setU(restYS.segments[i].getU());
       nextYS->segments[i].setU(restYS.segments[i].getU());
+    }
+    
+    for (Segment& s : restYS.segments) {
+      s.setFrozen(true);
     }
     
     for (int i=1; i<numCPs()-1; i++) {
@@ -168,6 +173,13 @@ public:
     YarnStr* temp = curYS;
     curYS = nextYS;
     nextYS = temp;
+    
+    for (Segment& s : curYS->segments) {
+      s.setFrozen(true);
+    }
+    for (Segment& s : nextYS->segments) {
+      s.setFrozen(false);
+    }
   }
   
   // Get the rest Voronoi length for an internal control point.

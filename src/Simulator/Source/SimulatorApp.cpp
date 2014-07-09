@@ -559,7 +559,7 @@ void SimulatorApp::loadStdEnergies() {
   YarnEnergy* stretch = new Stretching(*y, Implicit);
   energies.push_back(stretch);
   
-  YarnEnergy* bending = new Bending(*y, Explicit);
+  YarnEnergy* bending = new Bending(*y, Implicit);
   energies.push_back(bending);
   // Young's modulus is too strong for the following formula to be accurate for both bending and
   // stretching, so just use 1.0 instead.
@@ -574,7 +574,7 @@ void SimulatorApp::loadStdEnergies() {
   mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
-  YarnEnergy* intContact = new IntContact(*y, Explicit);
+  YarnEnergy* intContact = new IntContact(*y, Implicit);
   energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);

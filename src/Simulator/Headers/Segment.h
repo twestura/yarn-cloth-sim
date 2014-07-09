@@ -31,6 +31,17 @@ class Segment
   /// The change to numTwists this frame. Use this to keep numTwists in sync between yarns.
   int deltaTwists = 0;
   
+  bool frozen = false;
+  Vec3e frozVec, frozV;
+  
+  const Vec3e inline compVec() const {
+    return second.pos - first.pos;
+  }
+  
+  const Vec3e inline compV() const {
+    return vec().cross(u).normalized();
+  }
+
 public:
   /// Default Segment constructor
   Segment(const CtrlPoint& a, const CtrlPoint& b, Vec3e f) : first(a), second(b), u(f) {}
@@ -40,7 +51,10 @@ public:
   const CtrlPoint& getSecond() const { return second; }
   
   /// Calculate the vector that represents this segment. Not necessarily unit length.
-  const Vec3e inline vec() const { return second.pos - first.pos; }
+  const Vec3e inline vec() const {
+    if (!frozen) { return compVec(); }
+    return frozVec;
+  }
   /// Calculate the length of the segment.
   const real inline length() const { return vec().norm(); }
   
@@ -49,22 +63,21 @@ public:
   void inline setU(const Vec3e newU) { u = newU; }
   
   /// Calculate the reference (Bishop) frame vector v.
-  const Vec3e inline v() const { return vec().cross(u).normalized(); }
+  const Vec3e inline v() const {
+    if (!frozen) { return compV(); }
+    return frozV;
+  }
   /// Set the material frame rotation.
   void inline setRot(const real f) { rot = f; }
   /// Get the material frame rotation.
   const real inline getRot() const { return rot; }
   /// Calculate the material frame vector m1.
   const Vec3e inline m1() const {
-    // return cos(getRot()) * u + sin(getRot()) * v();
-    // .. or, equivalently:
-    Eigen::Quaternion<real> q(Eigen::AngleAxis<real>(getRot(), vec().normalized()));
-    return q * u;
+    return cos(rot) * u + sin(rot) * v();
   }
   /// Calculate the material frame vector m2.
   const Vec3e inline m2() const {
-    Eigen::Quaternion<real> q(Eigen::AngleAxis<real>(getRot(), vec().normalized()));
-    return q * v();
+    return -sin(rot) * u + cos(rot) * v();
   }
   /// Get twist in reference frame from previous frame.
   const real inline getRefTwist() const { return refTwist; } // + 2.0*constants::pi*numTwists; }
@@ -77,10 +90,22 @@ public:
   /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
   Vec3e static parallelTransport(const Vec3e vecPrev, const Vec3e vecCur, const Vec3e uPrev) {
     Vec3e cross = vecPrev.cross(vecCur).normalized();
-    real twist = acos(vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm()));
-    if (cross.allFinite() && twist > 1.0e-7) {
-      Eigen::Quaternion<real> q(Eigen::AngleAxis<real>(twist, cross));
-      return q * uPrev;
+    real cosT = vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm());
+    if (!cross.hasNaN() && cosT < 1.0 && cosT >= -1.0) {
+      // Form rotation matrix
+      real oneMinusCosT = 1.0 - cosT;
+      real sinT = sqrt(1.0 - (cosT * cosT));
+      real xyc = cross.x() * cross.y() * oneMinusCosT;
+      real xzc = cross.x() * cross.z() * oneMinusCosT;
+      real yzc = cross.y() * cross.z() * oneMinusCosT;
+      real xs = cross.x() * sinT;
+      real ys = cross.y() * sinT;
+      real zs = cross.z() * sinT;
+      Mat3e rotMat;
+      rotMat << cosT + cross.x() * cross.x() * oneMinusCosT, xyc - zs, xzc + ys,
+                xyc + zs, cosT + cross.y() * cross.y() * oneMinusCosT, yzc - xs,
+                xzc - ys, yzc + xs, cosT + cross.z() * cross.z() * oneMinusCosT;
+      return rotMat * uPrev;
     }
     return uPrev;
   }
@@ -104,7 +129,6 @@ public:
     CHECK_NAN_VEC(uRef);
     real cosTwist = u.normalized().dot(uRef.normalized());
     // Now find the angle between the reference (space-parallel transported u) and this.u
-    real oldTwist = refTwist;
     if (cosTwist >= 1.0) { // Avoid values like 1.0000000012 that introduce NaNs
       refTwist = 0.0;
     } else if (cosTwist <= -1.0) {
@@ -117,20 +141,16 @@ public:
       refTwist = -refTwist;
     }
     CHECK_NAN(refTwist);
-    
-    // Account for twists >|pi|. Assumes that twists are not greater than pi between each transport.
-    real diff = refTwist - oldTwist;
-    if (diff < -constants::pi) {
-      deltaTwists = 1;
-      numTwists += 1;
-    } else if (diff > constants::pi) {
-      deltaTwists = -1;
-      numTwists -= 1;
-    } else {
-      deltaTwists = 0;
-    }
-    
   }
+  
+  void inline setFrozen(bool f) {
+    frozen = f;
+    if (frozen) {
+      frozVec = compVec();
+      frozV = compV();
+    }
+  }
+  
 };
 
 

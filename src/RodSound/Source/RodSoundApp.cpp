@@ -166,6 +166,8 @@ void RodSoundApp::setup()
   loadDefaultYarn(42);
   // loadYarnFile("");
   loadStdEnergies();
+  
+  Profiler::start("Total");
 }
 
 void RodSoundApp::mouseDown(MouseEvent event)
@@ -341,10 +343,19 @@ void RodSoundApp::update()
                  curSample * sizeof(uint16_t), SampleRate, 1);
     
     fe.writeMPEG("result");
+    std::cout << "Total simulation time: " << app::getElapsedSeconds() << "\n"; // FIXME: This is inaccurate
     
     running = false;
     return;
   }
+  
+  if (c.getTicks() % 5000 == 0) {
+    Profiler::printElapsed();
+    Profiler::resetAll();
+    std::cout << "\n";
+  }
+  
+  Profiler::start("Update");
   
   c.suggestTimestep(1.0 / (real) SampleRate);
   // FIXME: Normally the frame exporter would suggest a timestep, but this interferes with the audio
@@ -405,19 +416,34 @@ void RodSoundApp::update()
    */
   
   // Sound Calculations
-  // WARNING: assumes the mass matrix is the identity
   if (c.getTicks() % 1 == 0) {
     real sample = 0;
     real sample2 = 0;
     for (int i=1; i<y->numCPs()-1; i++) {
-      // calculate jerk
+      // Calculate jerk
       Vec3e jerk = y->next().points[i].accel - y->cur().points[i].accel;
-      // project it to transverse plane
+      // Project it to transverse plane
       Vec3e tPlaneNormal = (y->next().segments[i-1].vec() + y->next().segments[i].vec()).normalized();
       jerk = jerk - jerk.dot(tPlaneNormal) * tPlaneNormal; // Vector rejection of jerk from tPlaneNormal
-
+      
+      /*
+      real m0 = y->restVoronoiLength(i)*constants::pi*y->radius()*y->radius()*constants::rhoAir;
+      // Rotation to align system so that the cylinder is coaxial with the z-axis
+      Eigen::Quaternion<real> q = Eigen::Quaternion<real>::FromTwoVectors(tPlaneNormal, Vec3e(0, 0, 1));
+      Vec3e rotJerk = q * jerk;
+      rotJerk = rotJerk.cwiseProduct(Vec3e(2.0*m0, 2.0*m0, m0));
+      
+      // Calculate sample contribution
       Vec3e earVec = CtoE(eyePos) - y->next().points[i].pos;
-      // calculate sample contribution
+      sample +=  (q * earVec).dot(rotJerk) / (4.0 * constants::pi * constants::cAir * earVec.dot(earVec));
+      
+      earVec = ear2Pos - y->next().points[i].pos;
+      sample2 +=  (q * earVec).dot(rotJerk) / (4.0 * constants::pi * constants::cAir * earVec.dot(earVec));
+      */
+       
+      
+      Vec3e earVec = CtoE(eyePos) - y->next().points[i].pos;
+      // Calculate sample contribution
       sample += (constants::rhoAir*y->radius()*y->radius()*y->radius() /
                  (2.0*constants::cAir*earVec.norm()*earVec.norm())) * (earVec.dot(jerk));
     
@@ -441,6 +467,7 @@ void RodSoundApp::update()
    */
 
   c.increment();
+  Profiler::stop("Update");
 }
 
 void RodSoundApp::draw() {
@@ -450,6 +477,8 @@ void RodSoundApp::draw() {
     update();
   }
   tAtLastDraw = app::getElapsedSeconds();
+  
+  Profiler::start("Draw");
   
 	// Clear out the window with grey
 	gl::clear(Color(0.45, 0.45, 0.5));
@@ -507,20 +536,6 @@ void RodSoundApp::draw() {
   
   yarnProg.unbind();
   
-#ifdef DRAW_QUADRATURES
-  for (int i=1; i<y->numSegs()-1; i++) {
-    const Segment& seg1 = y->cur().segments[i-1];
-    const Segment& seg2 = y->cur().segments[i];
-    const Segment& seg3 = y->cur().segments[i+1];
-    Spline s(seg1.getFirst(), seg2.getFirst(), seg2.getSecond(), seg3.getSecond());
-    gl::color(0.8, 0.8, 0.8, 0.4);
-    
-    for (int j=0; j<constants::numQuadPoints; j++) {
-      real t = ((real) j) / (real) constants::numQuadPoints;
-      gl::drawSphere(EtoC(s.eval(t)), constants::radius);
-    }
-  }
-#else //ifdef DRAW_QUADRATURES
   // Draw yarn segments
   yarnProg.bind();
   yarnTex.enableAndBind();
@@ -543,14 +558,15 @@ void RodSoundApp::draw() {
   }
   yarnTex.unbind();
   yarnProg.unbind();
-#endif //ifdef DRAW_QUADRATURES
-  
+
   for (YarnEnergy* e : energies) {
     e->draw(c.timestep());
   }
   integrator->draw();
  
   fe.record(c);
+  
+  Profiler::stop("Draw");
 }
 
 void RodSoundApp::loadYarnFile(std::string filename) {
@@ -602,7 +618,7 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   Vec3e end   = Vec3e(0.0, 1.0, 0.0); // Vec3e(5.0, 3.0, -3.0);
 
   Vec3e u     = (end-start).cross(Vec3e(0.0, 0.1, 0.0)).normalized();
-  if (!u.allFinite() || u.norm() < 0.95) {
+  if (u.hasNaN() || u.norm() < 0.95) {
     u << 1.0, 0.0, 0.0;
   }
   
