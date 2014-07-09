@@ -9,6 +9,9 @@
 #ifndef Visualizer_Macros_h
 #define Visualizer_Macros_h
 
+// util.h
+// #define ENABLE_PROFILER
+
 // SimulatorApp.cpp
 // #define DRAW_QUADRATURES
 // #define CONST_INTEGRATOR

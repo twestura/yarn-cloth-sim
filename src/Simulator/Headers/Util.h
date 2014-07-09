@@ -134,6 +134,20 @@ public:
   }
 };
 
+#ifdef ENABLE_PROFILER
+#define PROFILER_START(x) Profiler::start(x)
+#define PROFILER_STOP(x) Profiler::stop(x)
+#define PROFILER_PRINT_ELAPSED() Profiler::printElapsed()
+#define PROFILER_RESET_ALL() Profiler::resetAll()
+#else
+#define PROFILER_START(x) // NOP
+#define PROFILER_STOP(x) // NOP
+#define PROFILER_PRINT_ELAPSED() // NOP
+#define PROFILER_RESET_ALL() // NOP
+#endif
+
+/// Call this in a .cpp file to initialize the static profiler struct.
+#define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
 
 template <typename T>
 struct NewTypeStruct {
@@ -159,9 +173,5 @@ struct Millimeter : public NewTypeStruct<real> {
   Millimeter(real r) : NewTypeStruct<real>(r) {}
   Meter toMeters() { return Meter(t / 1000.0); }
 };
-
-
-/// Call this in a .cpp file to initialize the static profiler struct.
-#define DECLARE_PROFILER() Profiler::TimerMap Profiler::map{}
 
 #endif

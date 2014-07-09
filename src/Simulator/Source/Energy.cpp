@@ -116,7 +116,7 @@ void MouseSpring::setMouse(Vec3e newMouse, bool newDown) {
 Bending::Bending(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  Profiler::start("Bend Eval");
+  PROFILER_START("Bend Eval");
   
 #ifdef DRAW_BENDING
   VecXe forces = VecXe::Zero(3*y.numCPs());
@@ -450,7 +450,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   }
 #endif //ifdef DRAW_BENDING
   
-  Profiler::stop("Bend Eval");
+  PROFILER_STOP("Bend Eval");
   return true;
 }
 
@@ -460,7 +460,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 Stretching::Stretching(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  Profiler::start("Stretch Eval");
+  PROFILER_START("Stretch Eval");
   
   for (int i=0; i<y.numSegs(); i++) {
     const Segment& seg = y.cur().segments[i];
@@ -497,7 +497,7 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
     }
     
   }
-  Profiler::stop("Stretch Eval");
+  PROFILER_STOP("Stretch Eval");
   return true;
 }
 
@@ -508,7 +508,7 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
 Twisting::Twisting(const Yarn& y, EvalType et) : YarnEnergy(y, et) { }
 
 bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  Profiler::start("Twist Eval");
+  PROFILER_START("Twist Eval");
 #ifdef DRAW_TWIST
   VecXe twist = VecXe::Zero(y.numCPs()*3);
 #endif // ifdef DRAW_TWIST
@@ -617,7 +617,7 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
     });
   }
 #endif // ifdef DRAW_TWIST
-  Profiler::stop("Twist Eval");
+  PROFILER_STOP("Twist Eval");
   return true;
 }
 
@@ -626,7 +626,7 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
 IntContact::IntContact(const Yarn& y, EvalType et) : YarnEnergy(y, et) {}
 
 bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
-  Profiler::start("Int Contact Eval");
+  PROFILER_START("Int Contact Eval");
   const real r = y.radius();
   
   for (int i=0; i<y.numSegs(); i++) {
@@ -782,7 +782,7 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
     }
   }
   
-  Profiler::stop("Int Contact Eval");
+  PROFILER_STOP("Int Contact Eval");
   return true;
 }
 

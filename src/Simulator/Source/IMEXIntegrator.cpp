@@ -28,7 +28,7 @@ Integrator(y, energies) {
 }
 
 bool IMEXIntegrator::integrate(Clock& c) {
-  Profiler::start("Total");
+  PROFILER_START("Total");
   
   const real ConvergenceThreshold = 0.0125 * y.numCPs();
   const real ConvergenceTolerance = 1.25 * y.numCPs();
@@ -127,7 +127,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       
       CHECK_NAN_VEC(GradFx.toDense());
       
-      Profiler::start("CG Solver");
+      PROFILER_START("CG Solver");
       Eigen::ConjugateGradient<Eigen::SparseMatrix<real>, Eigen::Upper,
                                Eigen::IncompleteLUT<real>> cg;
       cg.compute(GradFx);
@@ -137,7 +137,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       
       if (cg.info() == Eigen::NoConvergence) {
         if (c.canDecreaseTimestep()) {
-          Profiler::stop("CG Solver");
+          PROFILER_STOP("CG Solver");
           c.suggestTimestep(c.timestep()/2.0);
           std::cout << "No convergence in CG solver. New timestep: " << c.timestep() << "\n";
           evalSuccess = false;
@@ -152,7 +152,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       }
       
       dqdot += sol;
-      Profiler::stop("CG Solver");
+      PROFILER_STOP("CG Solver");
     }
     
     // Update yarn positions
@@ -185,10 +185,10 @@ bool IMEXIntegrator::integrate(Clock& c) {
     }
   }
   
-  Profiler::stop("Total");
-//  Profiler::printElapsed();
+  PROFILER_STOP("Total");
+//  PROFILER_PRINT_ELAPSED();
 //  std::cout << "\n";
-  Profiler::resetAll();
+  PROFILER_RESET_ALL();
   
   return newtonConverge;
 }

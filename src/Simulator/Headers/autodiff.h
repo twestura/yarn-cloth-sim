@@ -22,7 +22,7 @@
 
 #ifndef __AUTODIFF_H
 #define __AUTODIFF_H
-#define EIGEN_DONT_PARALLELIZE
+//#define EIGEN_DONT_PARALLELIZE
 //#define EIGEN_NO_DEBUG
 
 #include "Eigen/Core"
@@ -537,7 +537,7 @@ public:
 	friend DScalar2 operator/(const DScalar2 &lhs, const Scalar &rhs) {
 		if (rhs == 0)
 			throw std::runtime_error("DScalar2: Division by zero!");
-		Scalar inv = 1.0f / rhs;
+		Scalar inv = 1.0 / rhs;
 		return DScalar2(lhs.value*inv, lhs.grad*inv, lhs.hess*inv);
 	}
   
@@ -552,10 +552,10 @@ public:
 	friend DScalar2 inverse(const DScalar2 &s) {
 		Scalar valueSqr = s.value*s.value,
     valueCub = valueSqr * s.value,
-    invValueSqr = (Scalar) 1 / valueSqr;
+    invValueSqr = (Scalar) 1.0 / valueSqr;
     
 		// vn = 1/v
-		DScalar2 result((Scalar) 1 / s.value);
+		DScalar2 result((Scalar) 1.0 / s.value);
     
 		// Dvn = -1/(v^2) Dv
 		result.grad = s.grad * -invValueSqr;
@@ -563,7 +563,7 @@ public:
 		// D^2vn = -1/(v^2) D^2v + 2/(v^3) Dv Dv^T
 		result.hess = s.hess * -invValueSqr;
 		result.hess += s.grad * s.grad.transpose()
-    * ((Scalar) 2 / valueCub);
+    * ((Scalar) 2.0 / valueCub);
     
 		return result;
 	}

@@ -167,7 +167,7 @@ void RodSoundApp::setup()
   // loadYarnFile("");
   loadStdEnergies();
   
-  Profiler::start("Total");
+  PROFILER_START("Total");
 }
 
 void RodSoundApp::mouseDown(MouseEvent event)
@@ -313,8 +313,11 @@ void RodSoundApp::update()
 {
   if (!running) return;
   
-  if (curSample % 5000 == 0) {
+  if (curSample % 5000 == 0 && curSample != 0) {
     std::cout << curSample << " / " << BufferSize << " (" << (curSample*100.0)/BufferSize << "%)\n";
+    PROFILER_PRINT_ELAPSED();
+    PROFILER_RESET_ALL();
+    std::cout << "\n";
   }
   
   if (curSample >= BufferSize || stopNow) { // We're done!
@@ -349,13 +352,7 @@ void RodSoundApp::update()
     return;
   }
   
-  if (c.getTicks() % 5000 == 0) {
-    Profiler::printElapsed();
-    Profiler::resetAll();
-    std::cout << "\n";
-  }
-  
-  Profiler::start("Update");
+  PROFILER_START("Update");
   
   c.suggestTimestep(1.0 / (real) SampleRate);
   // FIXME: Normally the frame exporter would suggest a timestep, but this interferes with the audio
@@ -467,7 +464,7 @@ void RodSoundApp::update()
    */
 
   c.increment();
-  Profiler::stop("Update");
+  PROFILER_STOP("Update");
 }
 
 void RodSoundApp::draw() {
@@ -478,7 +475,7 @@ void RodSoundApp::draw() {
   }
   tAtLastDraw = app::getElapsedSeconds();
   
-  Profiler::start("Draw");
+  PROFILER_START("Draw");
   
 	// Clear out the window with grey
 	gl::clear(Color(0.45, 0.45, 0.5));
@@ -566,7 +563,7 @@ void RodSoundApp::draw() {
  
   fe.record(c);
   
-  Profiler::stop("Draw");
+  PROFILER_STOP("Draw");
 }
 
 void RodSoundApp::loadYarnFile(std::string filename) {

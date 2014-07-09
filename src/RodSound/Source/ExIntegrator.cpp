@@ -39,7 +39,7 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integr
 }
 
 bool ExIntegrator::integrate(Clock& c) {
-  Profiler::start("Integrate");
+  PROFILER_START("Integrate");
   
   size_t NumEqs = y.numCPs() * 3;
   VecXe forces = VecXe::Zero(NumEqs);
@@ -108,7 +108,7 @@ bool ExIntegrator::integrate(Clock& c) {
   for (int i=0; i<y.numCPs(); i++) {
     vel.segment<3>(3*i) = y.cur().points[i].vel;
   }
-  if (c.getTicks() % 1000 == 0) { // May need to update stiffness matrix
+  if (c.getTicks() % 1000 == 0 && c.getTicks() != 0) { // May need to update stiffness matrix
     std::vector<Triplet> triplets;
     for (YarnEnergy* e : energies) {
       if (e->energySource() == Internal) {
@@ -131,6 +131,6 @@ bool ExIntegrator::integrate(Clock& c) {
   }
   
   
-  Profiler::stop("Integrate");
+  PROFILER_STOP("Integrate");
   return true;
 }
