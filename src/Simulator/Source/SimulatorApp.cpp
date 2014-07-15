@@ -544,7 +544,7 @@ void SimulatorApp::loadDefaultYarn(int numPoints) {
   targetPos = Vec3c(0.0, 10.0, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPoints, Vec3e(0.0, 0.0, 1.0));
+  y = new Yarn(yarnPoints, Vec3e(0.0, 0.0, 1.0), nullptr, constants::youngsModulus, 80.0);
 }
 
 void SimulatorApp::loadStdEnergies() {
@@ -561,9 +561,6 @@ void SimulatorApp::loadStdEnergies() {
   
   YarnEnergy* bending = new Bending(*y, Implicit);
   energies.push_back(bending);
-  // Young's modulus is too strong for the following formula to be accurate for both bending and
-  // stretching, so just use 1.0 instead.
-  y->setBendingCoeff(1.0);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
   energies.push_back(twisting);

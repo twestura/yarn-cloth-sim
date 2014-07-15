@@ -93,6 +93,8 @@ class RodSoundApp : public AppNative {
   double sampleBuffer2[BufferSize];
   size_t curSample = 0;
   
+  size_t multiSample = 2;
+  
   FrameExporter fe;
 };
 
@@ -163,7 +165,7 @@ void RodSoundApp::setup()
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
   // Load the yarn
-  loadDefaultYarn(42);
+  loadDefaultYarn(122);
   // loadYarnFile("");
   loadStdEnergies();
   
@@ -354,7 +356,7 @@ void RodSoundApp::update()
   
   PROFILER_START("Update");
   
-  c.suggestTimestep(1.0 / (real) SampleRate);
+  c.suggestTimestep(1.0 / (real) SampleRate / multiSample);
   // FIXME: Normally the frame exporter would suggest a timestep, but this interferes with the audio
   // recording, as it assumes all timesteps are 1/SampleRate. However, any error the frame exporter
   // experiences is small since 1/60 >> 1/SampleRate.
@@ -413,7 +415,7 @@ void RodSoundApp::update()
    */
   
   // Sound Calculations
-  if (c.getTicks() % 1 == 0) {
+  if (c.getTicks() % multiSample == 0) {
     real sample = 0;
     real sample2 = 0;
     for (int i=1; i<y->numCPs()-1; i++) {
@@ -441,12 +443,10 @@ void RodSoundApp::update()
       
       Vec3e earVec = CtoE(eyePos) - y->next().points[i].pos;
       // Calculate sample contribution
-      sample += (constants::rhoAir*y->radius()*y->radius()*y->radius() /
-                 (2.0*constants::cAir*earVec.norm()*earVec.norm())) * (earVec.dot(jerk));
+      sample += y->getCS()[i].calcSample(earVec, jerk);
     
       earVec = ear2Pos - y->next().points[i].pos;
-      sample2 += (constants::rhoAir*y->radius()*y->radius()*y->radius() /
-                  (2.0*constants::cAir*earVec.norm()*earVec.norm())) * (earVec.dot(jerk));
+      sample2 += y->getCS()[i].calcSample(earVec, jerk);
     }
     sampleBuffer[curSample] = sample;
     sampleBuffer2[curSample] = sample2;
@@ -630,8 +630,8 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   targetPos = Vec3c(0.0, 10.0, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-//  VecXe mass = VecXe::Constant(numPoints, 0.2);
-  y = new Yarn(yarnPoints, u); //, &mass);
+  VecXe mass = VecXe::Constant(numPoints, 0.344);
+  y = new Yarn(yarnPoints, u, &mass);
 }
 
 void RodSoundApp::loadStdEnergies() {

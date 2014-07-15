@@ -17,10 +17,10 @@ Integrator(y, energies) {
   std::vector<Triplet> triplets;
   for (int i=1; i < y.numSegs()-1; i++) {
     if (i > 1) {
-      triplets.push_back(Triplet(i-1, i-2, -2.0*y.twistCoeff()/y.restVoronoiLength(i)));
+      triplets.push_back(Triplet(i-1, i-2, -2.0*y.getCS()[i].twistCoeff()/y.restVoronoiLength(i)));
     }
     if (i < y.numSegs()-2) {
-      triplets.push_back(Triplet(i-1, i, -2.0*y.twistCoeff()/y.restVoronoiLength(i+1)));
+      triplets.push_back(Triplet(i-1, i, -2.0*y.getCS()[i+1].twistCoeff()/y.restVoronoiLength(i+1)));
     }
   }
   hessBase = Eigen::SparseMatrix<real>(y.numSegs()-2, y.numSegs()-2);
@@ -197,28 +197,29 @@ void static calcRotEqs(const Yarn& y, const VecXe& rot, const std::vector<Vec3e>
                       VecXe& grad, std::vector<Triplet>& triplets) {
   Eigen::Matrix<real, 2, 2> J;
   J << 0.0, -1.0, 1.0, 0.0;
-  // This assumes the yarn is isotropic
   for (int i=1; i<y.numSegs()-1; i++) {
     const Segment& s = y.next().segments[i];
     Vec3e m1 = cos(rot(i)) * s.getU() + sin(rot(i)) * s.v();
     Vec3e m2 = -sin(rot(i)) * s.getU() + cos(rot(i)) * s.v();
     Vec2e curvePrev(curveBinorm[i-1].dot(m2), -curveBinorm[i-1].dot(m1)); // omega ^i _i
     Vec2e curveNext(curveBinorm[i].dot(m2), -curveBinorm[i].dot(m1)); // omega ^i _i+1
-    real dWprev = y.bendCoeff() / y.restVoronoiLength(i) *
-      curvePrev.dot(J * (curvePrev - y.restCurveNext(i)));
-    real dWnext = y.bendCoeff() / y.restVoronoiLength(i+1) *
-      curveNext.dot(J * (curveNext - y.restCurvePrev(i+1)));
+    real dWprev = 1.0 / y.restVoronoiLength(i) *
+      curvePrev.dot(J * y.getCS()[i].bendMat() * (curvePrev - y.restCurveNext(i)));
+    real dWnext = 1.0 / y.restVoronoiLength(i+1) *
+      curveNext.dot(J * y.getCS()[i+1].bendMat() * (curveNext - y.restCurvePrev(i+1)));
     real twistPrev = rot(i) - rot(i-1) + y.next().segments[i].getRefTwist();
     real twistNext = rot(i+1) - rot(i) + y.next().segments[i+1].getRefTwist();
-    grad(i-1) = -(dWprev + dWnext + 2.0*y.twistCoeff()*
+    grad(i-1) = -(dWprev + dWnext + 2.0 * y.getCS()[i].twistCoeff() *
                   (twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
     
-    real hess = 2.0*(y.twistCoeff()/y.restVoronoiLength(i) +
-                     y.twistCoeff()/y.restVoronoiLength(i+1));
-    hess += y.bendCoeff()/y.restVoronoiLength(i) *
-      (curvePrev.dot(curvePrev) - curvePrev.dot(curvePrev - y.restCurveNext(i)));
-    hess += y.bendCoeff()/y.restVoronoiLength(i+1) *
-      (curveNext.dot(curveNext) - curveNext.dot(curveNext - y.restCurvePrev(i+1)));
+    real hess = 2.0*(y.getCS()[i].twistCoeff()/y.restVoronoiLength(i) +
+                     y.getCS()[i+1].twistCoeff()/y.restVoronoiLength(i+1));
+    hess += 1.0 / y.restVoronoiLength(i) *
+      (curvePrev.dot(J.transpose() * y.getCS()[i].bendMat() * J * curvePrev)
+       - curvePrev.dot(y.getCS()[i].bendMat() * (curvePrev - y.restCurveNext(i))));
+    hess += 1.0 /y.restVoronoiLength(i+1) *
+      (curveNext.dot(J.transpose() * y.getCS()[i+1].bendMat() * J * curveNext)
+       - curveNext.dot(y.getCS()[i+1].bendMat() * (curveNext - y.restCurvePrev(i+1))));
     triplets.push_back(Triplet(i-1, i-1, hess));
   }
 }

@@ -14,19 +14,23 @@ namespace constants {
   /// Timestep of the simulation in seconds.
   const real INITIAL_TIMESTEP = 1.0/60.0;
 
+  // TODO: Use these.
   /// Determines centerline plasticity due to bending forces on the yarn.
   const real pPlastic = 0.01;
   /// Determines the maximum amount of plasticity the centerline of the yarn exhibits.
   const real pPlasticMax = 2.5;
 
-  /// The default radius of the yarn.
+  /// The default radius of the rod.
   const real radius = 0.15;
   
-  // The default shear modulus of the yarn.
-  const real shearModulus = 8.0e2;
-
-  // the default Young's modulus of the yarn.
-  const real youngsModulus = 2.0e7;
+  /// The default Young's modulus of the rod.
+  constexpr real youngsModulus = 2.0e9;
+  
+  /// The default Poisson's ratio of the rod.
+  constexpr real poissonRatio = 0.3;
+  
+  /// The default shear modulus of the rod.
+  constexpr real shearModulus = youngsModulus / (2.0 * (1.0 + poissonRatio));
   
   /// Pi. You know the one.
   const real pi = 3.1415926535;
@@ -48,8 +52,6 @@ namespace constants {
   
   /// The path for outputting media files
   const std::string ResultPath = "../../result/";
-
-  
 }
 
 #endif

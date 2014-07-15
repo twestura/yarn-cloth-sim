@@ -9,11 +9,9 @@
 #ifndef __Visualizer__Yarn__
 #define __Visualizer__Yarn__
 
-#include "Eigen/Sparse"
 #include "Segment.h"
+#include "CrossSection.h"
 #include <vector>
-
-typedef Eigen::Triplet<real> Triplet;
 
 /// A Yarn at a specific point in time.
 struct YarnStr {
@@ -31,27 +29,19 @@ public:
   real total;
 };
 
-
 /// A Yarn stepped though points in time.
 class Yarn {
 private:
-  real r = constants::radius;
-  real shearModulus = constants::shearModulus;
-  real youngsModulus = constants::youngsModulus;
-  
-  real xArea = constants::pi * r * r;
-  real tCoeff = xArea * shearModulus * r * r / 2.0;
-  real sCoeff = xArea * youngsModulus;
-  real bCoeff = xArea * youngsModulus * r * r / 4.0 * 100.0;
+  real shearModulus;
+  real youngsModulus;
   
   /// The mass matrix.
   Mass mass;
   /// The inverse of the mass matrix, cached here to save on computation.
   Mass invMass;
-  /// The 2x2 bending matrices of the internal control points. If empty, the bending matrix for each
-  /// is assumed to be bCoeff * I_2 instead.
-  std::vector<Mat2e> bendingMatrix;
-  // TODO: edit energies to use this.
+  
+  /// Information related to the cross-section of the rod at a particular point.
+  CrossSection* cs;
   
   /// The yarn at rest.
   YarnStr  restYS;
@@ -72,8 +62,12 @@ private:
 public:
   /// Constructs a yarn that is initially at rest given a vector of initial positions.
   /// The U vector for the first segment is then propagated down the yarn by parallel transport
-  /// through space.
-  Yarn(std::vector<Vec3e>& points, Vec3e u0, VecXe* masses = nullptr) {
+  /// through space. A vector of lumped masses may be optionally passed in; if it is null, all
+  /// masses are set uniformly to 1kg. Young's and shear moduli may also be specified.
+  Yarn(std::vector<Vec3e>& points, Vec3e u0, VecXe* masses = nullptr,
+       real youngs = constants::youngsModulus, real shear = constants::shearModulus) :
+  youngsModulus(youngs), shearModulus(shear) {
+    
     for (Vec3e p : points) {
       CHECK_NAN_VEC(p);
       CtrlPoint cp;
@@ -148,6 +142,9 @@ public:
       invMass.sparse.resize(3*points.size(), 3*points.size());
       invMass.sparse.setIdentity();
     }
+    
+    cs = new CrossSection(new Ellipse(constants::radius, constants::radius,
+                                       youngsModulus, shearModulus));
   }
   
   // WARNING: The following methods are safe as long as curYS and nextYS are always allocated upon
@@ -206,23 +203,8 @@ public:
     return rc[index-1];
   }
   
-  /// Get the yarn's radius
-  const inline real radius() const { return r; }
-  
-  /// Get the twist coefficient
-  const inline real twistCoeff() const { return tCoeff; }
-  /// Set the twist coefficient
-  void inline setTwistCoeff(real newCoeff) { tCoeff = newCoeff; }
-  
-  /// Get the stretch coefficient
-  const inline real stretchCoeff() const { return sCoeff; }
-  /// Set the stretch coefficient
-  void inline setStretchCoeff(real newCoeff) { sCoeff = newCoeff; }
-  
-  /// Get the bend coefficient (multiply by the identity matrix to get the bending matrix)
-  const inline real bendCoeff() const { return bCoeff; }
-  /// Set the bending coefficient
-  void inline setBendingCoeff(real newCoeff) { bCoeff = newCoeff; }
+  /// Get the cross-section of the rod.
+  const inline CrossSection& getCS() const { return *cs; }
   
   /// Get the yarn's mass matrix.
   const inline Mass& getMass() const { return mass; }

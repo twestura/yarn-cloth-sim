@@ -123,12 +123,24 @@ bool ExIntegrator::integrate(Clock& c) {
   
   forces = y.getInvMass().sparse * forces;
   
+  // Symplectic Euler
   for (int i=0; i<y.numCPs(); i++) {
     Vec3e dqdot = forces.segment<3>(3*i) * c.timestep();
     y.next().points[i].accel = dqdot;
     y.next().points[i].vel = y.cur().points[i].vel + dqdot;
     y.next().points[i].pos = y.cur().points[i].pos + y.next().points[i].vel * c.timestep();
   }
+  
+  // Explicit Newmark -- NOT STABLE
+  /*
+  real lambda = 0.5;
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3e dqdot = forces.segment<3>(3*i) * c.timestep();
+    y.next().points[i].accel = dqdot;
+    y.next().points[i].vel = y.cur().points[i].vel + (1.0-lambda) * y.cur().points[i].accel + lambda * dqdot;
+    y.next().points[i].pos = y.cur().points[i].pos + c.timestep() * y.cur().points[i].vel + 0.5 * c.timestep() * y.cur().points[i].accel;
+  }
+   */
   
   
   PROFILER_STOP("Integrate");

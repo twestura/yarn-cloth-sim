@@ -31,6 +31,7 @@
 #include "cinder/Quaternion.h"
 
 #include "Eigen/dense"
+#include "Eigen/sparse"
 
 // Global typedefs
 typedef double real;
@@ -45,6 +46,8 @@ typedef Eigen::Matrix<real, Eigen::Dynamic, 1> VecXe;
 
 typedef ci::Vec2<real> Vec2c;
 typedef ci::Vec3<real> Vec3c;
+
+typedef Eigen::Triplet<real> Triplet;
 #endif
 
 #endif
