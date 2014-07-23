@@ -93,7 +93,7 @@ class RodSoundApp : public AppNative {
   double sampleBuffer2[BufferSize];
   size_t curSample = 0;
   
-  size_t multiSample = 2;
+  size_t multiSample = 18;
   
   FrameExporter fe;
 };
@@ -165,7 +165,7 @@ void RodSoundApp::setup()
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
   // Load the yarn
-  loadDefaultYarn(122);
+  loadDefaultYarn(60);
   // loadYarnFile("");
   loadStdEnergies();
   
@@ -315,7 +315,7 @@ void RodSoundApp::update()
 {
   if (!running) return;
   
-  if (curSample % 5000 == 0 && curSample != 0) {
+  if (curSample % 5000 == 0 && curSample != 0 && c.getTicks() % multiSample == 0) {
     std::cout << curSample << " / " << BufferSize << " (" << (curSample*100.0)/BufferSize << "%)\n";
     PROFILER_PRINT_ELAPSED();
     PROFILER_RESET_ALL();
@@ -469,7 +469,7 @@ void RodSoundApp::update()
 
 void RodSoundApp::draw() {
   while (running &&
-         // app::getElapsedSeconds() - tAtLastDraw < 1.0/app::getFrameRate() &&
+//         app::getElapsedSeconds() - tAtLastDraw < 1.0/app::getFrameRate() &&
          fe.nextTimestep(c) > 1.0 / (real) SampleRate) {
     update();
   }
@@ -506,7 +506,7 @@ void RodSoundApp::draw() {
     gl::color(1.0, 1.0, 0.0);
     gl::lineWidth(1.0);
     Vec3c u = EtoC(y->cur().segments[i].getU());
-    gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u);
+    gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u*(p1-p0).length()*2.0);
   }
   
   m.apply();
@@ -611,8 +611,11 @@ void RodSoundApp::loadYarnFile(std::string filename) {
 void RodSoundApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
-  Vec3e start = Vec3e(0.0, 20.0, 0.0); // Vec3e(-5.0, 4.0, 3.0);
+  Vec3e start = Vec3e(0.0, 1.6069, 0.0); // Vec3e(-5.0, 4.0, 3.0);
   Vec3e end   = Vec3e(0.0, 1.0, 0.0); // Vec3e(5.0, 3.0, -3.0);
+  // 1ft. = 0.3048m
+  // 2ft. = 0.6069m
+  // 3ft. = 0.9144m
 
   Vec3e u     = (end-start).cross(Vec3e(0.0, 0.1, 0.0)).normalized();
   if (u.hasNaN() || u.norm() < 0.95) {
@@ -626,12 +629,23 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
     yarnPoints.push_back(p);
   }
   
-  eyePos = Vec3c(40.0, 10.0, 0.0);
-  targetPos = Vec3c(0.0, 10.0, 0.0);
+  eyePos = Vec3c(5.0, 1.5, 0.0);
+  targetPos = Vec3c(0.0, 1.5, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  VecXe mass = VecXe::Constant(numPoints, 0.344);
+  // FIXME: assumes circular cylindrical rod of default radius
+  real totalMass = constants::radius * constants::radius * constants::pi * (start - end).norm() * constants::rhoRod;
+  real massPerPoint = totalMass / numPoints;
+  
+  VecXe mass = VecXe::Constant(numPoints, massPerPoint);
   y = new Yarn(yarnPoints, u, &mass);
+  
+  
+  real cb = std::pow(constants::youngsModulus * y->getCS()[0].areaMoment()(0, 0) / constants::rhoRod / y->getCS()[0].area(), 0.25);
+  real cbHigh = cb * 141.4;
+  real cbLow = cb * 4.47;
+  real dx = (start - end).norm() / (numPoints - 1.0);
+  std::cout << "Min timestep: " << dx / cbHigh << "\n";
 }
 
 void RodSoundApp::loadStdEnergies() {
@@ -662,10 +676,10 @@ void RodSoundApp::loadStdEnergies() {
 //  energies.push_back(floor);
   
   
-  YarnEnergy* imp1 = new Impulse(*y, Explicit, c, 0.2, 0.21, Vec3e(0.0, 0.0, -500.0), 0);
-  YarnEnergy* imp2 = new Impulse(*y, Explicit, c, 0.2, 0.21, Vec3e(0.0, 0.0, 500.0), y->numCPs()/2);
-  YarnEnergy* imp3 = new Impulse(*y, Explicit, c, 0.2, 0.21, Vec3e(0.0, 0.0, -500.0), y->numCPs()-1);
-  energies.push_back(imp1); energies.push_back(imp2); energies.push_back(imp3);
+  YarnEnergy* imp1 = new Impulse(*y, Explicit, c, 0.2, 0.21, Vec3e(0.0, 0.0, -1.0e-10), 0);
+  YarnEnergy* imp2 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(1.0e-10, 0.0, 0.0), y->numCPs()/2);
+  YarnEnergy* imp3 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(0.0, 0.0, 1.0e-10), y->numCPs()-1);
+  energies.push_back(imp2); //  energies.push_back(imp2);  energies.push_back(imp3);
   
   /*
   

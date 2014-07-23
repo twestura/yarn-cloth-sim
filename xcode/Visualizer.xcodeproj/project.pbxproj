@@ -77,6 +77,8 @@
 		71CAE64718C78B7A002C9FD3 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B00FF439BC000DE1D7 /* AudioToolbox.framework */; };
 		71CAE64818C78B7A002C9FD3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B10FF439BC000DE1D7 /* AudioUnit.framework */; };
 		71CAE64918C78B7A002C9FD3 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
+		71F11F84197D6DA800610630 /* Hashgrid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71F11F82197D6DA800610630 /* Hashgrid.cpp */; };
+		71F11F85197D6DA800610630 /* Hashgrid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 71F11F82197D6DA800610630 /* Hashgrid.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		DE224DC88C8943EDA4899E54 /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6E31D9CEBA884C4CB52F1690 /* CinderApp.icns */; };
 /* End PBXBuildFile section */
@@ -157,6 +159,8 @@
 		71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Simulator_Prefix.pch; path = Headers/Simulator_Prefix.pch; sourceTree = "<group>"; };
 		71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SimulatorApp.cpp; sourceTree = "<group>"; };
 		71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SimulatorApp.h; path = Headers/SimulatorApp.h; sourceTree = "<group>"; };
+		71F11F82197D6DA800610630 /* Hashgrid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashgrid.cpp; sourceTree = "<group>"; };
+		71F11F83197D6DA800610630 /* Hashgrid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Hashgrid.h; path = Source/Hashgrid.h; sourceTree = "<group>"; };
 		71F2BF0218CA58DD001AA0D4 /* Energy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Energy.h; path = Headers/Energy.h; sourceTree = "<group>"; };
 		7F945C3F150C458FB3352920 /* VisualizerApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = VisualizerApp.cpp; path = ../src/Visualizer/Source/VisualizerApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		8D1107320486CEB800E47090 /* Visualizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Visualizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -346,24 +350,25 @@
 		715D60C118ABE9D6008A9785 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
-				71266166196EFDA1001690BB /* CrossSection.h */,
-				71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */,
-				71CA570519420C960076A3F2 /* Constraint.h */,
-				71A93CCB192A4FF70030A80B /* YarnBuilder.h */,
-				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
-				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
-				71197EEE190ABB18003D1E8D /* PTDetector.h */,
-				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
 				719B0C5718BD51CB00FB1633 /* autodiff.h */,
-				719B0C5318BBEB9400FB1633 /* Util.h */,
+				719B0C5018BBDDC000FB1633 /* Clock.h */,
+				715D60CE18AD553C008A9785 /* Constants.h */,
+				71CA570519420C960076A3F2 /* Constraint.h */,
+				71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */,
+				71266166196EFDA1001690BB /* CrossSection.h */,
 				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,
-				715D60C818ABEABA008A9785 /* Segment.h */,
+				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
+				71F11F83197D6DA800610630 /* Hashgrid.h */,
 				719B0C4F18BBDD7100FB1633 /* IMEXIntegrator.h */,
 				713EE1F91947792A0010304B /* Integrator.h */,
-				719B0C5018BBDDC000FB1633 /* Clock.h */,
-				715D60CB18ABEC77008A9785 /* Yarn.h */,
-				715D60CE18AD553C008A9785 /* Constants.h */,
 				71CA57001940E6930076A3F2 /* Macros.h */,
+				71197EEE190ABB18003D1E8D /* PTDetector.h */,
+				715D60C818ABEABA008A9785 /* Segment.h */,
+				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
+				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
+				719B0C5318BBEB9400FB1633 /* Util.h */,
+				715D60CB18ABEC77008A9785 /* Yarn.h */,
+				71A93CCB192A4FF70030A80B /* YarnBuilder.h */,
 			);
 			name = Headers;
 			sourceTree = "<group>";
@@ -371,13 +376,14 @@
 		715D60C218ABE9E2008A9785 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				713EE1FA19477E7D0010304B /* Integrator.cpp */,
 				71CA570419420C960076A3F2 /* Constraint.cpp */,
 				71CA570119420BD80076A3F2 /* ConstraintIntegrator.cpp */,
-				71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */,
-				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
-				719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */,
 				715D32B518FC60490061154E /* Energy.cpp */,
+				71F11F82197D6DA800610630 /* Hashgrid.cpp */,
+				719B0C5118BBE9F200FB1633 /* IMEXIntegrator.cpp */,
+				713EE1FA19477E7D0010304B /* Integrator.cpp */,
+				71197EED190ABB18003D1E8D /* PTDetector.cpp */,
+				71CAE65318C78D7E002C9FD3 /* SimulatorApp.cpp */,
 				71A93CCA192A4FF70030A80B /* YarnBuilder.cpp */,
 			);
 			path = Source;
@@ -405,9 +411,9 @@
 		71CA573919463A870076A3F2 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
-				71CA573A19463A870076A3F2 /* RodSoundApp.h */,
-				713EE202194A10340010304B /* FrameExporter.h */,
 				713EE2001947884E0010304B /* ExIntegrator.h */,
+				713EE202194A10340010304B /* FrameExporter.h */,
+				71CA573A19463A870076A3F2 /* RodSoundApp.h */,
 			);
 			path = Headers;
 			sourceTree = "<group>";
@@ -415,8 +421,8 @@
 		71CA573B19463A870076A3F2 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				71CA573C19463A870076A3F2 /* RodSoundApp.cpp */,
 				713EE1FF1947884E0010304B /* ExIntegrator.cpp */,
+				71CA573C19463A870076A3F2 /* RodSoundApp.cpp */,
 				713EE203194A24980010304B /* MovieMaker.sh */,
 			);
 			path = Source;
@@ -586,6 +592,7 @@
 				719F3A98193E71B30096FC24 /* Energy.cpp in Sources */,
 				713EE1FD19477EBB0010304B /* Integrator.cpp in Sources */,
 				719F3A99193E71B30096FC24 /* YarnBuilder.cpp in Sources */,
+				71F11F85197D6DA800610630 /* Hashgrid.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -599,6 +606,7 @@
 				7101FBC118595AA9008553D8 /* PosFileConv.cpp in Sources */,
 				715454C4188495D300F2C196 /* Common.cpp in Sources */,
 				711E97E9183DE8DF00BAFB0B /* InfoPanel.cpp in Sources */,
+				71F11F84197D6DA800610630 /* Hashgrid.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

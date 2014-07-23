@@ -20,17 +20,31 @@ namespace constants {
   /// Determines the maximum amount of plasticity the centerline of the yarn exhibits.
   const real pPlasticMax = 2.5;
 
-  /// The default radius of the rod.
-  const real radius = 0.15;
+  /// The default radius of the rod in m.
+  const real radius = 0.00635;
+  // Mascarenhas test: 0.00955
+  // 1/2 inch diameter = 1/4 inch radius: 0.00635
+  // 3/4 inch diameter = 3/8 inch radius: 0.009525
   
-  /// The default Young's modulus of the rod.
-  constexpr real youngsModulus = 2.0e9;
+  /// The default Young's modulus of the rod in N/m^2
+  constexpr real youngsModulus = 6.89e10;
+  // Steel (1018): 2.05e11
+  // Aluminum (6061) : 6.89e10
   
-  /// The default Poisson's ratio of the rod.
-  constexpr real poissonRatio = 0.3;
+  /// The default Poisson's ratio of the rod (dimensionless).
+  constexpr real poissonRatio = 0.33;
+  // Steel (1018): 0.29
+  // Aluminum (6061) : 0.33
   
-  /// The default shear modulus of the rod.
-  constexpr real shearModulus = youngsModulus / (2.0 * (1.0 + poissonRatio));
+  /// The default shear modulus of the rod in N/m^2.
+  constexpr real shearModulus = 2.6e10; //  youngsModulus / (2.0 * (1.0 + poissonRatio));
+  // Steel (1018): 8.0e10
+  // Aluminum (6061): 2.6e10
+  
+  /// The default density of the rod in kg/m^3.
+  const real rhoRod = 2700;
+  // Steel (1018): 7870
+  // Aluminum (6061): 2700
   
   /// Pi. You know the one.
   const real pi = 3.1415926535;

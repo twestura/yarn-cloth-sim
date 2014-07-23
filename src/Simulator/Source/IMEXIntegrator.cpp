@@ -38,17 +38,17 @@ bool IMEXIntegrator::integrate(Clock& c) {
     e->suggestTimestep(c);
   }
   
-  const size_t NumEqs = y.numCPs() * 3;
+  const size_t dof = y.numCPs() * 3;
   bool evalSuccess = false;
   bool newtonConverge = false;
   int newtonIterations = 0;
 
   while (!evalSuccess) {
-    VecXe Fx    = VecXe::Zero(NumEqs);
-    VecXe FxEx  = VecXe::Zero(NumEqs);
-    VecXe dqdot = VecXe::Zero(NumEqs);
-    VecXe sol   = VecXe::Zero(NumEqs);
-    Eigen::SparseMatrix<real> GradFx(NumEqs, NumEqs);
+    VecXe Fx    = VecXe::Zero(dof);
+    VecXe FxEx  = VecXe::Zero(dof);
+    VecXe dqdot = VecXe::Zero(dof);
+    VecXe sol   = VecXe::Zero(dof);
+    Eigen::SparseMatrix<real> GradFx(dof, dof);
     std::vector<Triplet> triplets;
     
     // TODO: Figure out a thread-safe way to fill this
@@ -74,7 +74,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       Fx = FxEx;
       
       // Find offset for implicit evaluation
-      VecXe offset(NumEqs);
+      VecXe offset(dof);
       for (int i=0; i<y.numCPs(); i++) {
         offset.segment<3>(3*i) = c.timestep()*(y.cur().points[i].vel + dqdot.segment<3>(3*i));
       }

@@ -9,115 +9,60 @@
 #include "ExIntegrator.h"
 
 ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integrator(y, energies) {
-  alpha1 = 6.615e-7;
-  alpha2 = 0.882;
+  alpha1 = 1.0e-8;
+  alpha2 = 0.0;
   
-  std::vector<Triplet> triplets;
-  size_t NumEqs = y.numCPs() * 3;
-  for (YarnEnergy* e : energies) {
-    if (e->energySource() == Internal) {
-      e->eval(nullptr, &triplets);
+  size_t dof = y.numCPs() * 3;
+  stiffness.resize(dof, dof);
+  setDamping();
+  
+  Eigen::SparseMatrix<real> lklt = y.getInvMass().sparse * -stiffness;
+  
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic>> saes(lklt.toDense());
+  std::cout << saes.eigenvalues() << "\n\n";
+  
+  for (int i=0; i<4; i++) {
+    real eigval = saes.eigenvalues()(dof-4+i);
+    std::cout << "eigval " << dof-4+i << " (" << eigval << "): ";
+    if (eigval < 0) {
+      std::cout << "eigval is negative, skipping.\n";
+      continue;
     }
+    real temp = alpha1 * eigval + alpha2;
+    real disc = temp * temp - 4.0 * eigval;
+    if (disc >= 0) {
+      std::cout << "disc is non-negative: " << disc << "\n";
+      continue;
+    }
+    typedef std::complex<real> comp;
+    comp freqi = std::sqrt(comp(disc)) / 2.0; // only care about imaginary part
+    // comp freq2i = (-temp - std::sqrt(comp(disc))) / 2.0;
+    real freq = fabs(freqi.imag()) / (2.0 * constants::pi);
+    // real freq2 = fabs(freq2i.imag()) / (2.0 * constants::pi);
+    std::cout << "Freq: " << freq << "\n";
   }
-  stiffness.resize(NumEqs, NumEqs);
-  stiffness.setFromTriplets(triplets.begin(), triplets.end());
-  stiffness *= -1;
+  std::cout << "\n";
   
-  // Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic>> saes(-stiffness.toDense());
-  // std::cout << saes.eigenvalues() << "\n\n";
-  
-  // Rayleigh damping matrix, stiffness not rotated.
-  damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
-  
-  /*
-  affineRest.resize(3*y.numCPs());
-  Vec3e com = y.getCurCoM();
-  for (int i=0; i<y.numCPs(); i++) {
-    affineRest.segment<3>(3*i) = y.rest().points[i].pos - com;
-  }
-  */
+  // std::cout << saes.eigenvectors().topRightCorner(dof, 4) << "\n\n";
 }
 
 bool ExIntegrator::integrate(Clock& c) {
   PROFILER_START("Integrate");
   
-  size_t NumEqs = y.numCPs() * 3;
-  VecXe forces = VecXe::Zero(NumEqs);
+  size_t dof = y.numCPs() * 3;
+  VecXe forces = VecXe::Zero(dof);
   
   for (YarnEnergy* e : energies) {
     if (!e->eval(&forces)) return false;
   }
   
   // Damping calculations
-  /*
-  VecXe vel(NumEqs);
-  Mat3e Apq = Mat3e::Zero();
-  Vec3e com = y.getCurCoM();
-  for (int i=0; i<y.numCPs(); i++) {
-    Apq += y.getMass().diag(i) * (y.cur().points[i].pos - com) * affineRest.segment<3>(3*i).transpose();
-    vel.segment<3>(3*i) = y.cur().points[i].vel;
-  }
-  Eigen::SelfAdjointEigenSolver<Mat3e> saes;
-  saes.compute(Apq.transpose() * Apq);
-  Mat3e invSqrt = saes.operatorInverseSqrt();
-  if (invSqrt.hasNaN()) { // Polar decomposition failed; matrix is singular.
-    forces -= damping * vel;
-    if (c.getTicks() % 1000 == 0) {
-      std::vector<Triplet> triplets;
-      for (YarnEnergy* e : energies) {
-        if (e->energySource() == Internal) {
-          e->eval(nullptr, &triplets);
-        }
-      }
-      stiffness.setFromTriplets(triplets.begin(), triplets.end());
-      stiffness *= -1;
-      damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
-    }
-  } else {
-    Mat3e R;
-    R.noalias() = Apq * invSqrt; // rotates affine rest to affine cur
-    CHECK_NAN_VEC(R);
-    Mat3e RT = R.transpose(); // rotates affine cur to affine rest
-    for (int i=0; i<y.numCPs(); i++) {
-      vel.segment<3>(3*i) = RT * vel.segment<3>(3*i);
-    }
-    vel = alpha1 * stiffness * vel;
-    for (int i=0; i<y.numCPs(); i++) {
-      vel.segment<3>(3*i) = R * vel.segment<3>(3*i);
-    }
-    vel = alpha2 * y.getMass().sparse * vel;
-    forces -= vel;
-    
-    for (int i=0; i<y.numCPs(); i++) {
-      Vec3e aCur = y.cur().points[i].pos - com;
-      Vec3e aRest = affineRest.segment<3>(3*i);
-      aCur = RT * aCur;
-      frames.push_back([aCur, aRest] () {
-        for (int i=0; i<8; i++) {
-          ci::gl::color(1, 0, 0, 0.5);
-          ci::gl::drawSphere(EtoC(aCur) + Vec3c(0, 10, 0), 0.1);
-          ci::gl::color(0, 0, 1, 0.5);
-          ci::gl::drawSphere(EtoC(aRest) + Vec3c(0, 10, 0), 0.1);
-        }
-      });
-    }
-  }
-  */
-  
-  VecXe vel(NumEqs);
+  VecXe vel(dof);
   for (int i=0; i<y.numCPs(); i++) {
     vel.segment<3>(3*i) = y.cur().points[i].vel;
   }
-  if (c.getTicks() % 1000 == 0 && c.getTicks() != 0) { // May need to update stiffness matrix
-    std::vector<Triplet> triplets;
-    for (YarnEnergy* e : energies) {
-      if (e->energySource() == Internal) {
-        e->eval(nullptr, &triplets);
-      }
-    }
-    stiffness.setFromTriplets(triplets.begin(), triplets.end());
-    stiffness *= -1;
-    damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
+  if (c.getTicks() % 1000 == 0 && c.getTicks() != 0) { // Periodically update stiffness matrix
+    setDamping();
   }
   forces -= damping * vel;
   
@@ -145,4 +90,18 @@ bool ExIntegrator::integrate(Clock& c) {
   
   PROFILER_STOP("Integrate");
   return true;
+}
+
+void ExIntegrator::setDamping() {
+  std::vector<Triplet> triplets;
+  for (YarnEnergy* e : energies) {
+    if (e->energySource() == Internal) {
+      e->eval(nullptr, &triplets);
+    }
+  }
+  stiffness.setFromTriplets(triplets.begin(), triplets.end());
+  stiffness *= -1;
+  
+  // Rayleigh damping matrix
+  damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
 }

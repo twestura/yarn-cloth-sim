@@ -17,15 +17,15 @@ Integrator(y, energies), constraints(constraints) {
 
 bool ConstraintIntegrator::integrate(Clock& c) {
   // Evaluate all (explicit) forces
-  size_t numEqs = 3*y.numCPs();
-  VecXe forces = VecXe::Zero(numEqs);
+  size_t dof = 3*y.numCPs();
+  VecXe forces = VecXe::Zero(dof);
   
   for (YarnEnergy* e : energies) {
     e->eval(&forces);
   }
   
   // Find candidate positions
-  VecXe xStar = VecXe(numEqs);
+  VecXe xStar = VecXe(dof);
   for (int i=0; i<y.numCPs(); i++) {
     Vec3e velStar = y.cur().points[i].vel + y.getInvMass().diag(i)*c.timestep()*forces.segment<3>(3*i);
     xStar.segment<3>(3*i) = y.cur().points[i].pos + c.timestep()*velStar;

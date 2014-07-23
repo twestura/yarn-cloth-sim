@@ -77,7 +77,7 @@ public:
   const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
     // Approximate as circle
     return (constants::rhoAir * sRadius * sRadius * sRadius /
-            (2.0 * constants::cAir * ear.norm() * ear.norm())) * ear.dot(jerk);
+            (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
   }
 };
 
@@ -100,7 +100,7 @@ public:
   const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
     // Approximate as circle
     return (constants::rhoAir * sRadius * sRadius * sRadius /
-            (2.0 * constants::cAir * ear.norm() * ear.norm())) * ear.dot(jerk);
+            (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
   }
 };
 

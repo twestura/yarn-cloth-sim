@@ -16,7 +16,7 @@ class ExIntegrator : public Integrator {
   Eigen::SparseMatrix<real> stiffness;
   real alpha1;
   real alpha2;
-//  VecXe affineRest;
+  void setDamping();
 public:
   ExIntegrator(Yarn&, std::vector<YarnEnergy*>&);
   bool integrate(Clock&);
