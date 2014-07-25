@@ -23,6 +23,7 @@
 #include "FrameExporter.h"
 #include "ExIntegrator.h"
 #include "YarnBuilder.h"
+#include "BEMSolver.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -100,6 +101,9 @@ class RodSoundApp : public AppNative {
 
 void RodSoundApp::setup()
 {
+//  std::cout << solveBEM(constants::radius) << "\n\n";
+//  std::cout << "Expected:\n" << -constants::pi * constants::radius * constants::radius * Mat2e::Identity() << "\n\n";
+  
   // Setup scene
   cam.setPerspective(40.0, getWindowAspectRatio(), 0.1, 1000.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
