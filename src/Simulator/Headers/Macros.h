@@ -20,6 +20,9 @@
 // #define DRAW_IMEXINTEGRATOR
 // #define NEWMARK_BETA
 
+// ExIntegrator.cpp
+// #define DRAW_EIGENMODE
+
 // Energy.cpp
 // #define ENABLE_BEND_AUTODIFF
 // #define DRAW_SPRING

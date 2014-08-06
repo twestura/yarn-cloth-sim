@@ -32,8 +32,6 @@ public:
 /// A Yarn stepped though points in time.
 class Yarn {
 private:
-  real shearModulus;
-  real youngsModulus;
   
   /// The mass matrix.
   Mass mass;
@@ -60,6 +58,9 @@ private:
   
   
 public:
+  real shearModulus;
+  real youngsModulus;
+  
   /// Constructs a yarn that is initially at rest given a vector of initial positions.
   /// The U vector for the first segment is then propagated down the yarn by parallel transport
   /// through space. A vector of lumped masses may be optionally passed in; if it is null, all

@@ -86,6 +86,17 @@ public:
   EnergySource inline const energySource() { return Internal; }
 };
 
+class FEMBending : public YarnEnergy {
+private:
+  std::vector<Triplet> modDxxxxTriplets;
+  Eigen::SparseMatrix<real> modDxxxx;
+  Eigen::SparseMatrix<real> X;
+public:
+  FEMBending(const Yarn& y, EvalType et);
+  bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
+  EnergySource inline const energySource() { return Internal; }
+};
+
 class Stretching : public YarnEnergy {
 private:
   

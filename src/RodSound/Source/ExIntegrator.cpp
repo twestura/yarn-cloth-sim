@@ -8,42 +8,39 @@
 
 #include "ExIntegrator.h"
 
-ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies) : Integrator(y, energies) {
-  alpha1 = 1.0e-8;
-  alpha2 = 0.0;
+ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies,
+                           std::vector<YarnConstraint*>* c) : Integrator(y, energies) {
+  // Stiffness coefficient
+  alpha1 = 1.0e-9;
+  // Mass coefficient
+  alpha2 = 2.0;
   
   size_t dof = y.numCPs() * 3;
   stiffness.resize(dof, dof);
   setDamping();
   
-  Eigen::SparseMatrix<real> lklt = y.getInvMass().sparse * -stiffness;
-  
+#ifdef DRAW_EIGENMODE
+  // Test eigenvalues to extract frequencies.
+  Eigen::SparseMatrix<real> lklt = y.getInvMass().sparse * stiffness;
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic>> saes(lklt.toDense());
-  std::cout << saes.eigenvalues() << "\n\n";
-  
-  for (int i=0; i<4; i++) {
-    real eigval = saes.eigenvalues()(dof-4+i);
-    std::cout << "eigval " << dof-4+i << " (" << eigval << "): ";
-    if (eigval < 0) {
-      std::cout << "eigval is negative, skipping.\n";
-      continue;
-    }
+  for (int i=0; i<dof; i++) {
+    real eigval = saes.eigenvalues()(i);
+    if (eigval < 0) continue; // Only positive eigenvalues contribute.
     real temp = alpha1 * eigval + alpha2;
     real disc = temp * temp - 4.0 * eigval;
-    if (disc >= 0) {
-      std::cout << "disc is non-negative: " << disc << "\n";
-      continue;
-    }
+    if (disc >= 0) continue; // No imaginary part, which specifies the frequency.
     typedef std::complex<real> comp;
-    comp freqi = std::sqrt(comp(disc)) / 2.0; // only care about imaginary part
-    // comp freq2i = (-temp - std::sqrt(comp(disc))) / 2.0;
+    comp freqi = std::sqrt(comp(disc)) / 2.0;
     real freq = fabs(freqi.imag()) / (2.0 * constants::pi);
-    // real freq2 = fabs(freq2i.imag()) / (2.0 * constants::pi);
-    std::cout << "Freq: " << freq << "\n";
+    if (freq > 20.0 && freq < 20000.0) {
+      std::cout << "eigval " << i << " (" << eigval << "): " << "Freq: " << freq << "\n";
+    }
   }
   std::cout << "\n";
+  modes = saes.eigenvectors();
+#endif // ifdef DRAW_EIGENMODE
   
-  // std::cout << saes.eigenvectors().topRightCorner(dof, 4) << "\n\n";
+  if (c) constraints = *c;
 }
 
 bool ExIntegrator::integrate(Clock& c) {
@@ -87,6 +84,33 @@ bool ExIntegrator::integrate(Clock& c) {
   }
    */
   
+  // Constraint-based integration
+  /*
+  // Find candidate positions
+  VecXe xStar = VecXe(dof);
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3e velStar = y.cur().points[i].vel + c.timestep()*forces.segment<3>(3*i);
+    xStar.segment<3>(3*i) = y.cur().points[i].pos + c.timestep()*velStar;
+  }
+  // Solve constraints
+  const int gaussJacobiMaxIter = 4;
+  int gaussJacobiIter = 0;
+  real omega = 1.0;
+  while (gaussJacobiIter < gaussJacobiMaxIter) {
+    for (YarnConstraint* c : constraints) {
+      c->eval(xStar, omega); // need number of constraints per point?
+    }
+    gaussJacobiIter++;
+  }
+  // Update positions/velocities
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3e delta = xStar.segment<3>(3*i) - y.cur().points[i].pos;
+    y.next().points[i].vel = delta / c.timestep();
+    y.next().points[i].pos = xStar.segment<3>(3*i);
+    y.next().points[i].accel = y.next().points[i].vel - y.cur().points[i].vel;
+  }
+   */
+  
   
   PROFILER_STOP("Integrate");
   return true;
@@ -100,8 +124,22 @@ void ExIntegrator::setDamping() {
     }
   }
   stiffness.setFromTriplets(triplets.begin(), triplets.end());
-  stiffness *= -1;
+  stiffness *= -1.0;
   
   // Rayleigh damping matrix
   damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
+}
+
+
+void ExIntegrator::draw() {
+#ifdef DRAW_EIGENMODE
+  size_t eigval = 56;
+  VecXe mode = modes.col(eigval);
+  
+  ci::gl::color(0.7, 0.1, 0.6);
+  for (int i=0; i<y.numCPs(); i++) {
+    Vec3e flux = mode.segment<3>(i*3);
+    ci::gl::drawLine(EtoC(y.cur().points[i].pos), EtoC(y.cur().points[i].pos + flux));
+  }
+#endif DRAW_EIGENMODE
 }

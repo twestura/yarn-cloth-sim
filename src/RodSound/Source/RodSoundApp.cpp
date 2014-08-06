@@ -67,6 +67,7 @@ class RodSoundApp : public AppNative {
   Clock c;
   Integrator* integrator = nullptr;
   std::vector<YarnEnergy*> energies;
+  std::vector<YarnConstraint*> constraints;
   MouseSpring* mouseSpring;
   
   Spring* testSpring1;
@@ -93,8 +94,9 @@ class RodSoundApp : public AppNative {
   Vec3e ear2Pos = Vec3e(28.0, 10.0, 28.0);
   double sampleBuffer2[BufferSize];
   size_t curSample = 0;
+  double sampleBuffer3[BufferSize];
   
-  size_t multiSample = 18;
+  size_t multiSample = 13;
   
   FrameExporter fe;
 };
@@ -169,7 +171,7 @@ void RodSoundApp::setup()
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
   // Load the yarn
-  loadDefaultYarn(60);
+  loadDefaultYarn(50);
   // loadYarnFile("");
   loadStdEnergies();
   
@@ -332,7 +334,7 @@ void RodSoundApp::update()
     for (int i=0; i<BufferSize; i++) {
       max = std::max(max, std::fabs(sampleBuffer[i]));
     }
-    std::cout << "Max: " << max << "\n";
+    std::cout << "Max1: " << max << "\n";
     uint16_t buffer[BufferSize];
     for (int i=0; i<BufferSize; i++) {
       buffer[i] = toSample(sampleBuffer[i], max);
@@ -345,10 +347,23 @@ void RodSoundApp::update()
     for (int i=0; i<BufferSize; i++) {
       max = std::max(max, std::fabs(sampleBuffer2[i]));
     }
+    std::cout << "Max2: " << max << "\n";
     for (int i=0; i<BufferSize; i++) {
       buffer[i] = toSample(sampleBuffer2[i], max);
     }
     writeWAVData((constants::ResultPath+"result2.wav").data(), buffer,
+                 curSample * sizeof(uint16_t), SampleRate, 1);
+    
+    sampleBuffer3[0] = 0.0;
+    max = 0;
+    for (int i=0; i<BufferSize; i++) {
+      max = std::max(max, std::fabs(sampleBuffer3[i]));
+    }
+    std::cout << "Max3: " << max << "\n";
+    for (int i=0; i<BufferSize; i++) {
+      buffer[i] = toSample(sampleBuffer3[i], max);
+    }
+    writeWAVData((constants::ResultPath+"result3.wav").data(), buffer,
                  curSample * sizeof(uint16_t), SampleRate, 1);
     
     fe.writeMPEG("result");
@@ -422,7 +437,10 @@ void RodSoundApp::update()
   if (c.getTicks() % multiSample == 0) {
     real sample = 0;
     real sample2 = 0;
+    real avgX = 0;
     for (int i=1; i<y->numCPs()-1; i++) {
+      avgX += y->next().points[i].vel.x();
+      
       // Calculate jerk
       Vec3e jerk = y->next().points[i].accel - y->cur().points[i].accel;
       // Project it to transverse plane
@@ -452,8 +470,12 @@ void RodSoundApp::update()
       earVec = ear2Pos - y->next().points[i].pos;
       sample2 += y->getCS()[i].calcSample(earVec, jerk);
     }
+    avgX = avgX/(y->numCPs()-2);
     sampleBuffer[curSample] = sample;
     sampleBuffer2[curSample] = sample2;
+    
+    sampleBuffer3[curSample] = y->next().points[y->numCPs()/2].vel.x() - avgX;
+    
     curSample++;
   }
   
@@ -644,12 +666,24 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   VecXe mass = VecXe::Constant(numPoints, massPerPoint);
   y = new Yarn(yarnPoints, u, &mass);
   
+  real l = (start - end).norm();
+  real kappa = sqrt(y->youngsModulus * y->getCS()[0].areaMoment()(0, 0) /
+                    (constants::rhoRod * y->getCS()[0].area() * l * l * l * l));
+  std::cout << "kappa: " << kappa << "\n";
+  real h = l / (numPoints-1);
+  real k = 1.0 / (44100*multiSample);
+  real mu = kappa * k / (h * h);
+  std::cout << "mu: " << mu << "\n";
   
+  real fmax = asin(2.0 * mu) / (constants::pi * k);
+  std::cout << "fmax: " << fmax << "\n";
+  /*
   real cb = std::pow(constants::youngsModulus * y->getCS()[0].areaMoment()(0, 0) / constants::rhoRod / y->getCS()[0].area(), 0.25);
   real cbHigh = cb * 141.4;
   real cbLow = cb * 4.47;
   real dx = (start - end).norm() / (numPoints - 1.0);
   std::cout << "Min timestep: " << dx / cbHigh << "\n";
+   */
 }
 
 void RodSoundApp::loadStdEnergies() {
@@ -662,10 +696,16 @@ void RodSoundApp::loadStdEnergies() {
   
   
   YarnEnergy* stretch = new Stretching(*y, Explicit);
-  energies.push_back(stretch);
+//  energies.push_back(stretch);
+  // OR
+  //YarnConstraint* length = new Length(*y);
+  //constraints.push_back(length);
   
   YarnEnergy* bending = new Bending(*y, Explicit);
   energies.push_back(bending);
+  
+  YarnEnergy* fembending = new FEMBending(*y, Explicit);
+//  energies.push_back(fembending);
   
   YarnEnergy* twisting = new Twisting(*y, Explicit);
 //  energies.push_back(twisting);
@@ -680,42 +720,20 @@ void RodSoundApp::loadStdEnergies() {
 //  energies.push_back(floor);
   
   
-  YarnEnergy* imp1 = new Impulse(*y, Explicit, c, 0.2, 0.21, Vec3e(0.0, 0.0, -1.0e-10), 0);
-  YarnEnergy* imp2 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(1.0e-10, 0.0, 0.0), y->numCPs()/2);
+  YarnEnergy* imp1 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(1.0e-10, 0.0, 0.0), 0);
+  YarnEnergy* imp2 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(-1.0e-10, 0.0, 0.0), y->numCPs()-1);
   YarnEnergy* imp3 = new Impulse(*y, Explicit, c, 0.2, 0.201, Vec3e(0.0, 0.0, 1.0e-10), y->numCPs()-1);
-  energies.push_back(imp2); //  energies.push_back(imp2);  energies.push_back(imp3);
+  energies.push_back(imp1);  energies.push_back(imp2); // energies.push_back(imp3);
   
   /*
   
   YarnEnergy* intContact = new IntContact(*y, Explicit);
   energies.push_back(intContact);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
-  clamp1->setClamp(y->rest().points[0].pos);
-//  clamp1->setClamp(y->rest().points[0].pos + Vec3e(0.0, 6.0, 2.0));
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
-  clamp2->setClamp(y->rest().points[1].pos);
-//  Spring* clamp2 = new Spring(*y, Implicit, 14, 500.0);
-//  clamp2->setClamp(y->rest().points[14].pos + Vec3e(0.0, -6.0, 2.0));
-  Spring* clamp3 = new Spring(*y, Implicit, 28, 500.0);
-  clamp3->setClamp(y->rest().points[28].pos + Vec3e(0.0, 6.0, -2.0));
-  Spring* clamp4 = new Spring(*y, Implicit, 42, 500.0);
-  clamp4->setClamp(y->rest().points[42].pos + Vec3e(0.0, -6.0, -2.0));
-  energies.push_back(clamp1);
-  energies.push_back(clamp2);
-//  energies.push_back(clamp3);
-//  energies.push_back(clamp4);
-  
-  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50.0);
-  testSpring1->setClamp(testSpring1Clamp);
-  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50.0);
-  testSpring2->setClamp(testSpring2Clamp);
-//  energies.push_back(testSpring1);
-//  energies.push_back(testSpring2);
    */
   
   if (integrator) delete integrator;
-  integrator = new ExIntegrator(*y, energies);
+  integrator = new ExIntegrator(*y, energies, &constraints);
 }
 
 

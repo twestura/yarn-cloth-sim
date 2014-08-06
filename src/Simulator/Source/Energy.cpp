@@ -239,7 +239,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     if (Fx) {
       Vec3e gradePrev = totalcoeff * (gradK1ePrev * kcoeff.x() + gradK2ePrev * kcoeff.y()); // Verified
       Vec3e gradeNext = totalcoeff * (gradK1eNext * kcoeff.x() + gradK2eNext * kcoeff.y()); // Verified
-    
+      
       Fx->segment<3>(3*(i-1)) += gradePrev;
       Fx->segment<3>(3*i)     += (gradeNext - gradePrev);
       Fx->segment<3>(3*(i+1)) += -gradeNext;
@@ -829,6 +829,67 @@ bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   real t = sinf((c.time() - start) * constants::pi / (end - start));
   if (Fx) {
     Fx->segment<3>(3*index) += force * t;
+  }
+  return true;
+}
+
+FEMBending::FEMBending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
+  size_t n = y.numCPs();
+  real l = (y.rest().points[0].pos - y.rest().points[n-1].pos).norm();
+  real h = (y.rest().points[0].pos - y.rest().points[1].pos).norm();
+  real modmu2 = y.youngsModulus * y.getCS()[0].areaMoment()(0, 0) / (n * l * l * l * h * h * h * h);
+  
+  modDxxxxTriplets.push_back(Triplet(0, 0, -1.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(0, 1, 2.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(0, 2, -1.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(1, 0, 2.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(1, 1, -5.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(1, 2, 4.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(1, 3, -1.0 * modmu2));
+  
+  for (int i=2; i<n-2; i++) {
+    modDxxxxTriplets.push_back(Triplet(i, i-2, -1.0 * modmu2));
+    modDxxxxTriplets.push_back(Triplet(i, i-1, 4.0 * modmu2));
+    modDxxxxTriplets.push_back(Triplet(i, i, -6.0 * modmu2));
+    modDxxxxTriplets.push_back(Triplet(i, i+1, 4.0 * modmu2));
+    modDxxxxTriplets.push_back(Triplet(i, i+2, -1.0 * modmu2));
+  }
+  
+  modDxxxxTriplets.push_back(Triplet(n-2, n-4, -1.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-2, n-3, 4.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-2, n-2, -5.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-2, n-1, 2.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-1, n-3, -1.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-1, n-2, 2.0 * modmu2));
+  modDxxxxTriplets.push_back(Triplet(n-1, n-1, -1.0 * modmu2));
+  
+  modDxxxx.resize(n, n);
+  modDxxxx.setFromTriplets(modDxxxxTriplets.begin(), modDxxxxTriplets.end());
+
+  std::vector<Triplet> triplets;
+  X.resize(n, n*3);
+  for (int i=0; i<y.numCPs(); i++) {
+    triplets.push_back(Triplet(i, 3*i, 1.0));
+  }
+  X.setFromTriplets(triplets.begin(), triplets.end());
+}
+
+bool FEMBending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
+  if (Fx) {
+    VecXe x(y.numCPs());
+    for (int i=0; i<y.numCPs(); i++) {
+      x(i) = y.cur().points[i].pos.x();
+    }
+    if (offset) {
+      x += X * (*offset);
+    }
+    (*Fx) += X.transpose() * (modDxxxx * x);
+  }
+  
+  if (GradFx) {
+    for (Triplet t : modDxxxxTriplets) {
+      GradFx->push_back(Triplet(t.row()*3, t.col()*3, t.value()));
+    }
   }
   return true;
 }
