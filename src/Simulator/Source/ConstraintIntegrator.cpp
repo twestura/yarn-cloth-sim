@@ -9,27 +9,22 @@
 #include "ConstraintIntegrator.h"
 
 
-ConstraintIntegrator::ConstraintIntegrator(Yarn& y, std::vector<YarnEnergy*> energies,
-                                           std::vector<YarnConstraint*> constraints) :
+ConstraintIntegrator::ConstraintIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies,
+                                           std::vector<YarnConstraint*>& constraints) :
 Integrator(y, energies), constraints(constraints) {
   
 }
 
 bool ConstraintIntegrator::integrate(Clock& c) {
   // Evaluate all (explicit) forces
-  size_t dof = 3*y.numCPs();
-  VecXe forces = VecXe::Zero(dof);
+  VecXe forces = VecXe::Zero(y.numDOF());
   
   for (YarnEnergy* e : energies) {
     e->eval(&forces);
   }
   
-  // Find candidate positions
-  VecXe xStar = VecXe(dof);
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e velStar = y.cur().points[i].vel + y.getInvMass().diag(i)*c.timestep()*forces.segment<3>(3*i);
-    xStar.segment<3>(3*i) = y.cur().points[i].pos + c.timestep()*velStar;
-  }
+  VecXe xStar = y.cur().pos + c.timestep() * (y.cur().vel +
+                                              c.timestep() * (y.getInvMass().sparse * forces));
   
   // TODO: apply mass scaling (??)
   
@@ -47,16 +42,9 @@ bool ConstraintIntegrator::integrate(Clock& c) {
   }
   
   // Update positions/velocities
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e delta = xStar.segment<3>(3*i) - y.cur().points[i].pos;
-    if (delta.norm() < 1.0e-4) { // FIXME
-      y.next().points[i].vel = Vec3e::Zero();
-      y.next().points[i].pos = y.cur().points[i].pos;
-    } else {
-      y.next().points[i].vel = delta / c.timestep();
-      y.next().points[i].pos = xStar.segment<3>(3*i);
-    }
-  }
+  y.next().vel = (xStar - y.cur().pos) / c.timestep();
+  // TODO: filter velocities to prevent jitter
+  y.next().pos = xStar;
   
   return true;
 }

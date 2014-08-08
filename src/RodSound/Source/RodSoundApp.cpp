@@ -70,11 +70,6 @@ class RodSoundApp : public AppNative {
   std::vector<YarnConstraint*> constraints;
   MouseSpring* mouseSpring;
   
-  Spring* testSpring1;
-  Spring* testSpring2;
-  Vec3e testSpring1Clamp = Vec3e(10.0, 15.0, 5.0);
-  Vec3e testSpring2Clamp = Vec3e(-10.0, 15.0, 5.0);
-  
   real twist = 0.0;
   real yarnTwist = 0.0;
   int numYarnTwists = 0;
@@ -190,8 +185,8 @@ void RodSoundApp::mouseDown(MouseEvent event)
                             getWindowAspectRatio());
     real tmin = INFINITY;
     bool any = false;
-    for (const CtrlPoint& p : y->cur().points) { // A bit slow, but beats keeping a KD-Tree updated
-      Sphere s(EtoC(p.pos), constants::radius * 1.5);
+    for (int i=0; i<y->numCPs(); i++) { // A bit slow, but beats keeping a KD-Tree updated
+      Sphere s(EtoC(y->cur().POS(i)), constants::radius * 1.5);
       float t;
       if (s.intersect(r, &t) && t < tmin) {
         any = true;
@@ -281,32 +276,8 @@ void RodSoundApp::keyDown(KeyEvent event)
       cam.lookAt(eyePos, targetPos);
       break;
       
-      
-    case event.KEY_w:
-      testSpring1Clamp.z() += 1.0;
-      testSpring2Clamp.z() += 1.0;
-      testSpring1->setClamp(testSpring1Clamp);
-      testSpring2->setClamp(testSpring2Clamp);
-      break;
     case event.KEY_s:
-      /*
-      testSpring1Clamp.z() -= 1.0;
-      testSpring2Clamp.z() -= 1.0;
-      testSpring1->setClamp(testSpring1Clamp);
-      testSpring2->setClamp(testSpring2Clamp);
-       */
       stopNow = true;
-      break;
-      
-    case event.KEY_t:
-      for(int i=1; i<y->numSegs(); i++) {
-        const Segment& s = y->cur().segments[i];
-        const Segment& sPrev = y->cur().segments[i-1];
-        std::cout << "seg " << i << " twist: " << (s.getRot() - sPrev.getRot() + s.getRefTwist())
-        << " (" << y->cur().segments[i].getRot() << " + " << y->cur().segments[i].getRefTwist() <<
-        " = " << y->cur().segments[i].getRot() + y->cur().segments[i].getRefTwist() << ")\n";
-      }
-      std::cout << "numYarnTwists: " << numYarnTwists << "\n";
       break;
       
     default:;
@@ -388,63 +359,21 @@ void RodSoundApp::update()
   if (!integrator->integrate(c)) throw;
   
   /// Update Bishop frame
-  for(int i=0; i<y->numSegs(); i++) {
-    const Segment& prevTimeSeg = y->cur().segments[i];
-    Segment& seg = y->next().segments[i];
-    
-    if (i == 0) {
-      seg.parallelTransport(prevTimeSeg);
-    } else {
-      const Segment& prevSpaceSeg = y->next().segments[i-1];
-      seg.parallelTransport(prevTimeSeg, prevSpaceSeg);
-    }
-  }
-  
-  /*
-  // Update material frame rotation
-  if (isRotate) {
-    twist += 2.0*constants::pi*c.timestep();
-  }
-  const Segment& sFirst = y->next().segments[0];
-  Segment& sLast = y->next().segments[y->numSegs()-1];
-  Vec3e uRef = Segment::parallelTransport(sFirst.vec(), sLast.vec(), sFirst.getU());
-  real cosTwist = sLast.getU().normalized().dot(uRef.normalized());
-  real oldTwist = yarnTwist;
-  if (cosTwist >= 1.0) { // Avoid values like 1.0000000012 that introduce NaNs
-    yarnTwist = 0.0;
-  } else if (cosTwist <= -1.0) {
-    yarnTwist = constants::pi;
-  } else {
-    yarnTwist = acos(cosTwist);
-  }
-  // Flip the sign if necessary
-  if (sLast.v().normalized().dot(uRef) > 0.0) {
-    yarnTwist = -yarnTwist;
-  }
-  real diff = yarnTwist - oldTwist;
-  if (diff < -constants::pi) {
-    numYarnTwists += 1;
-  } else if (diff > constants::pi) {
-    numYarnTwists -= 1;
-  }
-  sLast.setRot(twist - (yarnTwist)); // + 2*constants::pi*numYarnTwists));
-  if (!integrator->setRotations()) {
-    std::cout << "rotations failed";
-  }
-   */
+  y->next().updateReferenceFrames(y->cur());
   
   // Sound Calculations
   if (c.getTicks() % multiSample == 0) {
     real sample = 0;
     real sample2 = 0;
     real avgX = 0;
+    VecXe jerkVec = y->next().acc - y->cur().acc;
     for (int i=1; i<y->numCPs()-1; i++) {
-      avgX += y->next().points[i].vel.x();
+      avgX += y->next().VEL(i).x();
       
       // Calculate jerk
-      Vec3e jerk = y->next().points[i].accel - y->cur().points[i].accel;
-      // Project it to transverse plane
-      Vec3e tPlaneNormal = (y->next().segments[i-1].vec() + y->next().segments[i].vec()).normalized();
+      Vec3e jerk = jerkVec.segment<3>(3*i);
+      // Project jerk to transverse plane
+      Vec3e tPlaneNormal = (y->next().vec(i-1) + y->next().vec(i)).normalized();
       jerk = jerk - jerk.dot(tPlaneNormal) * tPlaneNormal; // Vector rejection of jerk from tPlaneNormal
       
       /*
@@ -463,18 +392,18 @@ void RodSoundApp::update()
       */
        
       
-      Vec3e earVec = CtoE(eyePos) - y->next().points[i].pos;
+      Vec3e earVec = CtoE(eyePos) - y->next().POS(i);
       // Calculate sample contribution
       sample += y->getCS()[i].calcSample(earVec, jerk);
     
-      earVec = ear2Pos - y->next().points[i].pos;
+      earVec = ear2Pos - y->next().POS(i);
       sample2 += y->getCS()[i].calcSample(earVec, jerk);
     }
     avgX = avgX/(y->numCPs()-2);
     sampleBuffer[curSample] = sample;
     sampleBuffer2[curSample] = sample2;
     
-    sampleBuffer3[curSample] = y->next().points[y->numCPs()/2].vel.x() - avgX;
+    sampleBuffer3[curSample] = y->next().VEL(y->numCPs()/2).x() - avgX;
     
     curSample++;
   }
@@ -526,12 +455,12 @@ void RodSoundApp::draw() {
   
   // Draw the rod and the normal of the bishop frame
   for(int i=0; i<y->numSegs(); i++) {
-    Vec3c p0 = EtoC(y->cur().points[i].pos);
-    Vec3c p1 = EtoC(y->cur().points[i+1].pos);
+    Vec3c p0 = EtoC(y->cur().POS(i));
+    Vec3c p1 = EtoC(y->cur().POS(i+1));
     gl::drawLine(p0, p1);
     gl::color(1.0, 1.0, 0.0);
     gl::lineWidth(1.0);
-    Vec3c u = EtoC(y->cur().segments[i].getU());
+    Vec3c u = EtoC(y->cur().u[i]);
     gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u*(p1-p0).length()*2.0);
   }
   
@@ -545,7 +474,7 @@ void RodSoundApp::draw() {
   diffuseProg.bind();
   for (int i=0; i<y->numCPs(); i++) {
     gl::pushModelView();
-    gl::translate(EtoC(y->cur().points[i].pos));
+    gl::translate(EtoC(y->cur().POS(i)));
     spheredl->draw();
     gl::popModelView();
   }
@@ -564,18 +493,16 @@ void RodSoundApp::draw() {
   yarnTex.enableAndBind();
   for (int i=0; i<y->numSegs(); i++) {
     gl::pushModelView();
-    const Segment& s = y->cur().segments[i];
-    Vec3c v = EtoC(s.vec().normalized());
+    Vec3c v = EtoC(y->cur().vec(i).normalized());
     
-    gl::translate(EtoC(s.getFirst().pos));
+    gl::translate(EtoC(y->cur().POS(i)));
     Quaternion<real> q(Vec3c(0.0, 1.0, 0.0), v);
-    real angle = acosf(std::max((real)-1.0,
-                                std::min((real)1.0,(q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.getU())))));
-    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.v())) > 0.0) angle = -angle;
-    gl::rotate(Quatf(v, angle));
+    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().u[i])))));
+    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().v(i))) > 0.0) angle = -angle;
+    gl::rotate(Quaternion<real>(v, angle));
     gl::rotate(q);
-    gl::rotate(Vec3c(0.0, s.getRot()*180.0/constants::pi, 0.0));
-    gl::scale(1.0, s.length(), 1.0);
+    gl::rotate(Vec3c(0.0, y->cur().rot(i)*180.0/constants::pi, 0.0));
+    gl::scale(1.0, y->cur().length(i), 1.0);
     cylinderdl->draw();
     gl::popModelView();
   }
@@ -605,21 +532,16 @@ void RodSoundApp::loadYarnFile(std::string filename) {
   
   std::string line;
   std::getline(yarnFile, line);
-  const int numPoints = std::stoi(line);
+  const size_t numPoints = std::stoi(line);
   
-  std::vector<Vec3e> yarnPoints;
-  yarnPoints.reserve(numPoints);
+  VecXe yarnPos(3*numPoints);
   
-  for (int j=0; j<numPoints; j++) {
-    Vec3e p;
-    for (int i=0; i<3; i++) {
-      std::string line;
-      std::getline(yarnFile, line);
-      if(!line.empty()) {
-        p(i) = std::stof(line);
-      }
+  for (int i=0; i<3*numPoints; i++) {
+    std::string line;
+    std::getline(yarnFile, line);
+    if (!line.empty()) {
+      yarnPos(i) = std::stof(line);
     }
-    yarnPoints.push_back(p);
   }
   Vec3e u;
   for (int i=0; i<3; i++) {
@@ -627,11 +549,11 @@ void RodSoundApp::loadYarnFile(std::string filename) {
     std::getline(yarnFile, line);
     u(i) = std::stof(line);
   }
-  assert((yarnPoints[1] - yarnPoints[0]).dot(u) < 5.0e-6);
+  assert((yarnPos.segment<3>(3) - yarnPos.segment<3>(0)).dot(u) < 5.0e-6);
   
   yarnFile.close();
   if (y) delete y;
-  y = new Yarn(yarnPoints, u);
+  y = new Yarn(yarnPos, u);
 }
 
 void RodSoundApp::loadDefaultYarn(int numPoints) {
@@ -648,11 +570,10 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
     u << 1.0, 0.0, 0.0;
   }
   
-  std::vector<Vec3e> yarnPoints;
+  VecXe yarnPos(3*numPoints);
   for(int i=0; i < numPoints; i++) {
     real t = ((real) i) / (real) (numPoints -1);
-    Vec3e p = (1-t)*start + t*end;
-    yarnPoints.push_back(p);
+    yarnPos.segment<3>(3*i) = (1-t)*start + t*end;
   }
   
   eyePos = Vec3c(5.0, 1.5, 0.0);
@@ -664,7 +585,7 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
   real massPerPoint = totalMass / numPoints;
   
   VecXe mass = VecXe::Constant(numPoints, massPerPoint);
-  y = new Yarn(yarnPoints, u, &mass);
+  y = new Yarn(yarnPos, u, &mass);
   
   real l = (start - end).norm();
   real kappa = sqrt(y->youngsModulus * y->getCS()[0].areaMoment()(0, 0) /
@@ -688,7 +609,7 @@ void RodSoundApp::loadDefaultYarn(int numPoints) {
 
 void RodSoundApp::loadStdEnergies() {
   // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
-  assert(y && "Tried to load evergies on a null yarn");
+  assert(y && "Tried to load energies on a null yarn");
   for (YarnEnergy* e : energies) {
     delete e;
   }

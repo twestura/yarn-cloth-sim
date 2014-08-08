@@ -18,6 +18,7 @@ protected:
 public:
   YarnConstraint(Yarn& y) : y(y) { }
   virtual bool eval(VecXe&, real)=0;
+  virtual ~YarnConstraint() { }
 };
 
 class Length : public YarnConstraint {

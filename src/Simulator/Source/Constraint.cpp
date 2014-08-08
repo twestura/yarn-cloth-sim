@@ -14,7 +14,7 @@ bool Length::eval(VecXe& xStar, real omega) {
   for (int i=0; i<y.numSegs(); i++) {
     Vec3e p1 = xStar.segment<3>(3*i);
     Vec3e p2 = xStar.segment<3>(3*(i+1));
-    real c = (p1 - p2).norm() - y.rest().segments[i].length();
+    real c = (p1 - p2).norm() - y.rest().length(i);
     Vec3e p1gradC = (p1 - p2).normalized();
     Vec3e p2gradC = -p1gradC;
     // TODO: Assumes mass is identity

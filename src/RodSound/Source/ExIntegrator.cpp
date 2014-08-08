@@ -15,8 +15,7 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies,
   // Mass coefficient
   alpha2 = 2.0;
   
-  size_t dof = y.numCPs() * 3;
-  stiffness.resize(dof, dof);
+  stiffness.resize(y.numDOF(), y.numDOF());
   setDamping();
   
 #ifdef DRAW_EIGENMODE
@@ -54,44 +53,32 @@ bool ExIntegrator::integrate(Clock& c) {
   }
   
   // Damping calculations
-  VecXe vel(dof);
-  for (int i=0; i<y.numCPs(); i++) {
-    vel.segment<3>(3*i) = y.cur().points[i].vel;
-  }
   if (c.getTicks() % 1000 == 0 && c.getTicks() != 0) { // Periodically update stiffness matrix
     setDamping();
   }
-  forces -= damping * vel;
+  forces -= damping * y.cur().vel;
   
   forces = y.getInvMass().sparse * forces;
   
   // Symplectic Euler
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e dqdot = forces.segment<3>(3*i) * c.timestep();
-    y.next().points[i].accel = dqdot;
-    y.next().points[i].vel = y.cur().points[i].vel + dqdot;
-    y.next().points[i].pos = y.cur().points[i].pos + y.next().points[i].vel * c.timestep();
-  }
+  y.next().acc = forces * c.timestep();
+  y.next().vel = y.cur().vel + y.next().acc;
+  y.next().pos = y.cur().pos + y.next().vel * c.timestep();
   
   // Explicit Newmark -- NOT STABLE
   /*
   real lambda = 0.5;
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e dqdot = forces.segment<3>(3*i) * c.timestep();
-    y.next().points[i].accel = dqdot;
-    y.next().points[i].vel = y.cur().points[i].vel + (1.0-lambda) * y.cur().points[i].accel + lambda * dqdot;
-    y.next().points[i].pos = y.cur().points[i].pos + c.timestep() * y.cur().points[i].vel + 0.5 * c.timestep() * y.cur().points[i].accel;
-  }
+   
+  y.next().acc = forces * c.timestep();
+  y.next().vel = y.cur().vel + (1.0-lambda) * y.cur().acc + lambda * y.next().acc;
+  y.next().pos = y.cur().pos + c.timestep() * y.cur().vel + 0.5 * c.timestep() * y.cur().acc;
    */
   
   // Constraint-based integration
   /*
   // Find candidate positions
-  VecXe xStar = VecXe(dof);
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e velStar = y.cur().points[i].vel + c.timestep()*forces.segment<3>(3*i);
-    xStar.segment<3>(3*i) = y.cur().points[i].pos + c.timestep()*velStar;
-  }
+  VecXe xStar = y.cur().pos + c.timestep() * (y.cur().vel + c.timestep() * forces)
+
   // Solve constraints
   const int gaussJacobiMaxIter = 4;
   int gaussJacobiIter = 0;
@@ -103,12 +90,9 @@ bool ExIntegrator::integrate(Clock& c) {
     gaussJacobiIter++;
   }
   // Update positions/velocities
-  for (int i=0; i<y.numCPs(); i++) {
-    Vec3e delta = xStar.segment<3>(3*i) - y.cur().points[i].pos;
-    y.next().points[i].vel = delta / c.timestep();
-    y.next().points[i].pos = xStar.segment<3>(3*i);
-    y.next().points[i].accel = y.next().points[i].vel - y.cur().points[i].vel;
-  }
+  y.next().vel = (xStar - y.cur().pos) / c.timestep();
+  y.next().pos = xStar;
+  y.next().acc = y.next().vel - y.cur().vel
    */
   
   
@@ -141,5 +125,5 @@ void ExIntegrator::draw() {
     Vec3e flux = mode.segment<3>(i*3);
     ci::gl::drawLine(EtoC(y.cur().points[i].pos), EtoC(y.cur().points[i].pos + flux));
   }
-#endif DRAW_EIGENMODE
+#endif // ifdef DRAW_EIGENMODE
 }

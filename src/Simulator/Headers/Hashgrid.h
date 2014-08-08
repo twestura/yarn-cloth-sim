@@ -34,7 +34,7 @@ private:
     static real l;
     
   public:
-    inline size_t operator()(Vec3e& v) {
+    inline size_t operator()(Vec3e v) const {
       size_t x = (size_t) (v.x() / l);
       size_t y = (size_t) (v.y() / l);
       size_t z = (size_t) (v.z() / l);

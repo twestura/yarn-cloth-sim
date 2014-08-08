@@ -13,11 +13,9 @@
 // #define ENABLE_PROFILER
 
 // SimulatorApp.cpp
-// #define DRAW_QUADRATURES
 // #define CONST_INTEGRATOR
 
 // IMEXIntegrator.cpp
-// #define DRAW_IMEXINTEGRATOR
 // #define NEWMARK_BETA
 
 // ExIntegrator.cpp
@@ -25,7 +23,7 @@
 
 // Energy.cpp
 // #define ENABLE_BEND_AUTODIFF
-// #define DRAW_SPRING
+#define DRAW_SPRING
 #define DRAW_MOUSE_SPRING
 // #define DRAW_BENDING
 // #define DRAW_TWIST

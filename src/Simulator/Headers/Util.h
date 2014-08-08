@@ -50,6 +50,29 @@ const Vec3e static inline CtoE(const Vec3c& v) {
   return Vec3e(v.x, v.y, v.z);
 }
 
+/// Returns a parallel transported vector given a previous vector and its orthogonal u component.
+Vec3e static parallelTransport(const Vec3e vecPrev, const Vec3e vecCur, const Vec3e uPrev) {
+  Vec3e cross = vecPrev.cross(vecCur).normalized();
+  real cosT = vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm());
+  if (!cross.hasNaN() && cosT < 1.0 && cosT >= -1.0) {
+    // Form rotation matrix
+    real oneMinusCosT = 1.0 - cosT;
+    real sinT = sqrt(1.0 - (cosT * cosT));
+    real xyc = cross.x() * cross.y() * oneMinusCosT;
+    real xzc = cross.x() * cross.z() * oneMinusCosT;
+    real yzc = cross.y() * cross.z() * oneMinusCosT;
+    real xs = cross.x() * sinT;
+    real ys = cross.y() * sinT;
+    real zs = cross.z() * sinT;
+    Mat3e rotMat;
+    rotMat << cosT + cross.x() * cross.x() * oneMinusCosT, xyc - zs, xzc + ys,
+    xyc + zs, cosT + cross.y() * cross.y() * oneMinusCosT, yzc - xs,
+    xzc - ys, yzc + xs, cosT + cross.z() * cross.z() * oneMinusCosT;
+    return rotMat * uPrev;
+  }
+  return uPrev;
+}
+
 /// A class for profiling operations over several iterations.
 class Profiler {
   struct Stopwatch {

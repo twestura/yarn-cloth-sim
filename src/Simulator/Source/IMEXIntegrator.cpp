@@ -38,17 +38,16 @@ bool IMEXIntegrator::integrate(Clock& c) {
     e->suggestTimestep(c);
   }
   
-  const size_t dof = y.numCPs() * 3;
   bool evalSuccess = false;
   bool newtonConverge = false;
   int newtonIterations = 0;
 
   while (!evalSuccess) {
-    VecXe Fx    = VecXe::Zero(dof);
-    VecXe FxEx  = VecXe::Zero(dof);
-    VecXe dqdot = VecXe::Zero(dof);
-    VecXe sol   = VecXe::Zero(dof);
-    Eigen::SparseMatrix<real> GradFx(dof, dof);
+    VecXe Fx    = VecXe::Zero(y.numDOF());
+    VecXe FxEx  = VecXe::Zero(y.numDOF());
+    VecXe dqdot = VecXe::Zero(y.numDOF());
+    VecXe sol   = VecXe::Zero(y.numDOF());
+    Eigen::SparseMatrix<real> GradFx(y.numDOF(), y.numDOF());
     std::vector<Triplet> triplets;
     
     // TODO: Figure out a thread-safe way to fill this
@@ -74,10 +73,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       Fx = FxEx;
       
       // Find offset for implicit evaluation
-      VecXe offset(dof);
-      for (int i=0; i<y.numCPs(); i++) {
-        offset.segment<3>(3*i) = c.timestep()*(y.cur().points[i].vel + dqdot.segment<3>(3*i));
-      }
+      VecXe offset = c.timestep() * (y.cur().vel + dqdot);
       
       // Add up energies
       for (YarnEnergy* e : energies) {
@@ -103,17 +99,6 @@ bool IMEXIntegrator::integrate(Clock& c) {
         if (residual < ConvergenceTolerance) {
           newtonConverge = true;
         }
-#ifdef DRAW_IMEX_INTEGRATOR
-        real maxcoeff = error.maxCoeff();
-        Yarn* yp = &y;
-        for (int i=0; i<y.numCPs(); i++) {
-          Vec3e curerror = error.segment<3>(3*i);
-          frames.push_back([yp, i, maxcoeff, curerror] () {
-            ci::gl::color(curerror[0]/maxcoeff, curerror[1]/maxcoeff, curerror[2]/maxcoeff, 0.7);
-            ci::gl::drawSphere(EtoC(yp->cur().points[i].pos), constants::radius*2.0);
-          });
-        }
-#endif // ifdef DRAW_IMEX_INTEGRATOR
         break;
       }
       
@@ -161,33 +146,24 @@ bool IMEXIntegrator::integrate(Clock& c) {
     // Newmark-Beta update
       const real gamma = 0.5;
       const real beta = 0.25;
-      for (int i=0; i<y.numCPs(); i++) {
-        Vec3e curdqdot = dqdot.segment<3>(3*i);
-        y.next().points[i].vel = y.cur().points[i].vel +
-                                 (1.0-gamma)*y.cur().points[i].accel + gamma*curdqdot;
-        y.next().points[i].pos = y.cur().points[i].pos +
-                                 c.timestep()*(y.cur().points[i].vel +
-                                               (1.0-2.0*beta)/2.0*y.cur().points[i].accel +
-                                               beta*curdqdot);
-        y.next().points[i].accel = curdqdot;
-      }
+      y.next().acc = dqdot;
+      y.next().vel = y.cur().vel + (1.0-gamma) * y.cur().acc + gamma * dqdot;
+      y.next().pos = y.cur().pos + c.timestep() * (y.cur().vel +
+                                                   ((1.0-2.0*beta) / 2.0) * y.cur().acc +
+                                                   beta * dqdot);
     
 #else // ifdef NEWMARK_BETA
-    
+      
       // Update changes to position and velocity
-      for (int i=0; i<y.numCPs(); i++) {
-        Vec3e curdqdot = dqdot.segment<3>(3*i);
-        y.next().points[i].vel = y.cur().points[i].vel + curdqdot;
-        y.next().points[i].pos = y.cur().points[i].pos + c.timestep()*y.next().points[i].vel;
-      }
+      y.next().vel = y.cur().vel + dqdot;
+      y.next().pos = y.cur().pos + c.timestep() * y.next().vel;
       
 #endif // ifdef NEWMARK_BETA
     }
   }
   
   PROFILER_STOP("Total");
-//  PROFILER_PRINT_ELAPSED();
-//  std::cout << "\n";
+  PROFILER_PRINT_ELAPSED();
   PROFILER_RESET_ALL();
   
   return newtonConverge;
@@ -198,17 +174,16 @@ void static calcRotEqs(const Yarn& y, const VecXe& rot, const std::vector<Vec3e>
   Eigen::Matrix<real, 2, 2> J;
   J << 0.0, -1.0, 1.0, 0.0;
   for (int i=1; i<y.numSegs()-1; i++) {
-    const Segment& s = y.next().segments[i];
-    Vec3e m1 = cos(rot(i)) * s.getU() + sin(rot(i)) * s.v();
-    Vec3e m2 = -sin(rot(i)) * s.getU() + cos(rot(i)) * s.v();
+    Vec3e m1 = cos(rot(i)) * y.next().u[i] + sin(rot(i)) * y.next().v(i);
+    Vec3e m2 = -sin(rot(i)) * y.next().u[i] + cos(rot(i)) * y.next().v(i);
     Vec2e curvePrev(curveBinorm[i-1].dot(m2), -curveBinorm[i-1].dot(m1)); // omega ^i _i
     Vec2e curveNext(curveBinorm[i].dot(m2), -curveBinorm[i].dot(m1)); // omega ^i _i+1
     real dWprev = 1.0 / y.restVoronoiLength(i) *
       curvePrev.dot(J * y.getCS()[i].bendMat() * (curvePrev - y.restCurveNext(i)));
     real dWnext = 1.0 / y.restVoronoiLength(i+1) *
       curveNext.dot(J * y.getCS()[i+1].bendMat() * (curveNext - y.restCurvePrev(i+1)));
-    real twistPrev = rot(i) - rot(i-1) + y.next().segments[i].getRefTwist();
-    real twistNext = rot(i+1) - rot(i) + y.next().segments[i+1].getRefTwist();
+    real twistPrev = rot(i) - rot(i-1) + y.next().refTwist(i);
+    real twistNext = rot(i+1) - rot(i) + y.next().refTwist(i+1);
     grad(i-1) = -(dWprev + dWnext + 2.0 * y.getCS()[i].twistCoeff() *
                   (twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
     
@@ -228,25 +203,18 @@ bool IMEXIntegrator::setRotations() const {
   const real newtonThreshold = 1.0e-5; //should be able to get this almost exact
   std::vector<Triplet> triplets;
   Eigen::SparseMatrix<real> hess(y.numSegs()-2, y.numSegs()-2);
-  VecXe rot(y.numSegs());
+  VecXe rot = y.next().rot;
   VecXe grad = VecXe::Zero(y.numSegs()-2); // Assumes edges are clamped
   bool newtonConverge = false;
-  for(int i=0; i<y.numSegs(); i++) {
-    rot(i) = y.next().segments[i].getRot();
-  }
+
   std::vector<Vec3e> curveBinorm;
   for (int i=1; i<y.numCPs()-1; i++) {
-    Vec3e tPrev = y.next().segments[i-1].vec().normalized();
-    Vec3e tNext = y.next().segments[i].vec().normalized();
+    Vec3e tPrev = y.next().vec(i-1).normalized();
+    Vec3e tNext = y.next().vec(i).normalized();
     real chi = 1.0 + (tPrev.dot(tNext));
     curveBinorm.push_back(2.0*tPrev.cross(tNext)/chi);
   }
   int newtonIterations = 0;
-  
-  // TESTING
-  // VecXe guess = VecXe::Zero(y.numSegs()-2);
-  // real totalTwist = y.next().segments[y.numSegs()-1].getRot() - y.next().segments[0].getRot();
-  
   
   do {
     triplets.clear();
@@ -269,9 +237,7 @@ bool IMEXIntegrator::setRotations() const {
   } while (!newtonConverge);
   
   if (newtonConverge) {
-    for (int i=1; i<y.numSegs()-1; i++) {
-      y.next().segments[i].setRot(rot(i));
-    }
+    y.next().rot = rot;
   }
   
   return newtonConverge;

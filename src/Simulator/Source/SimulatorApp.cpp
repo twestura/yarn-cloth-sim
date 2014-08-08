@@ -73,11 +73,6 @@ class SimulatorApp : public AppNative {
   MouseSpring* mouseSpring;
   std::vector<YarnConstraint*> constraints;
   
-  Spring* testSpring1;
-  Spring* testSpring2;
-  Vec3e testSpring1Clamp = Vec3e(10.0, 15.0, 5.0);
-  Vec3e testSpring2Clamp = Vec3e(-10.0, 15.0, 5.0);
-  
   real twist = 0.0;
   real yarnTwist = 0.0;
   int numYarnTwists = 0;
@@ -90,8 +85,6 @@ class SimulatorApp : public AppNative {
 
 void SimulatorApp::setup()
 {
-  // YarnBuilder::buildBraid();
-  
   // Setup scene
   cam.setPerspective(40.0, getWindowAspectRatio(), 0.1, 1000.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
@@ -178,8 +171,8 @@ void SimulatorApp::mouseDown(MouseEvent event)
                             getWindowAspectRatio());
     real tmin = INFINITY;
     bool any = false;
-    for (const CtrlPoint& p : y->cur().points) { // A bit slow, but beats keeping a KD-Tree updated
-      Sphere s(EtoC(p.pos), constants::radius * 1.5);
+    for (int i=0; i<y->numCPs(); i++) { // A bit slow, but beats keeping a KD-Tree updated
+      Sphere s(EtoC(y->cur().POS(i)), constants::radius * 1.5);
       float t;
       if (s.intersect(r, &t) && t < tmin) {
         any = true;
@@ -285,11 +278,9 @@ void SimulatorApp::keyDown(KeyEvent event)
       
     case event.KEY_t:
       for(int i=1; i<y->numSegs(); i++) {
-        const Segment& s = y->cur().segments[i];
-        const Segment& sPrev = y->cur().segments[i-1];
-        std::cout << "seg " << i << " twist: " << (s.getRot() - sPrev.getRot() + s.getRefTwist())
-        << " (" << y->cur().segments[i].getRot() << " + " << y->cur().segments[i].getRefTwist() <<
-        " = " << y->cur().segments[i].getRot() + y->cur().segments[i].getRefTwist() << ")\n";
+        std::cout << "seg " << i << " twist: " << (y->cur().rot(i) - y->cur().rot(i-1) + y->cur().refTwist(i))
+        << " (" << y->cur().rot(i) << " + " << y->cur().refTwist(i) <<
+        " = " << y->cur().rot(i) + y->cur().refTwist(i) << ")\n";
       }
       std::cout << "numYarnTwists: " << numYarnTwists << "\n";
       break;
@@ -326,31 +317,19 @@ void SimulatorApp::update()
     std::cout << "wat\n";
     throw;
   }
-  
 #endif // ifdef CONST_INTEGRATOR
   
   /// Update Bishop frame
-  for(int i=0; i<y->numSegs(); i++) {
-    const Segment& prevTimeSeg = y->cur().segments[i];
-    Segment& seg = y->next().segments[i];
-    
-    if (i == 0) {
-      seg.parallelTransport(prevTimeSeg);
-    } else {
-      const Segment& prevSpaceSeg = y->next().segments[i-1];
-      seg.parallelTransport(prevTimeSeg, prevSpaceSeg);
-    }
-  }
+  y->next().updateReferenceFrames(y->cur());
   
 #ifndef CONST_INTEGRATOR
   /// Update material frame rotation
   if (isRotate) {
     twist += 2.0*constants::pi*c.timestep();
   }
-  const Segment& sFirst = y->next().segments[0];
-  Segment& sLast = y->next().segments[y->numSegs()-1];
-  Vec3e uRef = Segment::parallelTransport(sFirst.vec(), sLast.vec(), sFirst.getU());
-  real cosTwist = sLast.getU().normalized().dot(uRef.normalized());
+  
+  Vec3e uRef = parallelTransport(y->next().vec(0), y->next().vec(y->numSegs()-1), y->next().u[0]);
+  real cosTwist = y->next().u[y->numSegs()-1].dot(uRef.normalized());
   real oldTwist = yarnTwist;
   if (cosTwist >= 1.0) { // Avoid values like 1.0000000012 that introduce NaNs
     yarnTwist = 0.0;
@@ -360,7 +339,7 @@ void SimulatorApp::update()
     yarnTwist = acos(cosTwist);
   }
   // Flip the sign if necessary
-  if (sLast.v().normalized().dot(uRef) > 0.0) {
+  if (y->next().v(y->numSegs()-1).dot(uRef) > 0.0) {
     yarnTwist = -yarnTwist;
   }
   real diff = yarnTwist - oldTwist;
@@ -369,7 +348,7 @@ void SimulatorApp::update()
   } else if (diff > constants::pi) {
     numYarnTwists -= 1;
   }
-  sLast.setRot(twist - (yarnTwist)); // + 2*constants::pi*numYarnTwists));
+  y->next().rot(y->numSegs()-1) = twist - yarnTwist;
   if (!static_cast<IMEXIntegrator*>(integrator)->setRotations()) {
     std::cout << "rotations failed";
   }
@@ -377,11 +356,6 @@ void SimulatorApp::update()
   
   // Swap Yarns
   y->swapYarns();
-  
-  // Update twists in new yarn
-  for (int i=0; i<y->numSegs(); i++) {
-    y->next().segments[i].updateTwists(y->cur().segments[i]);
-  }
 
   c.increment();
 }
@@ -410,13 +384,13 @@ void SimulatorApp::draw() {
   
   // Draw the rod and the normal of the bishop frame
   for(int i=0; i<y->numSegs(); i++) {
-    Vec3c p0 = EtoC(y->cur().points[i].pos);
-    Vec3c p1 = EtoC(y->cur().points[i+1].pos);
+    Vec3c p0 = EtoC(y->cur().POS(i));
+    Vec3c p1 = EtoC(y->cur().POS(i+1));
     gl::drawLine(p0, p1);
     gl::color(1.0, 1.0, 0.0);
     gl::lineWidth(1.0);
-    Vec3c u = EtoC(y->cur().segments[i].getU());
-    gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u);
+    Vec3c u = EtoC(y->cur().u[i]);
+    gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u*(p1-p0).length()*2.0);
   }
   
   m.apply();
@@ -429,7 +403,7 @@ void SimulatorApp::draw() {
   diffuseProg.bind();
   for (int i=0; i<y->numCPs(); i++) {
     gl::pushModelView();
-    gl::translate(EtoC(y->cur().points[i].pos));
+    gl::translate(EtoC(y->cur().POS(i)));
     spheredl->draw();
     gl::popModelView();
   }
@@ -443,42 +417,26 @@ void SimulatorApp::draw() {
   
   yarnProg.unbind();
   
-#ifdef DRAW_QUADRATURES
-  for (int i=1; i<y->numSegs()-1; i++) {
-    const Segment& seg1 = y->cur().segments[i-1];
-    const Segment& seg2 = y->cur().segments[i];
-    const Segment& seg3 = y->cur().segments[i+1];
-    Spline s(seg1.getFirst(), seg2.getFirst(), seg2.getSecond(), seg3.getSecond());
-    gl::color(0.8, 0.8, 0.8, 0.4);
-    
-    for (int j=0; j<constants::numQuadPoints; j++) {
-      real t = ((real) j) / (real) constants::numQuadPoints;
-      gl::drawSphere(EtoC(s.eval(t)), constants::radius);
-    }
-  }
-#else //ifdef DRAW_QUADRATURES
   // Draw yarn segments
   yarnProg.bind();
   yarnTex.enableAndBind();
   for (int i=0; i<y->numSegs(); i++) {
     gl::pushModelView();
-    const Segment& s = y->cur().segments[i];
-    Vec3c v = EtoC(s.vec().normalized());
+    Vec3c v = EtoC(y->cur().vec(i).normalized());
     
-    gl::translate(EtoC(s.getFirst().pos));
+    gl::translate(EtoC(y->cur().POS(i)));
     Quaternion<real> q(Vec3c(0.0, 1.0, 0.0), v);
-    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.getU())))));
-    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(s.v())) > 0.0) angle = -angle;
+    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().u[i])))));
+    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().v(i))) > 0.0) angle = -angle;
     gl::rotate(Quaternion<real>(v, angle));
     gl::rotate(q);
-    gl::rotate(Vec3c(0.0, s.getRot()*180.0/constants::pi, 0.0));
-    gl::scale(1.0, s.length(), 1.0);
+    gl::rotate(Vec3c(0.0, y->cur().rot(i)*180.0/constants::pi, 0.0));
+    gl::scale(1.0, y->cur().length(i), 1.0);
     cylinderdl->draw();
     gl::popModelView();
   }
   yarnTex.unbind();
   yarnProg.unbind();
-#endif //ifdef DRAW_QUADRATURES
   
   for (YarnEnergy* e : energies) {
     e->draw(c.timestep());
@@ -502,21 +460,16 @@ void SimulatorApp::loadYarnFile(std::string filename) {
   
   std::string line;
   std::getline(yarnFile, line);
-  const int numPoints = std::stoi(line);
+  const size_t numPoints = std::stoi(line);
   
-  std::vector<Vec3e> yarnPoints;
-  yarnPoints.reserve(numPoints);
+  VecXe yarnPos(3*numPoints);
   
-  for (int j=0; j<numPoints; j++) {
-    Vec3e p;
-    for (int i=0; i<3; i++) {
-      std::string line;
-      std::getline(yarnFile, line);
-      if(!line.empty()) {
-        p(i) = std::stof(line);
-      }
+  for (int i=0; i<3*numPoints; i++) {
+    std::string line;
+    std::getline(yarnFile, line);
+    if(!line.empty()) {
+      yarnPos(i) = std::stof(line);
     }
-    yarnPoints.push_back(p);
   }
   Vec3e u;
   for (int i=0; i<3; i++) {
@@ -524,32 +477,47 @@ void SimulatorApp::loadYarnFile(std::string filename) {
     std::getline(yarnFile, line);
     u(i) = std::stof(line);
   }
-  assert((yarnPoints[1] - yarnPoints[0]).dot(u) < 5.0e-6);
+  assert((yarnPos.segment<3>(3) - yarnPos.segment<3>(0)).dot(u) < 5.0e-6);
   
   yarnFile.close();
   if (y) delete y;
-  y = new Yarn(yarnPoints, u);
+  y = new Yarn(yarnPos, u);
 }
 
 void SimulatorApp::loadDefaultYarn(int numPoints) {
   if (y) delete y;
   
-  std::vector<Vec3e> yarnPoints;
-  for(int i=0; i < numPoints; i++) {
-    Vec3e p(0.0, (numPoints-i)*20.0/numPoints, 0.0);
-    yarnPoints.push_back(p);
-  }
-  
   eyePos = Vec3c(40.0, 10.0, 0.0);
   targetPos = Vec3c(0.0, 10.0, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPoints, Vec3e(0.0, 0.0, 1.0), nullptr, constants::youngsModulus, 80.0);
+  Vec3e start = Vec3e(0.0, 1.6069, 0.0);
+  Vec3e end   = Vec3e(0.0, 1.0, 0.0);
+  
+  Vec3e u     = (end-start).cross(Vec3e(0.0, 0.1, 0.0)).normalized();
+  if (u.hasNaN() || u.norm() < 0.95) {
+    u << 1.0, 0.0, 0.0;
+  }
+  
+  VecXe yarnPos(3*numPoints);
+  for(int i=0; i < numPoints; i++) {
+    real t = ((real) i) / (real) (numPoints -1);
+    yarnPos.segment<3>(3*i) = (1-t)*start + t*end;
+  }
+  
+  real massPerPoint = 0.1;
+  VecXe mass = VecXe::Constant(numPoints, massPerPoint);
+  
+  eyePos = Vec3c(5.0, 1.5, 0.0);
+  targetPos = Vec3c(0.0, 1.5, 0.0);
+  cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
+  
+  y = new Yarn(yarnPos, Vec3e(0.0, 0.0, 1.0), &mass, 1e7, 80.0);
 }
 
 void SimulatorApp::loadStdEnergies() {
   // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
-  assert(y && "Tried to load evergies on a null yarn");
+  assert(y && "Tried to load energies on a null yarn");
   for (YarnEnergy* e : energies) {
     delete e;
   }
@@ -575,27 +543,11 @@ void SimulatorApp::loadStdEnergies() {
   energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
-  clamp1->setClamp(y->rest().points[0].pos);
-//  clamp1->setClamp(y->rest().points[0].pos + Vec3e(0.0, 6.0, 2.0));
+  clamp1->setClamp(y->rest().POS(0));
   Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
-  clamp2->setClamp(y->rest().points[1].pos);
-//  Spring* clamp2 = new Spring(*y, Implicit, 14, 500.0);
-//  clamp2->setClamp(y->rest().points[14].pos + Vec3e(0.0, -6.0, 2.0));
-  Spring* clamp3 = new Spring(*y, Implicit, 28, 500.0);
-  clamp3->setClamp(y->rest().points[28].pos + Vec3e(0.0, 6.0, -2.0));
-  Spring* clamp4 = new Spring(*y, Implicit, 42, 500.0);
-  clamp4->setClamp(y->rest().points[42].pos + Vec3e(0.0, -6.0, -2.0));
+  clamp2->setClamp(y->rest().POS(1));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
-//  energies.push_back(clamp3);
-//  energies.push_back(clamp4);
-  
-  testSpring1 = new Spring(*y, Explicit, 2*y->numCPs()/3, 50.0);
-  testSpring1->setClamp(testSpring1Clamp);
-  testSpring2 = new Spring(*y, Explicit, y->numCPs()-1, 50.0);
-  testSpring2->setClamp(testSpring2Clamp);
-//  energies.push_back(testSpring1);
-//  energies.push_back(testSpring2);
   
   if (integrator) delete integrator;
   integrator = new IMEXIntegrator(energies, *y);
@@ -616,13 +568,13 @@ void SimulatorApp::loadStdEnergiesAndConsts() {
   energies.push_back(gravity);
   
   Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
-  clamp1->setClamp(y->rest().points[0].pos);
+  clamp1->setClamp(y->rest().POS(0));
   Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
-  clamp2->setClamp(y->rest().points[1].pos);
+  clamp2->setClamp(y->rest().POS(1));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
+  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10.0);
   energies.push_back(mouseSpring);
   
   YarnConstraint* length = new Length(*y);

@@ -44,14 +44,14 @@ bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) 
   // Drawing ops
 #ifdef DRAW_SPRING
   Vec3c ciclamp = EtoC(clamp);
-  Vec3c ciindex = EtoC(y.cur().points[index].pos);
+  Vec3c ciindex = EtoC(y.cur().POS(index));
   frames.push_back([ciclamp, ciindex] (real scale) {
     ci::gl::color(1.0, 0.5, 0.0);
     ci::gl::drawLine(ciclamp, ciindex);
   });
 #endif // ifdef DRAW_SPRING
   
-  Vec3e yPoint = y.cur().points[index].pos;
+  Vec3e yPoint = y.cur().POS(index);
   if (offset) {
     yPoint += offset->segment<3>(3*index);
   }
@@ -79,7 +79,7 @@ bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* off
   if (!mouseDown) return true;
   assert(mouseSet && "Set the mouse position each time you call eval()!");
 
-  Vec3e yPoint = y.cur().points[index].pos;
+  Vec3e yPoint = y.cur().POS(index);
   if (offset) {
     yPoint += offset->segment<3>(3*index);
   }
@@ -97,7 +97,7 @@ bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* off
   Vec3c ciindex = EtoC(yPoint);
   frames.push_back([cimouse, ciindex] (real scale) {
     ci::gl::color(1.0, 0.0, 0.0);
-    ci::gl::drawVector(ciindex, cimouse);
+    ci::gl::drawLine(ciindex, cimouse);
   });
 #endif // ifdef DRAW_MOUSE_SPRING
   
@@ -123,11 +123,9 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 #endif //ifdef DRAW_BENDING
   
   for (int i=1; i<y.numCPs()-1; i++) {
-    const Segment&   prevSeg   = y.cur().segments[i-1];
-    const Segment&   nextSeg   = y.cur().segments[i];
-    Vec3e prevPoint = y.cur().points[i-1].pos;
-    Vec3e curPoint  = y.cur().points[i].pos;
-    Vec3e nextPoint = y.cur().points[i+1].pos;
+    Vec3e prevPoint = y.cur().POS(i-1);
+    Vec3e curPoint  = y.cur().POS(i);
+    Vec3e nextPoint = y.cur().POS(i+1);
     
     if (offset) {
       prevPoint += offset->segment<3>(3*(i-1));
@@ -166,10 +164,10 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     
     DVector3 dvcurveBinorm = (DScalar(2.0)*dvPrevSegN.cross(dvNextSegN))/(1.0+dotProd);
     
-    Vec3e prevm1 = prevSeg.m1();
-    Vec3e prevm2 = prevSeg.m2();
-    Vec3e nextm1 = nextSeg.m1();
-    Vec3e nextm2 = nextSeg.m2();
+    Vec3e prevm1 = y.cur().m1(i-1);
+    Vec3e prevm2 = y.cur().m2(i-1);
+    Vec3e nextm1 = y.cur().m1(i);
+    Vec3e nextm2 = y.cur().m2(i);
     
     DVector3 d1prev(DScalar(prevm1.x()), DScalar(prevm1.y()), DScalar(prevm1.z()));
     DVector3 d2prev(DScalar(prevm2.x()), DScalar(prevm2.y()), DScalar(prevm2.z()));
@@ -182,20 +180,19 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     
     DVector2 restMatCurve(DScalar(y.restCurve(i).x()), DScalar(y.restCurve(i).y()));
     
-    // TODO: bending matrix may not be I
     DVector2 curveDiff = dvmatCurve - restMatCurve;
-    DScalar bendEnergy = (-0.5/y.restVoronoiLength(i))*curveDiff.dot(curveDiff);
+    DVector2 fcurveDiff = y.getCS()[i].autodBend(curveDiff);
+    DScalar bendEnergy = (-0.5/y.restVoronoiLength(i))*curveDiff.dot(fcurveDiff);
     
     if (Fx) {
-      Gradient grad = bendEnergy.getGradient();
-      Fx->segment<9>(3*(i-1)) += y.bendCoeff()*grad;
+      Fx->segment<9>(3*(i-1)) += bendEnergy.getGradient();
     }
     
     if (GradFx) {
       Hessian hess = bendEnergy.getHessian();
       for (int j=0; j<9; j++) {
         for (int k=0; k<9; k++) {
-          real val = y.bendCoeff()*hess(j,k);
+          real val = hess(j,k);
           CHECK_NAN(val);
           pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, val));
         }
@@ -216,9 +213,9 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
     assert(chi > 0.0 && "Segments are pointing in exactly opposite directions!");
     
     tTilde = (tPrev + tNext)/chi;
-    d1 = prevSeg.m1() + nextSeg.m1();
+    d1 = y.cur().m1(i-1) + y.cur().m1(i);
     d1tilde = d1/chi;
-    d2 = prevSeg.m2() + nextSeg.m2();
+    d2 = y.cur().m2(i-1) + y.cur().m2(i);
     d2tilde = d2/chi;
     curveBinorm = (tPrev.cross(tNext))/(0.5*chi); // Verified
     Vec2e matCurve(0.5*d2.dot(curveBinorm), -0.5*d1.dot(curveBinorm)); // Verified
@@ -282,10 +279,10 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
       
       DVector3 dvcurveBinorm = (DScalar(2.0)*dvPrevSegN.cross(dvNextSegN))/(1.0+dotProd);
       
-      Vec3e prevm1 = prevSeg.m1();
-      Vec3e prevm2 = prevSeg.m2();
-      Vec3e nextm1 = nextSeg.m1();
-      Vec3e nextm2 = nextSeg.m2();
+      Vec3e prevm1 = y.cur().m1(i-1);
+      Vec3e prevm2 = y.cur().m2(i-1);
+      Vec3e nextm1 = y.cur().m1(i);
+      Vec3e nextm2 = y.cur().m2(i);
       
       DVector3 d1prev(DScalar(prevm1.x()), DScalar(prevm1.y()), DScalar(prevm1.z()));
       DVector3 d2prev(DScalar(prevm2.x()), DScalar(prevm2.y()), DScalar(prevm2.z()));
@@ -440,10 +437,10 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 #ifdef DRAW_BENDING
   for (int i=0; i<y.numCPs(); i++) {
     Vec3c f = EtoC(forces.segment<3>(3*i));
-    Vec3c p = EtoC(y.cur().points[i].pos);
+    Vec3c p = EtoC(y.cur().POS(i));
     frames.push_back([f, p] (real scale) {
       ci::gl::color(0.4, 1.0, 1.0);
-      ci::gl::drawVector(p, p+f*scale);
+      ci::gl::drawLine(p, p+f*scale);
     });
   }
 #endif //ifdef DRAW_BENDING
@@ -461,10 +458,9 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
   PROFILER_START("Stretch Eval");
   
   for (int i=0; i<y.numSegs(); i++) {
-    const Segment& seg = y.cur().segments[i];
-    real restSegLength = y.rest().segments[i].length();
-    Vec3e prevPoint = seg.getFirst().pos;
-    Vec3e nextPoint = seg.getSecond().pos;
+    real restSegLength = y.rest().length(i);
+    Vec3e prevPoint = y.cur().POS(i);
+    Vec3e nextPoint = y.cur().POS(i+1);
     
     if (offset) {
       prevPoint += offset->segment<3>(3*i);
@@ -513,12 +509,9 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
   VecXe twist = VecXe::Zero(y.numCPs()*3);
 #endif // ifdef DRAW_TWIST
   for (int i=1; i<y.numCPs()-1; i++) {
-    const Segment& segPrev = y.cur().segments[i-1];
-    const Segment& segNext = y.cur().segments[i];
-    
-    Vec3e prevPoint = y.cur().points[i-1].pos;
-    Vec3e curPoint  = y.cur().points[i].pos;
-    Vec3e nextPoint = y.cur().points[i+1].pos;
+    Vec3e prevPoint = y.cur().POS(i-1);
+    Vec3e curPoint  = y.cur().POS(i);
+    Vec3e nextPoint = y.cur().POS(i+1);
     
     if (offset) {
       prevPoint += offset->segment<3>(3*(i-1));
@@ -535,7 +528,7 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
     real chi = 1.0 + tPrev.dot(tNext);
     assert(chi > 0.0 && "Segments are pointing in exactly opposite directions!");
     Vec3e curveBinorm = (2.0 * tPrev.cross(tNext)) / chi;
-    real mi = segNext.getRefTwist() + (segNext.getRot() - segPrev.getRot());
+    real mi = y.cur().refTwist(i) + (y.cur().rot(i) - y.cur().rot(i-1));
     real dThetaHat = y.getCS()[i].twistCoeff() * mi / y.restVoronoiLength(i);
     
     if (Fx) {
@@ -610,10 +603,10 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
     Vec3c delta = EtoC(twist.segment<3>(3*i));
     const Yarn* yp = &y;
     if (delta.length() > 0.0) frames.push_back([i, delta, yp] (real scale) {
-      Vec3c s = EtoC(yp->cur().points[i].pos);
+      Vec3c s = EtoC(yp->cur().POS(i));
       Vec3c e = s + delta * scale;
       ci::gl::color(ci::Color(1.0, 0.5, 0.5));
-      ci::gl::drawVector(s, e);
+      ci::gl::drawLine(s, e);
     });
   }
 #endif // ifdef DRAW_TWIST
@@ -636,13 +629,10 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       const real r = (y.getCS()[i].approxRadius() + y.getCS()[i+1].approxRadius()
                       + y.getCS()[j].approxRadius() + y.getCS()[j+1].approxRadius()) / 4.0;
       
-      const Segment& e1 = y.cur().segments[i];
-      const Segment& e2 = y.cur().segments[j];
-      
-      Vec3e e1p1 = e1.getFirst().pos;
-      Vec3e e1p2 = e1.getSecond().pos;
-      Vec3e e2p1 = e2.getFirst().pos;
-      Vec3e e2p2 = e2.getSecond().pos;
+      Vec3e e1p1 = y.cur().POS(i);
+      Vec3e e1p2 = y.cur().POS(i+1);
+      Vec3e e2p1 = y.cur().POS(j);
+      Vec3e e2p2 = y.cur().POS(j+1);
       
       if (offset) {
         e1p1 += offset->segment<3>(3*i);
@@ -654,15 +644,19 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       Vec3e e1mid = (e1p1 + e1p2) / 2.0;
       Vec3e e2mid = (e2p1 + e2p2) / 2.0;
       
-      if ((e1mid - e2mid).norm() > fmaxf(e1.length(), e2.length())) {
+      // FIXME: hack to get an estimate of spline length.
+      real l1 = (e1p2 - e1p1).norm();
+      real l2 = (e2p2 - e2p1).norm();
+      
+      if ((e1mid - e2mid).norm() > fmaxf(l1, l2)) {
         continue;
       }
       
       // Splines are close, evaluate them.
-      Vec3e e1p0 = y.cur().points[i-1].pos;
-      Vec3e e1p3 = y.cur().points[i+2].pos;
-      Vec3e e2p0 = y.cur().points[j-1].pos;
-      Vec3e e2p3 = y.cur().points[j+2].pos;
+      Vec3e e1p0 = y.cur().POS(i-1);
+      Vec3e e1p3 = y.cur().POS(i+2);
+      Vec3e e2p0 = y.cur().POS(j-1);
+      Vec3e e2p3 = y.cur().POS(j+2);
       
       if (offset) {
         e1p0 += offset->segment<3>(3*(i-1));
@@ -674,9 +668,6 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       Spline s1(e1p0, e1p1, e1p2, e1p3);
       Spline s2(e2p0, e2p1, e2p2, e2p3);
       
-      // FIXME: hack to get an estimate of spline length.
-      real l1 = e1.length();
-      real l2 = e2.length();
       real coeff = contactMod * l1 * l2;
       
       Mat3e hess[8][8];
@@ -770,14 +761,14 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       
 #ifdef DRAW_INT_CONTACT
       for (int k=0; k<4; k++) {
-        Vec3c s1start = EtoC(y.cur().points[i-1+k].pos);
+        Vec3c s1start = EtoC(y.cur().POS(i-1+k));
         Vec3c s1vec = EtoC(s1draw[k]);
-        Vec3c s2start = EtoC(y.cur().points[j-1+k].pos);
+        Vec3c s2start = EtoC(y.cur().POS(j-1+k));
         Vec3c s2vec = EtoC(s2draw[k]);
         frames.push_back([s1start, s1vec, s2start, s2vec] (real scale) {
           ci::gl::color(ci::Color(0.0, 1.0, 0.0));
-          ci::gl::drawVector(s1start, s1start+s1vec*scale);
-          ci::gl::drawVector(s2start, s2start+s2vec*scale);
+          ci::gl::drawLine(s1start, s1start+s1vec*scale);
+          ci::gl::drawLine(s2start, s2start+s2vec*scale);
         });
       }
 #endif // ifdef DRAW_INT_CONTACT
@@ -795,7 +786,7 @@ PlaneContact::PlaneContact(const Yarn& y, EvalType et, Vec3e normal, Vec3e origi
 
 bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   for (int i=0; i<y.numCPs(); i++) {
-    Vec3e pos = y.cur().points[i].pos;
+    Vec3e pos = y.cur().POS(i);
     if (offset) {
       pos += offset->segment<3>(3*i);
     }
@@ -835,8 +826,8 @@ bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 
 FEMBending::FEMBending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
   size_t n = y.numCPs();
-  real l = (y.rest().points[0].pos - y.rest().points[n-1].pos).norm();
-  real h = (y.rest().points[0].pos - y.rest().points[1].pos).norm();
+  real l = (y.rest().POS(0) - y.rest().POS(n-1)).norm();
+  real h = (y.rest().POS(0) - y.rest().POS(1)).norm();
   real modmu2 = y.youngsModulus * y.getCS()[0].areaMoment()(0, 0) / (n * l * l * l * h * h * h * h);
   
   modDxxxxTriplets.push_back(Triplet(0, 0, -1.0 * modmu2));
@@ -876,10 +867,7 @@ FEMBending::FEMBending(const Yarn& y, EvalType et) : YarnEnergy(y, et) {
 
 bool FEMBending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   if (Fx) {
-    VecXe x(y.numCPs());
-    for (int i=0; i<y.numCPs(); i++) {
-      x(i) = y.cur().points[i].pos.x();
-    }
+    VecXe x = X * y.cur().pos;
     if (offset) {
       x += X * (*offset);
     }

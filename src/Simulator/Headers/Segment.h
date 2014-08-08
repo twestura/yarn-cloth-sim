@@ -26,10 +26,6 @@ class Segment
   real rot = 0.0;
   /// Twist in radians from reference frame parallel transport through time.
   real refTwist = 0.0;
-  /// The number of full (2*pi) twists in the reference frame.
-  int numTwists = 0;
-  /// The change to numTwists this frame. Use this to keep numTwists in sync between yarns.
-  int deltaTwists = 0;
   
   bool frozen = false;
   Vec3e frozVec, frozV;
@@ -80,12 +76,7 @@ public:
     return -sin(rot) * u + cos(rot) * v();
   }
   /// Get twist in reference frame from previous frame.
-  const real inline getRefTwist() const { return refTwist; } // + 2.0*constants::pi*numTwists; }
-  
-  /// Update numTwists this tick.
-  void inline updateTwists(const Segment& oldSeg) {
-    numTwists += oldSeg.deltaTwists;
-  }
+  const real inline getRefTwist() const { return refTwist; }
   
   /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
   Vec3e static parallelTransport(const Vec3e vecPrev, const Vec3e vecCur, const Vec3e uPrev) {

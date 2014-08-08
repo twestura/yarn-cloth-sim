@@ -126,9 +126,7 @@
 		715D608F18A95941008A9785 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		715D609118A95941008A9785 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		715D60AB18A95941008A9785 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		715D60C818ABEABA008A9785 /* Segment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Segment.h; path = Headers/Segment.h; sourceTree = "<group>"; };
 		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Yarn.h; path = Headers/Yarn.h; sourceTree = "<group>"; };
-		715D60CD18ABEE71008A9785 /* CtrlPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CtrlPoint.h; path = Headers/CtrlPoint.h; sourceTree = "<group>"; };
 		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = Headers/Constants.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Compressor.cpp; path = ../src/Visualizer/Source/Compressor.cpp; sourceTree = "<group>"; };
 		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Compressor.h; path = ../src/Visualizer/Headers/Compressor.h; sourceTree = "<group>"; };
@@ -359,14 +357,12 @@
 				71CA570519420C960076A3F2 /* Constraint.h */,
 				71CA570219420BD80076A3F2 /* ConstraintIntegrator.h */,
 				71266166196EFDA1001690BB /* CrossSection.h */,
-				715D60CD18ABEE71008A9785 /* CtrlPoint.h */,
 				71F2BF0218CA58DD001AA0D4 /* Energy.h */,
 				71F11F83197D6DA800610630 /* Hashgrid.h */,
 				719B0C4F18BBDD7100FB1633 /* IMEXIntegrator.h */,
 				713EE1F91947792A0010304B /* Integrator.h */,
 				71CA57001940E6930076A3F2 /* Macros.h */,
 				71197EEE190ABB18003D1E8D /* PTDetector.h */,
-				715D60C818ABEABA008A9785 /* Segment.h */,
 				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
 				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
 				719B0C5318BBEB9400FB1633 /* Util.h */,

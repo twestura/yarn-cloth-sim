@@ -18,7 +18,7 @@ private:
   
 public:
   
-  ConstraintIntegrator(Yarn&, std::vector<YarnEnergy*>, std::vector<YarnConstraint*>);
+  ConstraintIntegrator(Yarn&, std::vector<YarnEnergy*>&, std::vector<YarnConstraint*>&);
   bool integrate(Clock& c);
 };
 
