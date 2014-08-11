@@ -11,52 +11,47 @@
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 DECLARE_PROFILER();
 
-IMEXIntegrator::IMEXIntegrator(std::vector<YarnEnergy*>& energies, Yarn& y) :
-Integrator(y, energies) {
+IMEXIntegrator::IMEXIntegrator(std::vector<RodEnergy*>& energies, Rod& r) :
+Integrator(r, energies) {
   // Fill hess base
   std::vector<Triplet> triplets;
-  for (int i=1; i < y.numSegs()-1; i++) {
+  for (int i=1; i < r.numEdges()-1; i++) {
     if (i > 1) {
-      triplets.push_back(Triplet(i-1, i-2, -2.0*y.getCS()[i].twistCoeff()/y.restVoronoiLength(i)));
+      triplets.push_back(Triplet(i-1, i-2, -2.0*r.getCS()[i].twistCoeff()/r.restVoronoiLength(i)));
     }
-    if (i < y.numSegs()-2) {
-      triplets.push_back(Triplet(i-1, i, -2.0*y.getCS()[i+1].twistCoeff()/y.restVoronoiLength(i+1)));
+    if (i < r.numEdges()-2) {
+      triplets.push_back(Triplet(i-1, i, -2.0*r.getCS()[i+1].twistCoeff()/r.restVoronoiLength(i+1)));
     }
   }
-  hessBase = Eigen::SparseMatrix<real>(y.numSegs()-2, y.numSegs()-2);
+  hessBase = Eigen::SparseMatrix<real>(r.numEdges()-2, r.numEdges()-2);
   hessBase.setFromTriplets(triplets.begin(), triplets.end());
 }
 
 bool IMEXIntegrator::integrate(Clock& c) {
   PROFILER_START("Total");
   
-  const real ConvergenceThreshold = 0.0125 * y.numCPs();
-  const real ConvergenceTolerance = 1.25 * y.numCPs();
-  
-  // Compute timestep
-  for (YarnEnergy* e : energies) {
-    e->suggestTimestep(c);
-  }
+  const real ConvergenceThreshold = 0.0125 * r.numCPs();
+  const real ConvergenceTolerance = 1.25 * r.numCPs();
   
   bool evalSuccess = false;
   bool newtonConverge = false;
   int newtonIterations = 0;
 
   while (!evalSuccess) {
-    VecXe Fx    = VecXe::Zero(y.numDOF());
-    VecXe FxEx  = VecXe::Zero(y.numDOF());
-    VecXe dqdot = VecXe::Zero(y.numDOF());
-    VecXe sol   = VecXe::Zero(y.numDOF());
-    Eigen::SparseMatrix<real> GradFx(y.numDOF(), y.numDOF());
+    VecXe Fx    = VecXe::Zero(r.numDOF());
+    VecXe FxEx  = VecXe::Zero(r.numDOF());
+    VecXe dqdot = VecXe::Zero(r.numDOF());
+    VecXe sol   = VecXe::Zero(r.numDOF());
+    Eigen::SparseMatrix<real> GradFx(r.numDOF(), r.numDOF());
     std::vector<Triplet> triplets;
     
     // TODO: Figure out a thread-safe way to fill this
     // TODO: Query energies to figure out a good estimate
-    size_t numTriplets = 9*9*y.numIntCPs();
+    size_t numTriplets = 9*9*r.numIntCPs();
     
     // Calculate Fx contribution from Explicit energies
     // (these do not change between Newton iterations)
-    for (YarnEnergy* e : energies) {
+    for (RodEnergy* e : energies) {
       if (e->evalType() == Explicit) {
         evalSuccess = e->eval(&FxEx);
         CHECK_NAN_VEC(FxEx);
@@ -73,10 +68,10 @@ bool IMEXIntegrator::integrate(Clock& c) {
       Fx = FxEx;
       
       // Find offset for implicit evaluation
-      VecXe offset = c.timestep() * (y.cur().vel + dqdot);
+      VecXe offset = c.timestep() * (r.cur().vel + dqdot);
       
       // Add up energies
-      for (YarnEnergy* e : energies) {
+      for (RodEnergy* e : energies) {
         if (e->evalType() == Implicit) {
           evalSuccess = e->eval(&Fx, &triplets, &offset);
           if (!evalSuccess) break;
@@ -85,7 +80,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       if (!evalSuccess) break;
       
       Fx *= -c.timestep();
-      Fx += y.getMass().sparse * dqdot;
+      Fx += r.getMass().sparse * dqdot;
       
       CHECK_NAN_VEC(Fx);
       
@@ -108,7 +103,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
       // Create sparse Jacobian of Fx
       GradFx.setFromTriplets(triplets.begin(), triplets.end()); // sums up duplicates automagically
       GradFx *= -c.timestep() * c.timestep();
-      GradFx += y.getMass().sparse;
+      GradFx += r.getMass().sparse;
       
       CHECK_NAN_VEC(GradFx.toDense());
       
@@ -140,23 +135,23 @@ bool IMEXIntegrator::integrate(Clock& c) {
       PROFILER_STOP("CG Solver");
     }
     
-    // Update yarn positions
+    // Update rod positions
     if (newtonConverge) {
 #ifdef NEWMARK_BETA
     // Newmark-Beta update
       const real gamma = 0.5;
       const real beta = 0.25;
-      y.next().acc = dqdot;
-      y.next().vel = y.cur().vel + (1.0-gamma) * y.cur().acc + gamma * dqdot;
-      y.next().pos = y.cur().pos + c.timestep() * (y.cur().vel +
-                                                   ((1.0-2.0*beta) / 2.0) * y.cur().acc +
+      r.next().dVel = dqdot;
+      r.next().vel = r.cur().vel + (1.0-gamma) * r.cur().dVel + gamma * dqdot;
+      r.next().pos = r.cur().pos + c.timestep() * (r.cur().vel +
+                                                   ((1.0-2.0*beta) / 2.0) * r.cur().dVel +
                                                    beta * dqdot);
     
 #else // ifdef NEWMARK_BETA
       
       // Update changes to position and velocity
-      y.next().vel = y.cur().vel + dqdot;
-      y.next().pos = y.cur().pos + c.timestep() * y.next().vel;
+      r.next().vel = r.cur().vel + dqdot;
+      r.next().pos = r.cur().pos + c.timestep() * r.next().vel;
       
 #endif // ifdef NEWMARK_BETA
     }
@@ -169,32 +164,32 @@ bool IMEXIntegrator::integrate(Clock& c) {
   return newtonConverge;
 }
 
-void static calcRotEqs(const Yarn& y, const VecXe& rot, const std::vector<Vec3e>& curveBinorm,
+void static calcRotEqs(const Rod& r, const VecXe& rot, const std::vector<Vec3e>& curveBinorm,
                       VecXe& grad, std::vector<Triplet>& triplets) {
   Eigen::Matrix<real, 2, 2> J;
   J << 0.0, -1.0, 1.0, 0.0;
-  for (int i=1; i<y.numSegs()-1; i++) {
-    Vec3e m1 = cos(rot(i)) * y.next().u[i] + sin(rot(i)) * y.next().v(i);
-    Vec3e m2 = -sin(rot(i)) * y.next().u[i] + cos(rot(i)) * y.next().v(i);
+  for (int i=1; i<r.numEdges()-1; i++) {
+    Vec3e m1 = cos(rot(i)) * r.next().u[i] + sin(rot(i)) * r.next().v(i);
+    Vec3e m2 = -sin(rot(i)) * r.next().u[i] + cos(rot(i)) * r.next().v(i);
     Vec2e curvePrev(curveBinorm[i-1].dot(m2), -curveBinorm[i-1].dot(m1)); // omega ^i _i
     Vec2e curveNext(curveBinorm[i].dot(m2), -curveBinorm[i].dot(m1)); // omega ^i _i+1
-    real dWprev = 1.0 / y.restVoronoiLength(i) *
-      curvePrev.dot(J * y.getCS()[i].bendMat() * (curvePrev - y.restCurveNext(i)));
-    real dWnext = 1.0 / y.restVoronoiLength(i+1) *
-      curveNext.dot(J * y.getCS()[i+1].bendMat() * (curveNext - y.restCurvePrev(i+1)));
-    real twistPrev = rot(i) - rot(i-1) + y.next().refTwist(i);
-    real twistNext = rot(i+1) - rot(i) + y.next().refTwist(i+1);
-    grad(i-1) = -(dWprev + dWnext + 2.0 * y.getCS()[i].twistCoeff() *
-                  (twistPrev/y.restVoronoiLength(i) - twistNext/y.restVoronoiLength(i+1)));
+    real dWprev = 1.0 / r.restVoronoiLength(i) *
+      curvePrev.dot(J * r.getCS()[i].bendMat() * (curvePrev - r.restCurveNext(i)));
+    real dWnext = 1.0 / r.restVoronoiLength(i+1) *
+      curveNext.dot(J * r.getCS()[i+1].bendMat() * (curveNext - r.restCurvePrev(i+1)));
+    real twistPrev = rot(i) - rot(i-1) + r.next().refTwist(i);
+    real twistNext = rot(i+1) - rot(i) + r.next().refTwist(i+1);
+    grad(i-1) = -(dWprev + dWnext + 2.0 * r.getCS()[i].twistCoeff() *
+                  (twistPrev/r.restVoronoiLength(i) - twistNext/r.restVoronoiLength(i+1)));
     
-    real hess = 2.0*(y.getCS()[i].twistCoeff()/y.restVoronoiLength(i) +
-                     y.getCS()[i+1].twistCoeff()/y.restVoronoiLength(i+1));
-    hess += 1.0 / y.restVoronoiLength(i) *
-      (curvePrev.dot(J.transpose() * y.getCS()[i].bendMat() * J * curvePrev)
-       - curvePrev.dot(y.getCS()[i].bendMat() * (curvePrev - y.restCurveNext(i))));
-    hess += 1.0 /y.restVoronoiLength(i+1) *
-      (curveNext.dot(J.transpose() * y.getCS()[i+1].bendMat() * J * curveNext)
-       - curveNext.dot(y.getCS()[i+1].bendMat() * (curveNext - y.restCurvePrev(i+1))));
+    real hess = 2.0*(r.getCS()[i].twistCoeff()/r.restVoronoiLength(i) +
+                     r.getCS()[i+1].twistCoeff()/r.restVoronoiLength(i+1));
+    hess += 1.0 / r.restVoronoiLength(i) *
+      (curvePrev.dot(J.transpose() * r.getCS()[i].bendMat() * J * curvePrev)
+       - curvePrev.dot(r.getCS()[i].bendMat() * (curvePrev - r.restCurveNext(i))));
+    hess += 1.0 /r.restVoronoiLength(i+1) *
+      (curveNext.dot(J.transpose() * r.getCS()[i+1].bendMat() * J * curveNext)
+       - curveNext.dot(r.getCS()[i+1].bendMat() * (curveNext - r.restCurvePrev(i+1))));
     triplets.push_back(Triplet(i-1, i-1, hess));
   }
 }
@@ -202,15 +197,15 @@ void static calcRotEqs(const Yarn& y, const VecXe& rot, const std::vector<Vec3e>
 bool IMEXIntegrator::setRotations() const {
   const real newtonThreshold = 1.0e-5; //should be able to get this almost exact
   std::vector<Triplet> triplets;
-  Eigen::SparseMatrix<real> hess(y.numSegs()-2, y.numSegs()-2);
-  VecXe rot = y.next().rot;
-  VecXe grad = VecXe::Zero(y.numSegs()-2); // Assumes edges are clamped
+  Eigen::SparseMatrix<real> hess(r.numEdges()-2, r.numEdges()-2);
+  VecXe rot = r.next().rot;
+  VecXe grad = VecXe::Zero(r.numEdges()-2); // Assumes edges are clamped
   bool newtonConverge = false;
 
   std::vector<Vec3e> curveBinorm;
-  for (int i=1; i<y.numCPs()-1; i++) {
-    Vec3e tPrev = y.next().vec(i-1).normalized();
-    Vec3e tNext = y.next().vec(i).normalized();
+  for (int i=1; i<r.numCPs()-1; i++) {
+    Vec3e tPrev = r.next().edge(i-1).normalized();
+    Vec3e tNext = r.next().edge(i).normalized();
     real chi = 1.0 + (tPrev.dot(tNext));
     curveBinorm.push_back(2.0*tPrev.cross(tNext)/chi);
   }
@@ -218,10 +213,10 @@ bool IMEXIntegrator::setRotations() const {
   
   do {
     triplets.clear();
-    calcRotEqs(y, rot, curveBinorm, grad, triplets);
+    calcRotEqs(r, rot, curveBinorm, grad, triplets);
     real resid = grad.norm();
     if (resid < newtonThreshold || newtonIterations > 4) {
-      if (resid > 1.0e-5 * y.numSegs()) { return false; }
+      if (resid > 1.0e-5 * r.numEdges()) { return false; }
       newtonConverge = true;
       break;
     }
@@ -233,11 +228,11 @@ bool IMEXIntegrator::setRotations() const {
     sLDLT.compute(hess);
     VecXe sol = sLDLT.solve(grad);
     assert(sLDLT.info() == Eigen::Success);
-    rot.block(1, 0, y.numSegs()-2, 1) += sol;
+    rot.block(1, 0, r.numEdges()-2, 1) += sol;
   } while (!newtonConverge);
   
   if (newtonConverge) {
-    y.next().rot = rot;
+    r.next().rot = rot;
   }
   
   return newtonConverge;

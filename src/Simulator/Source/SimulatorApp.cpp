@@ -19,7 +19,7 @@
 
 #include "Resources.h"
 #include "Util.h"
-#include "Yarn.h"
+#include "Rod.h"
 #include "Clock.h"
 #include "Integrator.h"
 #include "IMEXIntegrator.h"
@@ -41,8 +41,8 @@ class SimulatorApp : public AppNative {
 	void update();
 	void draw();
   
-  void loadYarnFile(std::string filename);
-  void loadDefaultYarn(int numPoints);
+  void loadRodFile(std::string filename);
+  void loadDefaultRod(int numPoints);
   void loadStdEnergies();
   void loadStdEnergiesAndConsts();
   
@@ -55,9 +55,9 @@ class SimulatorApp : public AppNative {
   Vec3c targetPos = Vec3c(0.0, 0.0, 0.0);
   
   // Rendering stuff
-  gl::GlslProg yarnProg;
+  gl::GlslProg rodProg;
   gl::GlslProg diffuseProg;
-  gl::Texture yarnTex;
+  gl::Texture rodTex;
   gl::Texture floorTex;
   gl::DisplayList* spheredl;
   gl::DisplayList* cylinderdl;
@@ -65,17 +65,17 @@ class SimulatorApp : public AppNative {
   gl::Light* l;
   TriMesh floor;
   
-  Yarn* y = nullptr;
+  Rod* r = nullptr;
   Clock c;
   Integrator* integrator = nullptr;
   ConstraintIntegrator* cIntegrator = nullptr;
-  std::vector<YarnEnergy*> energies;
+  std::vector<RodEnergy*> energies;
   MouseSpring* mouseSpring;
-  std::vector<YarnConstraint*> constraints;
+  std::vector<RodConstraint*> constraints;
   
   real twist = 0.0;
-  real yarnTwist = 0.0;
-  int numYarnTwists = 0;
+  real rodTwist = 0.0;
+  int numRodTwists = 0;
   
   // Interactive stuff
   bool isMouseDown = false;
@@ -103,7 +103,7 @@ void SimulatorApp::setup()
   l = new gl::Light(gl::Light::POINT, 0);
   
   try {
-    yarnTex = loadImage(loadResource(RES_SIM_YARN_TEX));
+    rodTex = loadImage(loadResource(RES_SIM_YARN_TEX));
   } catch (ImageIoException e) {
     std::cerr << "Error loading textures: " << e.what();
     exit(1);
@@ -112,7 +112,7 @@ void SimulatorApp::setup()
   // Load and compile shaders
   try {
     diffuseProg = gl::GlslProg(loadResource(RES_SIM_VERT_GLSL), loadResource(RES_SIM_FRAG_GLSL));
-    yarnProg = gl::GlslProg(loadResource(RES_SIM_VERT_TEX_GLSL), loadResource(RES_SIM_FRAG_TEX_GLSL));
+    rodProg = gl::GlslProg(loadResource(RES_SIM_VERT_TEX_GLSL), loadResource(RES_SIM_FRAG_TEX_GLSL));
   } catch (gl::GlslProgCompileExc e) {
     std::cerr << "Error compiling GLSL program: " << e.what();
     exit(1);
@@ -149,9 +149,9 @@ void SimulatorApp::setup()
   floorTex.setMagFilter(GL_NEAREST);
   floorTex.setWrap(GL_REPEAT, GL_REPEAT);
   
-  // Load the yarn
-  loadDefaultYarn(42);
-  // loadYarnFile("");
+  // Load the rod
+  loadDefaultRod(42);
+  // loadRodFile("");
 #ifndef CONST_INTEGRATOR
   loadStdEnergies();
 #else
@@ -163,24 +163,24 @@ void SimulatorApp::mouseDown(MouseEvent event)
 {
   if (event.isRight()) {
     // Set targetPos to the ControlPoint we just clicked
-    if (!y) return;
+    if (!r) return;
     Vec2i mouse = event.getPos();
     Vec2i windowSize = getWindowSize();
-    Ray r = cam.generateRay((real)mouse.x/windowSize.x,
+    Ray ray = cam.generateRay((real)mouse.x/windowSize.x,
                             1.0 - (real)mouse.y/windowSize.y,
                             getWindowAspectRatio());
     real tmin = INFINITY;
     bool any = false;
-    for (int i=0; i<y->numCPs(); i++) { // A bit slow, but beats keeping a KD-Tree updated
-      Sphere s(EtoC(y->cur().POS(i)), constants::radius * 1.5);
+    for (int i=0; i<r->numCPs(); i++) { // A bit slow, but beats keeping a KD-Tree updated
+      Sphere s(EtoC(r->cur().POS(i)), constants::radius * 1.5);
       float t;
-      if (s.intersect(r, &t) && t < tmin) {
+      if (s.intersect(ray, &t) && t < tmin) {
         any = true;
         tmin = t;
       }
     }
     if (!any) return;
-    targetPos = r.calcPosition(tmin);
+    targetPos = ray.calcPosition(tmin);
     cam.lookAt(targetPos);
   } else {
     if (!running) return;
@@ -234,7 +234,7 @@ void SimulatorApp::keyDown(KeyEvent event)
       break;
     case event.KEY_y:
       running = false;
-      loadYarnFile("");
+      loadRodFile("");
       loadStdEnergies();
       break;
     case event.KEY_LEFT:
@@ -263,26 +263,13 @@ void SimulatorApp::keyDown(KeyEvent event)
       break;
       
       
-    case event.KEY_w:
-      testSpring1Clamp.z() += 1.0;
-      testSpring2Clamp.z() += 1.0;
-      testSpring1->setClamp(testSpring1Clamp);
-      testSpring2->setClamp(testSpring2Clamp);
-      break;
-    case event.KEY_s:
-      testSpring1Clamp.z() -= 1.0;
-      testSpring2Clamp.z() -= 1.0;
-      testSpring1->setClamp(testSpring1Clamp);
-      testSpring2->setClamp(testSpring2Clamp);
-      break;
-      
     case event.KEY_t:
-      for(int i=1; i<y->numSegs(); i++) {
-        std::cout << "seg " << i << " twist: " << (y->cur().rot(i) - y->cur().rot(i-1) + y->cur().refTwist(i))
-        << " (" << y->cur().rot(i) << " + " << y->cur().refTwist(i) <<
-        " = " << y->cur().rot(i) + y->cur().refTwist(i) << ")\n";
+      for(int i=1; i<r->numEdges(); i++) {
+        std::cout << "edge " << i << " twist: " << (r->cur().rot(i) - r->cur().rot(i-1) + r->cur().refTwist(i))
+        << " (" << r->cur().rot(i) << " + " << r->cur().refTwist(i) <<
+        " = " << r->cur().rot(i) + r->cur().refTwist(i) << ")\n";
       }
-      std::cout << "numYarnTwists: " << numYarnTwists << "\n";
+      std::cout << "numRodTwists: " << numRodTwists << "\n";
       break;
       
     default:;
@@ -320,7 +307,7 @@ void SimulatorApp::update()
 #endif // ifdef CONST_INTEGRATOR
   
   /// Update Bishop frame
-  y->next().updateReferenceFrames(y->cur());
+  r->next().updateReferenceFrames(r->cur());
   
 #ifndef CONST_INTEGRATOR
   /// Update material frame rotation
@@ -328,34 +315,34 @@ void SimulatorApp::update()
     twist += 2.0*constants::pi*c.timestep();
   }
   
-  Vec3e uRef = parallelTransport(y->next().vec(0), y->next().vec(y->numSegs()-1), y->next().u[0]);
-  real cosTwist = y->next().u[y->numSegs()-1].dot(uRef.normalized());
-  real oldTwist = yarnTwist;
+  Vec3e uRef = parallelTransport(r->next().edge(0), r->next().edge(r->numEdges()-1), r->next().u[0]);
+  real cosTwist = r->next().u[r->numEdges()-1].dot(uRef.normalized());
+  real oldTwist = rodTwist;
   if (cosTwist >= 1.0) { // Avoid values like 1.0000000012 that introduce NaNs
-    yarnTwist = 0.0;
+    rodTwist = 0.0;
   } else if (cosTwist <= -1.0) {
-    yarnTwist = constants::pi;
+    rodTwist = constants::pi;
   } else {
-    yarnTwist = acos(cosTwist);
+    rodTwist = acos(cosTwist);
   }
   // Flip the sign if necessary
-  if (y->next().v(y->numSegs()-1).dot(uRef) > 0.0) {
-    yarnTwist = -yarnTwist;
+  if (r->next().v(r->numEdges()-1).dot(uRef) > 0.0) {
+    rodTwist = -rodTwist;
   }
-  real diff = yarnTwist - oldTwist;
+  real diff = rodTwist - oldTwist;
   if (diff < -constants::pi) {
-    numYarnTwists += 1;
+    numRodTwists += 1;
   } else if (diff > constants::pi) {
-    numYarnTwists -= 1;
+    numRodTwists -= 1;
   }
-  y->next().rot(y->numSegs()-1) = twist - yarnTwist;
+  r->next().rot(r->numEdges()-1) = twist - rodTwist;
   if (!static_cast<IMEXIntegrator*>(integrator)->setRotations()) {
     std::cout << "rotations failed";
   }
 #endif // ifndef CONST_INTEGRATOR
   
-  // Swap Yarns
-  y->swapYarns();
+  // Swap Rods
+  r->swapRods();
 
   c.increment();
 }
@@ -383,13 +370,13 @@ void SimulatorApp::draw() {
   gl::setMatrices(cam);
   
   // Draw the rod and the normal of the bishop frame
-  for(int i=0; i<y->numSegs(); i++) {
-    Vec3c p0 = EtoC(y->cur().POS(i));
-    Vec3c p1 = EtoC(y->cur().POS(i+1));
+  for(int i=0; i<r->numEdges(); i++) {
+    Vec3c p0 = EtoC(r->cur().POS(i));
+    Vec3c p1 = EtoC(r->cur().POS(i+1));
     gl::drawLine(p0, p1);
     gl::color(1.0, 1.0, 0.0);
     gl::lineWidth(1.0);
-    Vec3c u = EtoC(y->cur().u[i]);
+    Vec3c u = EtoC(r->cur().u[i]);
     gl::drawLine((p0+p1)/2.0, (p0+p1)/2.0+u*(p1-p0).length()*2.0);
   }
   
@@ -401,44 +388,44 @@ void SimulatorApp::draw() {
   l->enable();
   
   diffuseProg.bind();
-  for (int i=0; i<y->numCPs(); i++) {
+  for (int i=0; i<r->numCPs(); i++) {
     gl::pushModelView();
-    gl::translate(EtoC(y->cur().POS(i)));
+    gl::translate(EtoC(r->cur().POS(i)));
     spheredl->draw();
     gl::popModelView();
   }
   diffuseProg.unbind();
   
-  yarnProg.bind();
+  rodProg.bind();
 
   floorTex.enableAndBind();
   gl::draw(floor);
   floorTex.disable();
   
-  yarnProg.unbind();
+  rodProg.unbind();
   
-  // Draw yarn segments
-  yarnProg.bind();
-  yarnTex.enableAndBind();
-  for (int i=0; i<y->numSegs(); i++) {
+  // Draw rod edges
+  rodProg.bind();
+  rodTex.enableAndBind();
+  for (int i=0; i<r->numEdges(); i++) {
     gl::pushModelView();
-    Vec3c v = EtoC(y->cur().vec(i).normalized());
+    Vec3c v = EtoC(r->cur().edge(i).normalized());
     
-    gl::translate(EtoC(y->cur().POS(i)));
+    gl::translate(EtoC(r->cur().POS(i)));
     Quaternion<real> q(Vec3c(0.0, 1.0, 0.0), v);
-    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().u[i])))));
-    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(y->cur().v(i))) > 0.0) angle = -angle;
+    real angle = acos(std::max((real)-1.0, std::min((real)1.0, (q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(r->cur().u[i])))));
+    if ((q*Vec3c(-1.0, 0.0, 0.0)).dot(EtoC(r->cur().v(i))) > 0.0) angle = -angle;
     gl::rotate(Quaternion<real>(v, angle));
     gl::rotate(q);
-    gl::rotate(Vec3c(0.0, y->cur().rot(i)*180.0/constants::pi, 0.0));
-    gl::scale(1.0, y->cur().length(i), 1.0);
+    gl::rotate(Vec3c(0.0, r->cur().rot(i)*180.0/constants::pi, 0.0));
+    gl::scale(1.0, r->cur().edgeLength(i), 1.0);
     cylinderdl->draw();
     gl::popModelView();
   }
-  yarnTex.unbind();
-  yarnProg.unbind();
+  rodTex.unbind();
+  rodProg.unbind();
   
-  for (YarnEnergy* e : energies) {
+  for (RodEnergy* e : energies) {
     e->draw(c.timestep());
   }
 #ifndef CONST_INTEGRATOR
@@ -447,45 +434,45 @@ void SimulatorApp::draw() {
   
 }
 
-void SimulatorApp::loadYarnFile(std::string filename) {
+void SimulatorApp::loadRodFile(std::string filename) {
   if (filename.empty()) filename = getOpenFilePath().string();
   if (filename.empty()) return;
   
-  std::ifstream yarnFile(filename);
+  std::ifstream rodFile(filename);
   
-  if (!yarnFile.is_open()) {
+  if (!rodFile.is_open()) {
     std::cerr << filename << " failed to open!\n";
     return;
   }
   
   std::string line;
-  std::getline(yarnFile, line);
+  std::getline(rodFile, line);
   const size_t numPoints = std::stoi(line);
   
-  VecXe yarnPos(3*numPoints);
+  VecXe rodPos(3*numPoints);
   
   for (int i=0; i<3*numPoints; i++) {
     std::string line;
-    std::getline(yarnFile, line);
+    std::getline(rodFile, line);
     if(!line.empty()) {
-      yarnPos(i) = std::stof(line);
+      rodPos(i) = std::stof(line);
     }
   }
   Vec3e u;
   for (int i=0; i<3; i++) {
     std::string line;
-    std::getline(yarnFile, line);
+    std::getline(rodFile, line);
     u(i) = std::stof(line);
   }
-  assert((yarnPos.segment<3>(3) - yarnPos.segment<3>(0)).dot(u) < 5.0e-6);
+  assert((rodPos.segment<3>(3) - rodPos.segment<3>(0)).dot(u) < 5.0e-6);
   
-  yarnFile.close();
-  if (y) delete y;
-  y = new Yarn(yarnPos, u);
+  rodFile.close();
+  if (r) delete r;
+  r = new Rod(rodPos, u);
 }
 
-void SimulatorApp::loadDefaultYarn(int numPoints) {
-  if (y) delete y;
+void SimulatorApp::loadDefaultRod(int numPoints) {
+  if (r) delete r;
   
   eyePos = Vec3c(40.0, 10.0, 0.0);
   targetPos = Vec3c(0.0, 10.0, 0.0);
@@ -499,10 +486,10 @@ void SimulatorApp::loadDefaultYarn(int numPoints) {
     u << 1.0, 0.0, 0.0;
   }
   
-  VecXe yarnPos(3*numPoints);
+  VecXe rodPos(3*numPoints);
   for(int i=0; i < numPoints; i++) {
     real t = ((real) i) / (real) (numPoints -1);
-    yarnPos.segment<3>(3*i) = (1-t)*start + t*end;
+    rodPos.segment<3>(3*i) = (1-t)*start + t*end;
   }
   
   real massPerPoint = 0.1;
@@ -512,76 +499,76 @@ void SimulatorApp::loadDefaultYarn(int numPoints) {
   targetPos = Vec3c(0.0, 1.5, 0.0);
   cam.lookAt(eyePos, targetPos, Vec3c(0.0, 1.0, 0.0));
   
-  y = new Yarn(yarnPos, Vec3e(0.0, 0.0, 1.0), &mass, 1e7, 80.0);
+  r = new Rod(rodPos, Vec3e(0.0, 0.0, 1.0), &mass, 1e7, 80.0);
 }
 
 void SimulatorApp::loadStdEnergies() {
-  // Create Yarn Energies - Add in the order they are most likely to fail during evaluation
-  assert(y && "Tried to load energies on a null yarn");
-  for (YarnEnergy* e : energies) {
+  // Create Rod Energies - Add in the order they are most likely to fail during evaluation
+  assert(r && "Tried to load energies on a null rod");
+  for (RodEnergy* e : energies) {
     delete e;
   }
   energies.clear();
   
   
-  YarnEnergy* stretch = new Stretching(*y, Implicit);
+  RodEnergy* stretch = new Stretching(*r, Implicit);
   energies.push_back(stretch);
   
-  YarnEnergy* bending = new Bending(*y, Implicit);
+  RodEnergy* bending = new Bending(*r, Implicit);
   energies.push_back(bending);
   
-  YarnEnergy* twisting = new Twisting(*y, Explicit);
+  RodEnergy* twisting = new Twisting(*r, Explicit);
   energies.push_back(twisting);
   
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Vec3e(0.0, -9.8, 0.0));
+  RodEnergy* gravity = new Gravity(*r, Explicit, Vec3e(0.0, -9.8, 0.0));
   energies.push_back(gravity);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 100.0);
+  mouseSpring = new MouseSpring(*r, Explicit, r->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
-  YarnEnergy* intContact = new IntContact(*y, Implicit);
+  RodEnergy* intContact = new IntContact(*r, Implicit);
   energies.push_back(intContact);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
-  clamp1->setClamp(y->rest().POS(0));
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
-  clamp2->setClamp(y->rest().POS(1));
+  Spring* clamp1 = new Spring(*r, Implicit, 0, 500.0);
+  clamp1->setClamp(r->rest().POS(0));
+  Spring* clamp2 = new Spring(*r, Implicit, 1, 1000.0);
+  clamp2->setClamp(r->rest().POS(1));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   
   if (integrator) delete integrator;
-  integrator = new IMEXIntegrator(energies, *y);
+  integrator = new IMEXIntegrator(energies, *r);
 }
 
 void SimulatorApp::loadStdEnergiesAndConsts() {
-  assert(y && "Tried to load energies and constraints on a null yarn");
-  for (YarnEnergy* e : energies) {
+  assert(r && "Tried to load energies and constraints on a null rod");
+  for (RodEnergy* e : energies) {
     delete e;
   }
-  for (YarnConstraint* c : constraints) {
+  for (RodConstraint* c : constraints) {
     delete c;
   }
   energies.clear();
   constraints.clear();
   
-  YarnEnergy* gravity = new Gravity(*y, Explicit, Vec3e(0.0, -9.8, 0.0));
+  RodEnergy* gravity = new Gravity(*r, Explicit, Vec3e(0.0, -9.8, 0.0));
   energies.push_back(gravity);
   
-  Spring* clamp1 = new Spring(*y, Implicit, 0, 500.0);
-  clamp1->setClamp(y->rest().POS(0));
-  Spring* clamp2 = new Spring(*y, Implicit, 1, 1000.0);
-  clamp2->setClamp(y->rest().POS(1));
+  Spring* clamp1 = new Spring(*r, Implicit, 0, 500.0);
+  clamp1->setClamp(r->rest().POS(0));
+  Spring* clamp2 = new Spring(*r, Implicit, 1, 1000.0);
+  clamp2->setClamp(r->rest().POS(1));
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   
-  mouseSpring = new MouseSpring(*y, Explicit, y->numCPs()-1, 10.0);
+  mouseSpring = new MouseSpring(*r, Explicit, r->numCPs()-1, 10.0);
   energies.push_back(mouseSpring);
   
-  YarnConstraint* length = new Length(*y);
+  RodConstraint* length = new Length(*r);
   constraints.push_back(length);
   
   if (cIntegrator) delete cIntegrator;
-  cIntegrator = new ConstraintIntegrator(*y, energies, constraints);
+  cIntegrator = new ConstraintIntegrator(*r, energies, constraints);
 }
 
 

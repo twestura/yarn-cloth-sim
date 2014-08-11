@@ -10,20 +10,21 @@
 #define __Visualizer__Constraint__
 
 #include <iostream>
-#include "Yarn.h"
+#include "Rod.h"
 
-class YarnConstraint {
+/// An abstract class representing a position-based constraint on a rod.
+class RodConstraint {
 protected:
-  Yarn& y;
+  Rod& r;
 public:
-  YarnConstraint(Yarn& y) : y(y) { }
+  RodConstraint(Rod& r) : r(r) { }
   virtual bool eval(VecXe&, real)=0;
-  virtual ~YarnConstraint() { }
+  virtual ~RodConstraint() { }
 };
 
-class Length : public YarnConstraint {
+class Length : public RodConstraint {
 public:
-  Length(Yarn& y) : YarnConstraint(y) { }
+  Length(Rod& r) : RodConstraint(r) { }
   bool eval(VecXe&, real);
 };
 

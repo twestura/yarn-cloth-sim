@@ -8,19 +8,19 @@
 
 #include "ExIntegrator.h"
 
-ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies,
-                           std::vector<YarnConstraint*>* c) : Integrator(y, energies) {
+ExIntegrator::ExIntegrator(Rod& r, std::vector<RodEnergy*>& energies,
+                           std::vector<RodConstraint*>* c) : Integrator(r, energies) {
   // Stiffness coefficient
   alpha1 = 1.0e-9;
   // Mass coefficient
   alpha2 = 2.0;
   
-  stiffness.resize(y.numDOF(), y.numDOF());
+  stiffness.resize(r.numDOF(), r.numDOF());
   setDamping();
   
 #ifdef DRAW_EIGENMODE
   // Test eigenvalues to extract frequencies.
-  Eigen::SparseMatrix<real> lklt = y.getInvMass().sparse * stiffness;
+  Eigen::SparseMatrix<real> lklt = r.getInvMass().sparse * stiffness;
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic>> saes(lklt.toDense());
   for (int i=0; i<dof; i++) {
     real eigval = saes.eigenvalues()(i);
@@ -45,10 +45,10 @@ ExIntegrator::ExIntegrator(Yarn& y, std::vector<YarnEnergy*>& energies,
 bool ExIntegrator::integrate(Clock& c) {
   PROFILER_START("Integrate");
   
-  size_t dof = y.numCPs() * 3;
+  size_t dof = r.numCPs() * 3;
   VecXe forces = VecXe::Zero(dof);
   
-  for (YarnEnergy* e : energies) {
+  for (RodEnergy* e : energies) {
     if (!e->eval(&forces)) return false;
   }
   
@@ -56,43 +56,43 @@ bool ExIntegrator::integrate(Clock& c) {
   if (c.getTicks() % 1000 == 0 && c.getTicks() != 0) { // Periodically update stiffness matrix
     setDamping();
   }
-  forces -= damping * y.cur().vel;
+  forces -= damping * r.cur().vel;
   
-  forces = y.getInvMass().sparse * forces;
+  forces = r.getInvMass().sparse * forces;
   
   // Symplectic Euler
-  y.next().acc = forces * c.timestep();
-  y.next().vel = y.cur().vel + y.next().acc;
-  y.next().pos = y.cur().pos + y.next().vel * c.timestep();
+  r.next().dVel = forces * c.timestep();
+  r.next().vel = r.cur().vel + r.next().dVel;
+  r.next().pos = r.cur().pos + r.next().vel * c.timestep();
   
   // Explicit Newmark -- NOT STABLE
   /*
   real lambda = 0.5;
    
-  y.next().acc = forces * c.timestep();
-  y.next().vel = y.cur().vel + (1.0-lambda) * y.cur().acc + lambda * y.next().acc;
-  y.next().pos = y.cur().pos + c.timestep() * y.cur().vel + 0.5 * c.timestep() * y.cur().acc;
+  r.next().dVel = forces * c.timestep();
+  r.next().vel = r.cur().vel + (1.0-lambda) * r.cur().dVel + lambda * r.next().dVel;
+  r.next().pos = r.cur().pos + c.timestep() * r.cur().vel + 0.5 * c.timestep() * r.cur().dVel;
    */
   
   // Constraint-based integration
   /*
   // Find candidate positions
-  VecXe xStar = y.cur().pos + c.timestep() * (y.cur().vel + c.timestep() * forces)
+  VecXe xStar = r.cur().pos + c.timestep() * (r.cur().vel + c.timestep() * forces)
 
   // Solve constraints
   const int gaussJacobiMaxIter = 4;
   int gaussJacobiIter = 0;
   real omega = 1.0;
   while (gaussJacobiIter < gaussJacobiMaxIter) {
-    for (YarnConstraint* c : constraints) {
+    for (RodConstraint* c : constraints) {
       c->eval(xStar, omega); // need number of constraints per point?
     }
     gaussJacobiIter++;
   }
   // Update positions/velocities
-  y.next().vel = (xStar - y.cur().pos) / c.timestep();
-  y.next().pos = xStar;
-  y.next().acc = y.next().vel - y.cur().vel
+  r.next().vel = (xStar - r.cur().pos) / c.timestep();
+  r.next().pos = xStar;
+  r.next().dVel = r.next().vel - r.cur().vel
    */
   
   
@@ -102,7 +102,7 @@ bool ExIntegrator::integrate(Clock& c) {
 
 void ExIntegrator::setDamping() {
   std::vector<Triplet> triplets;
-  for (YarnEnergy* e : energies) {
+  for (RodEnergy* e : energies) {
     if (e->energySource() == Internal) {
       e->eval(nullptr, &triplets);
     }
@@ -111,7 +111,7 @@ void ExIntegrator::setDamping() {
   stiffness *= -1.0;
   
   // Rayleigh damping matrix
-  damping = alpha1 * stiffness + alpha2 * y.getMass().sparse;
+  damping = alpha1 * stiffness + alpha2 * r.getMass().sparse;
 }
 
 
@@ -121,9 +121,9 @@ void ExIntegrator::draw() {
   VecXe mode = modes.col(eigval);
   
   ci::gl::color(0.7, 0.1, 0.6);
-  for (int i=0; i<y.numCPs(); i++) {
+  for (int i=0; i<r.numCPs(); i++) {
     Vec3e flux = mode.segment<3>(i*3);
-    ci::gl::drawLine(EtoC(y.cur().points[i].pos), EtoC(y.cur().points[i].pos + flux));
+    ci::gl::drawLine(EtoC(r.cur().points[i].pos), EtoC(r.cur().points[i].pos + flux));
   }
 #endif // ifdef DRAW_EIGENMODE
 }

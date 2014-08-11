@@ -8,11 +8,11 @@
 
 #include "Integrator.h"
 
-Integrator::Integrator(Yarn& y, std::vector<YarnEnergy*>& energies) : y(y), energies(energies) { }
+Integrator::Integrator(Rod& r, std::vector<RodEnergy*>& energies) : r(r), energies(energies) { }
 
 void Integrator::draw() {
-  for (std::function<void(void)> f : frames) {
+  for (std::function<void(void)> f : drawFuncs) {
     f();
   }
-  frames.clear();
+  drawFuncs.clear();
 }

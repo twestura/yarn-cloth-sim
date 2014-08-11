@@ -12,6 +12,8 @@
 #include "Clock.h"
 #include <unordered_map>
 
+// TODO: Write documentation.
+
 // Avoid abstract class structure to remove allocation, since this needs to be instantiated fast.
 class CollisionObject {
 public:

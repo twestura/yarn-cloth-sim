@@ -12,13 +12,15 @@
 #include "Integrator.h"
 #include "Constraint.h"
 
+/// An integrator that combines explicitly evaluated forces and position-based constraints.
 class ConstraintIntegrator : public Integrator {
 private:
-  std::vector<YarnConstraint*> constraints;
+  /// The position-based constraints imposed on the rod.
+  std::vector<RodConstraint*> constraints;
   
 public:
   
-  ConstraintIntegrator(Yarn&, std::vector<YarnEnergy*>&, std::vector<YarnConstraint*>&);
+  ConstraintIntegrator(Rod&, std::vector<RodEnergy*>&, std::vector<RodConstraint*>&);
   bool integrate(Clock& c);
 };
 

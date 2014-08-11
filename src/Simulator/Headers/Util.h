@@ -16,7 +16,7 @@
 #include <boost/timer.hpp>
 
 // #define ENABLE_CHECK_NAN
-
+/// If enabled, will check for NaNs; if not, does nothing.
 #ifdef ENABLE_CHECK_NAN
 #define CHECK_NAN(f) assert(!isnan(f) && "NaN Detected.")
 #define CHECK_NAN_VEC(v) assert(!v.hasNaN() && "NaN Detected.")

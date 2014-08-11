@@ -112,8 +112,8 @@
 		713EE1F7194644640010304B /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		713EE1F91947792A0010304B /* Integrator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Integrator.h; path = Headers/Integrator.h; sourceTree = "<group>"; };
 		713EE1FA19477E7D0010304B /* Integrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Integrator.cpp; sourceTree = "<group>"; };
-		713EE1FF1947884E0010304B /* ExIntegrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExIntegrator.cpp; sourceTree = "<group>"; };
-		713EE2001947884E0010304B /* ExIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExIntegrator.h; sourceTree = "<group>"; };
+		713EE1FF1947884E0010304B /* ExIntegrator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = ExIntegrator.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		713EE2001947884E0010304B /* ExIntegrator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = ExIntegrator.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		713EE202194A10340010304B /* FrameExporter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FrameExporter.h; sourceTree = "<group>"; };
 		713EE203194A24980010304B /* MovieMaker.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = MovieMaker.sh; sourceTree = "<group>"; };
 		714D11381914073F00C8B1BD /* sim-frag-tex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag-tex.glsl"; path = "../resources/sim-frag-tex.glsl"; sourceTree = "<group>"; };
@@ -126,7 +126,7 @@
 		715D608F18A95941008A9785 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		715D609118A95941008A9785 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		715D60AB18A95941008A9785 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
-		715D60CB18ABEC77008A9785 /* Yarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Yarn.h; path = Headers/Yarn.h; sourceTree = "<group>"; };
+		715D60CB18ABEC77008A9785 /* Rod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Rod.h; path = Headers/Rod.h; sourceTree = "<group>"; };
 		715D60CE18AD553C008A9785 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = Headers/Constants.h; sourceTree = "<group>"; };
 		717DD766188EF95E00D3BFA2 /* Compressor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Compressor.cpp; path = ../src/Visualizer/Source/Compressor.cpp; sourceTree = "<group>"; };
 		717DD767188EF95E00D3BFA2 /* Compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Compressor.h; path = ../src/Visualizer/Headers/Compressor.h; sourceTree = "<group>"; };
@@ -149,7 +149,7 @@
 		71CA570419420C960076A3F2 /* Constraint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Constraint.cpp; sourceTree = "<group>"; };
 		71CA570519420C960076A3F2 /* Constraint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constraint.h; path = Headers/Constraint.h; sourceTree = "<group>"; };
 		71CA573A19463A870076A3F2 /* RodSoundApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RodSoundApp.h; sourceTree = "<group>"; };
-		71CA573C19463A870076A3F2 /* RodSoundApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RodSoundApp.cpp; sourceTree = "<group>"; };
+		71CA573C19463A870076A3F2 /* RodSoundApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = RodSoundApp.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		71CA573E19463B830076A3F2 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		71CA574019463B9C0076A3F2 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		71CA574219463BA20076A3F2 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
@@ -366,7 +366,7 @@
 				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
 				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
 				719B0C5318BBEB9400FB1633 /* Util.h */,
-				715D60CB18ABEC77008A9785 /* Yarn.h */,
+				715D60CB18ABEC77008A9785 /* Rod.h */,
 				71A93CCB192A4FF70030A80B /* YarnBuilder.h */,
 			);
 			name = Headers;

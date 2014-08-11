@@ -11,22 +11,16 @@
 
 namespace constants {
 
-  /// Timestep of the simulation in seconds.
+  /// Target timestep of the simulation in seconds.
   const real INITIAL_TIMESTEP = 1.0/60.0;
 
-  // TODO: Use these.
-  /// Determines centerline plasticity due to bending forces on the yarn.
-  const real pPlastic = 0.01;
-  /// Determines the maximum amount of plasticity the centerline of the yarn exhibits.
-  const real pPlasticMax = 2.5;
-
-  /// The default radius of the rod in m.
+  /// The default radius of the rod in meters.
   const real radius = 0.00635;
   // Mascarenhas test: 0.00955
   // 1/2 inch diameter = 1/4 inch radius: 0.00635
   // 3/4 inch diameter = 3/8 inch radius: 0.009525
   
-  /// The default Young's modulus of the rod in N/m^2
+  /// The default Young's modulus of the rod in N/m^2.
   constexpr real youngsModulus = 6.89e10;
   // Steel (1018): 2.05e11
   // Aluminum (6061) : 6.89e10
@@ -64,7 +58,7 @@ namespace constants {
   /// The number of quadrature points per spline segment.
   const int numQuadPoints = 6;
   
-  /// The path for outputting media files
+  /// The path for outputting media files.
   const std::string ResultPath = "../../result/";
 }
 

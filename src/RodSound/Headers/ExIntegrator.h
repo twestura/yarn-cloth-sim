@@ -19,10 +19,10 @@ class ExIntegrator : public Integrator {
   real alpha2;
   void setDamping();
   
-  std::vector<YarnConstraint*> constraints;
+  std::vector<RodConstraint*> constraints;
   Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic> modes;
 public:
-  ExIntegrator(Yarn&, std::vector<YarnEnergy*>&, std::vector<YarnConstraint*>* = nullptr);
+  ExIntegrator(Rod&, std::vector<RodEnergy*>&, std::vector<RodConstraint*>* = nullptr);
   bool integrate(Clock&);
   void draw();
 };
