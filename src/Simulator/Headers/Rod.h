@@ -25,12 +25,12 @@ private:
   std::vector<Vec3e> frozEdge;
   
   /// Calculate a 3-vector representing a rod edge for a given edge index.
-  const Vec3e inline compEdge(size_t index) const {
+  const Vec3e inline compEdge(uint32 index) const {
     return pos.segment<3>(3*(index+1)) - pos.segment<3>(3*index);
   }
   
   /// Calculate the v component of the reference frame for a given edge index.
-  const Vec3e inline compV(size_t index) const {
+  const Vec3e inline compV(uint32 index) const {
     return edge(index).cross(u[index]).normalized();
   }
   
@@ -59,27 +59,27 @@ public:
   std::vector<Vec3e> u;
   
   /// Calculate a 3-vector representing an edge of the rod (or return a cached calculation).
-  const Vec3e inline edge(size_t index) const {
+  const Vec3e inline edge(uint32 index) const {
     if (!frozen) { return compEdge(index); }
     return frozEdge[index];
   }
   
   /// Calculate the v component of the reference frame for a given edge index
   /// (or return a cached calculation).
-  const Vec3e inline v(size_t index) const {
+  const Vec3e inline v(uint32 index) const {
     if (!frozen) { return compV(index); }
     return frozV[index];
   }
   
   /// Calculate the length of a given edge.
-  const real inline edgeLength(size_t index) const { return edge(index).norm(); }
+  const real inline edgeLength(uint32 index) const { return edge(index).norm(); }
   
   /// Calculate the material frame vector m1 for a given edge.
-  const Vec3e inline m1(size_t index) const {
+  const Vec3e inline m1(uint32 index) const {
     return cos(rot(index)) * u[index] + sin(rot(index)) * v(index);
   }
   /// Calculate the material frame vector m2 at a given edge.
-  const Vec3e inline m2(size_t index) const {
+  const Vec3e inline m2(uint32 index) const {
     return -sin(rot(index)) * u[index] + cos(rot(index)) * v(index);
   }
   
@@ -141,16 +141,36 @@ public:
   real total;
 };
 
+class BoundaryCondition {
+public:
+  enum BoundaryType {
+    Free,
+    SimplySupported,
+    Clamped,
+    Cycle,
+  };
+  
+  enum BoundaryDirection {
+    Negative,
+    Positive
+  };
+  
+  BoundaryType bt;
+  BoundaryDirection bd;
+  uint32 cycleIndex;
+};
+
+
 /// A class representing a 1D elastic rod. Stores rod data that is constant throughout the
 /// simulation.
 class Rod {
 private:
   /// The number of control points of the rod.
-  size_t nCPs;
+  uint32 nCPs;
   /// The number of degrees of freedom of the rod (3*nCPs).
-  size_t ndof;
+  uint32 ndof;
   /// The number of edges of the rod (nCPs-1).
-  size_t nEdges;
+  uint32 nEdges;
   
   /// The mass configuration.
   Mass mass;
@@ -275,13 +295,13 @@ public:
   const RodSnapshot& rest() const { return restRS; }
   
   /// Get the number of control points on the rod.
-  const inline size_t numCPs() const { return nCPs; }
+  const inline uint32 numCPs() const { return nCPs; }
   /// Get the number of control points associated with 2 edges.
-  const inline size_t numIntCPs() const { return nCPs > 2 ? nCPs-2 : 0; }
+  const inline uint32 numIntCPs() const { return nCPs > 2 ? nCPs-2 : 0; }
   /// Get the number of edges in the rod.
-  const inline size_t numEdges() const { return nEdges; }
+  const inline uint32 numEdges() const { return nEdges; }
   /// Get the number of degrees of freedom of the rod.
-  const inline size_t numDOF() const { return ndof; }
+  const inline uint32 numDOF() const { return ndof; }
   
   /// Swaps the current and next rod configurations, e.g. at the end of a timestep.
   void inline swapRods() {
@@ -294,25 +314,25 @@ public:
   }
   
   /// Get the rest Voronoi length for an internal control point.
-  const inline real restVoronoiLength(size_t index) const {
+  const inline real restVoronoiLength(uint32 index) const {
     assert(index > 0 && "Voronoi length undifined at this control point.");
     return rvl[index-1];
   }
   
   /// Get the rest curvature for an internal control point.
-  const inline Vec2e& restCurvePrev(size_t index) const {
+  const inline Vec2e& restCurvePrev(uint32 index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rcp[index-1];
   }
   
   /// Get the rest curvature for an internal control point.
-  const inline Vec2e& restCurveNext(size_t index) const {
+  const inline Vec2e& restCurveNext(uint32 index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rcn[index-1];
   }
   
   /// Get the rest curvature for an internal control point.
-  const inline Vec2e& restCurve(size_t index) const {
+  const inline Vec2e& restCurve(uint32 index) const {
     assert(index > 0 && "Curvature undefined at this control point.");
     return rc[index-1];
   }

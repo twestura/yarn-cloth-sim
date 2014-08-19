@@ -80,19 +80,18 @@ class RodSoundApp : public AppNative {
   bool isRotate = false;
   
   // Sound stuff
-  constexpr static real SimulationLength = 3.0; // in seconds
-  constexpr static size_t BufferSize = (size_t)(SampleRate * SimulationLength);
+#define SimulationLength 3.0 // in seconds
+  const static uint32 BufferSize = (uint32)(SampleRate * SimulationLength);
   double sampleBuffer[BufferSize];
   
   real tAtLastDraw = 0.0;
   bool stopNow = false;
   Vec3e ear2Pos = Vec3e(28.0, 10.0, 28.0);
   double sampleBuffer2[BufferSize];
-  size_t curSample = 0;
+  uint32 curSample = 0;
   double sampleBuffer3[BufferSize];
   
-  size_t multiSample = 13;
-  
+  uint32 multiSample = 13;
   FrameExporter fe;
 };
 
@@ -525,7 +524,7 @@ void RodSoundApp::loadRodFile(std::string filename) {
   
   std::string line;
   std::getline(rodFile, line);
-  const size_t numPoints = std::stoi(line);
+  const uint32 numPoints = std::stoi(line);
   
   VecXe rodPos(3*numPoints);
   
@@ -552,8 +551,8 @@ void RodSoundApp::loadRodFile(std::string filename) {
 void RodSoundApp::loadDefaultRod(int numPoints) {
   if (r) delete r;
   
-  Vec3e start = Vec3e(0.0, 1.6069, 0.0); // Vec3e(-5.0, 4.0, 3.0);
-  Vec3e end   = Vec3e(0.0, 1.0, 0.0); // Vec3e(5.0, 3.0, -3.0);
+  Vec3e start = Vec3e(0.0, 1.9144, 0.0); // Vec3e(0.5, 1.0, 0.5);
+  Vec3e end   = Vec3e(0.0, 1.0, 0.0); // start + (Vec3e(-1.0, -1.0, -1.0).normalized() * 0.6069);
   // 1ft. = 0.3048m
   // 2ft. = 0.6069m
   // 3ft. = 0.9144m
@@ -610,7 +609,7 @@ void RodSoundApp::loadStdEnergies() {
   
   
   RodEnergy* stretch = new Stretching(*r, Explicit);
-//  energies.push_back(stretch);
+  energies.push_back(stretch);
   // OR
   //RodConstraint* length = new Length(*r);
   //constraints.push_back(length);
@@ -634,10 +633,16 @@ void RodSoundApp::loadStdEnergies() {
 //  energies.push_back(floor);
   
   
-  RodEnergy* imp1 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(1.0e-10, 0.0, 0.0), 0);
-  RodEnergy* imp2 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(-1.0e-10, 0.0, 0.0), r->numCPs()-1);
+  RodEnergy* imp1 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(1.0e-5, 0.0, 0.0), 3);
+  RodEnergy* imp2 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(-1.0e-5, 0.0, 0.0), r->numCPs()-2);
   RodEnergy* imp3 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(0.0, 0.0, 1.0e-10), r->numCPs()-1);
-  energies.push_back(imp1);  energies.push_back(imp2); // energies.push_back(imp3);
+  energies.push_back(imp1);  // energies.push_back(imp2); // energies.push_back(imp3);
+  
+  RodEnergy* spr1 = new Spring(*r, Explicit, 0, 1e5);
+  static_cast<Spring*>(spr1)->setClamp(r->rest().POS(0) + Vec3e(0.0, 0.1, 0.0));
+  RodEnergy* spr2 = new Spring(*r, Explicit, r->numCPs()-1, 1e5);
+  static_cast<Spring*>(spr2)->setClamp(r->rest().POS(r->numCPs()-1));
+  energies.push_back(spr1); energies.push_back(spr2);
   
   /*
   

@@ -22,7 +22,7 @@ public:
 };
 
 struct GridEntry {
-  size_t timestamp = 0;
+  uint32 timestamp = 0;
   std::vector<CollisionObject> cos;
 };
 
@@ -30,16 +30,16 @@ class HashGrid {
 private:
   struct Hasher {
   private:
-    const static size_t p1 = 73856093;
-    const static size_t p2 = 19349663;
-    const static size_t p3 = 83492791;
+    const static uint32 p1 = 73856093;
+    const static uint32 p2 = 19349663;
+    const static uint32 p3 = 83492791;
     static real l;
     
   public:
-    inline size_t operator()(Vec3e v) const {
-      size_t x = (size_t) (v.x() / l);
-      size_t y = (size_t) (v.y() / l);
-      size_t z = (size_t) (v.z() / l);
+    inline uint32 operator()(Vec3e v) const {
+      uint32 x = (uint32) (v.x() / l);
+      uint32 y = (uint32) (v.y() / l);
+      uint32 z = (uint32) (v.z() / l);
       return (x * p1) ^ (y * p2) ^ (z * p3);
     }
     

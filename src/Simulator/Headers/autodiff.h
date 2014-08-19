@@ -32,43 +32,6 @@
 #include "Util.h"
 
 /**
- * \brief Base class of all automatic differentiation types
- *
- * This class records the number of independent variables with respect
- * to which derivatives are computed.
- */
-struct DiffScalarBase {
-	// ======================================================================
-	/// @{ \name Configuration
-	// ======================================================================
-  
-	/**
-	 * \brief Set the independent variable count used by the automatic
-	 * differentiation layer
-	 *
-	 * This function must be called before doing any computations with
-	 * \ref DScalar1 or \ref DScalar2. The value will be recorded in
-	 * thread-local storage.
-	 */
-	static inline void setVariableCount(size_t value) {
-		m_variableCount = value;
-	}
-  
-	/// Get the variable count used by the automatic differentiation layer
-	static inline size_t getVariableCount() {
-		return m_variableCount;
-	}
-  
-	/// @}
-	// ======================================================================
-  
-	static __thread size_t m_variableCount;
-};
-
-#define DECLARE_DIFFSCALAR_BASE() \
-__thread size_t DiffScalarBase::m_variableCount = 0
-
-/**
  * \brief Automatic differentiation scalar with first-order derivatives
  *
  * This class provides an instrumented "scalar" value, which may be dependent on
@@ -91,8 +54,9 @@ __thread size_t DiffScalarBase::m_variableCount = 0
  * \sa DScalar2
  * \author Wenzel Jakob
  */
-template <typename _Scalar, typename _Gradient = Eigen::Matrix<_Scalar, Eigen::Dynamic, 1> >
-struct DScalar1 : public DiffScalarBase {
+template <typename _Scalar, uint32 variableCount,
+typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1> >
+struct DScalar1 {
 public:
 	typedef _Scalar                                         Scalar;
 	typedef _Gradient                                       Gradient;
@@ -105,16 +69,11 @@ public:
   
 	/// Create a new constant automatic differentiation scalar
 	explicit DScalar1(Scalar value = (Scalar) 0) : value(value) {
-		size_t variableCount = getVariableCount();
-		grad.resize(Eigen::NoChange_t(), variableCount);
 		grad.setZero();
 	}
   
 	/// Construct a new scalar with the specified value and one first derivative set to 1
-	DScalar1(size_t index, const Scalar &value)
-  : value(value) {
-		size_t variableCount = getVariableCount();
-		grad.resize(Eigen::NoChange_t(), variableCount);
+	DScalar1(uint32 index, const Scalar &value) : value(value) {
 		grad.setZero();
 		grad(index) = 1;
 	}
@@ -383,8 +342,8 @@ protected:
 	Gradient grad;
 };
 
-template <typename Scalar, typename VecType>
-std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, VecType> &s) {
+template <typename Scalar, uint32 variableCount, typename VecType>
+std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, variableCount, VecType> &s) {
 	out << "[" << s.getValue()
   << ", grad=" << s.getGradient().format(Eigen::IOFormat(4, 1, ", ", "; ", "", "", "[", "]"))
   << "]";
@@ -414,9 +373,9 @@ std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, VecType> &s) 
  * \sa DScalar1
  * \author Wenzel Jakob
  */
-template <typename _Scalar, size_t variableCount, typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1>,
+template <typename _Scalar, uint32 variableCount, typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1>,
 typename _Hessian = Eigen::Matrix<_Scalar, variableCount, variableCount> >
-struct DScalar2 : public DiffScalarBase {
+struct DScalar2 {
 public:
 	typedef _Scalar                                         Scalar;
 	typedef _Gradient                                       Gradient;
@@ -430,25 +389,16 @@ public:
   
 	/// Create a new constant automatic differentiation scalar
 	explicit DScalar2(Scalar value = (Scalar) 0) : value(value) {
-//		size_t variableCount = getVariableCount();
-    
-//		grad.resize(variableCount, Eigen::NoChange_t()); ///
 		grad.setZero();
-//		hess.resize(variableCount, variableCount);
 		hess.setZero();
     
     CHECK_NAN(value);
 	}
   
 	/// Construct a new scalar with the specified value and one first derivative set to 1
-	DScalar2(size_t index, const Scalar &value)
-  : value(value) {
-//		size_t variableCount = getVariableCount();
-    
-//		grad.resize(variableCount, Eigen::NoChange_t()); ///
+	DScalar2(uint32 index, const Scalar &value) : value(value) {
 		grad.setZero();
 		grad(index) = 1;
-//		hess.resize(variableCount, variableCount);
 		hess.setZero();
     
     CHECK_NAN(value);
@@ -839,7 +789,7 @@ protected:
 	Hessian hess;
 };
 
-template <typename Scalar, size_t variableCount, typename VecType, typename MatType>
+template <typename Scalar, uint32 variableCount, typename VecType, typename MatType>
 std::ostream &operator<<(std::ostream &out, const DScalar2<Scalar, variableCount, VecType, MatType> &s) {
 	out << "[" << s.getValue()
   << ", grad=" << s.getGradient().format(Eigen::IOFormat(4, 1, ", ", "; ", "", "", "[", "]"))

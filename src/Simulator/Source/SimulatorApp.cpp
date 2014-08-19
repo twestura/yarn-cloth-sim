@@ -447,7 +447,7 @@ void SimulatorApp::loadRodFile(std::string filename) {
   
   std::string line;
   std::getline(rodFile, line);
-  const size_t numPoints = std::stoi(line);
+  const uint32 numPoints = std::stoi(line);
   
   VecXe rodPos(3*numPoints);
   
