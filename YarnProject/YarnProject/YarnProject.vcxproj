@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9B4F6EF3-7FAC-4E07-82E8-5D233FD720D6}</ProjectGuid>
+    <RootNamespace>YarnProject</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\Travis\Desktop\cinder_0.8.6_vc2013\cinder_0.8.6_vc2013\boost;C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\include;C:\Users\Travis\Desktop\cinder_0.8.6_vc2013\cinder_0.8.6_vc2013\include;C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\src\Visualizer\Headers;C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\src\RodSound\Headers;C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\src\Simulator\Headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\src\Simulator\Headers\Simulator_Prefix.pch;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>cinder-$(PlatformToolset)_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\Desktop\cinder_0.8.6_vc2013\cinder_0.8.6_vc2013\lib\msw\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCPMT</IgnoreSpecificDefaultLibraries>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Simulator\Source\Constraint.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\ConstraintIntegrator.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\Energy.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\Hashgrid.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\IMEXIntegrator.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\Integrator.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\PTDetector.cpp" />
+    <ClCompile Include="..\..\src\Simulator\Source\SimulatorApp.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\include\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Simulator\Source\YarnBuilder.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\Simulator\Headers\autodiff.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Clock.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Constants.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Constraint.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\ConstraintIntegrator.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\CrossSection.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Energy.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Hashgrid.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\IMEXIntegrator.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Integrator.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Macros.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\PTDetector.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Rod.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\SimulatorApp.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\Util.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\YarnBuilder.h" />
+    <ClInclude Include="TypeDefs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\resources\CinderApp.icns" />
+    <None Include="..\..\resources\Info.plist" />
+    <None Include="..\..\resources\RodSound-Info.plist" />
+    <None Include="..\..\resources\sim-frag-tex.glsl" />
+    <None Include="..\..\resources\sim-frag.glsl" />
+    <None Include="..\..\resources\sim-vert-tex.glsl" />
+    <None Include="..\..\resources\sim-vert.glsl" />
+    <None Include="..\..\resources\Simulator-Info.plist" />
+    <None Include="..\..\resources\vis-frag.glsl" />
+    <None Include="..\..\resources\vis-vert.glsl" />
+    <None Include="..\..\src\Simulator\Headers\Simulator_Prefix.pch" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\resources\yarnTex.png" />
+    <Image Include="..\..\resources\yarnTex.tga" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

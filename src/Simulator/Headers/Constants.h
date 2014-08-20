@@ -21,17 +21,17 @@ namespace constants {
   // 3/4 inch diameter = 3/8 inch radius: 0.009525
   
   /// The default Young's modulus of the rod in N/m^2.
-  constexpr real youngsModulus = 6.89e10;
+  const real youngsModulus = 6.89e10;
   // Steel (1018): 2.05e11
   // Aluminum (6061) : 6.89e10
   
   /// The default Poisson's ratio of the rod (dimensionless).
-  constexpr real poissonRatio = 0.33;
+  const real poissonRatio = 0.33;
   // Steel (1018): 0.29
   // Aluminum (6061) : 0.33
   
   /// The default shear modulus of the rod in N/m^2.
-  constexpr real shearModulus = 2.6e10; //  youngsModulus / (2.0 * (1.0 + poissonRatio));
+  const real shearModulus = 2.6e10; //  youngsModulus / (2.0 * (1.0 + poissonRatio));
   // Steel (1018): 8.0e10
   // Aluminum (6061): 2.6e10
   

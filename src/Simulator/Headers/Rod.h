@@ -259,6 +259,7 @@ public:
       invMass.sparse.setIdentity();
     }
     
+
     cs = new CrossSection(new Ellipse(constants::radius, constants::radius,
                                        youngsModulus, shearModulus));
   }

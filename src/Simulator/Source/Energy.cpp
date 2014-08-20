@@ -7,6 +7,7 @@
 //
 
 #include "Energy.h"
+#include "Simulator_Prefix.pch"
 
 void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
   if (value.value() != 0.0) {

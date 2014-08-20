@@ -7,6 +7,7 @@
 //
 
 #include "ConstraintIntegrator.h"
+#include "Simulator_Prefix.pch"
 
 
 ConstraintIntegrator::ConstraintIntegrator(Rod& r, std::vector<RodEnergy*>& energies,

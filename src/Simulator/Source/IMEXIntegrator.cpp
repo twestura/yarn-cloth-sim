@@ -7,6 +7,7 @@
 //
 
 #include "IMEXIntegrator.h"
+#include "Simulator_Prefix.pch"
 
 DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
 DECLARE_PROFILER();
