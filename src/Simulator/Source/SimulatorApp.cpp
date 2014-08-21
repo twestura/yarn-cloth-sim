@@ -530,7 +530,8 @@ void SimulatorApp::loadStdEnergies() {
   RodEnergy* twisting = new Twisting(*r, Explicit);
   energies.push_back(twisting);
   
-  RodEnergy* gravity = new Gravity(*r, Explicit, Vec3e(0.0, -9.8, 0.0));
+  Vec3e dir(0.0, -9.8, 0.0);
+  RodEnergy* gravity = new Gravity(*r, Explicit, dir);
   energies.push_back(gravity);
   
   mouseSpring = new MouseSpring(*r, Explicit, r->numCPs()-1, 100.0);
@@ -540,9 +541,11 @@ void SimulatorApp::loadStdEnergies() {
   energies.push_back(intContact);
   
   Spring* clamp1 = new Spring(*r, Implicit, 0, 500.0);
-  clamp1->setClamp(r->rest().POS(0));
+  Vec3e pos0 = r->rest().POS(0);
+  clamp1->setClamp(pos0);
   Spring* clamp2 = new Spring(*r, Implicit, 1, 1000.0);
-  clamp2->setClamp(r->rest().POS(1));
+  Vec3e pos1 = r->rest().POS(1);
+  clamp2->setClamp(pos1);
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   
@@ -561,13 +564,16 @@ void SimulatorApp::loadStdEnergiesAndConsts() {
   energies.clear();
   constraints.clear();
   
-  RodEnergy* gravity = new Gravity(*r, Explicit, Vec3e(0.0, -9.8, 0.0));
+  Vec3e dir(0.0, -9.8, 0.0);
+  RodEnergy* gravity = new Gravity(*r, Explicit, dir);
   energies.push_back(gravity);
   
   Spring* clamp1 = new Spring(*r, Implicit, 0, 500.0);
-  clamp1->setClamp(r->rest().POS(0));
+  Vec3e pos0 = r->rest().POS(0);
+  clamp1->setClamp(pos0);
   Spring* clamp2 = new Spring(*r, Implicit, 1, 1000.0);
-  clamp2->setClamp(r->rest().POS(1));
+  Vec3e pos1 = r->rest().POS(1);
+  clamp2->setClamp(pos1);
   energies.push_back(clamp1);
   energies.push_back(clamp2);
   

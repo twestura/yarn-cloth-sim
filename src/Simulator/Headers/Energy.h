@@ -57,7 +57,8 @@ protected:
   /// The direction and magnitude of the gravity force.
   Vec3e dir;
 public:
-  Gravity(const Rod& r, EvalType et, Vec3e dir);
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  Gravity(const Rod& r, EvalType et, Vec3e& dir);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   EnergySource inline const energySource() { return External; }
 };
@@ -72,9 +73,10 @@ protected:
   /// The stiffness of the spring.
   real stiffness;
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Spring(const Rod& r, EvalType et, std::size_t index, real stiffness);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
-  void setClamp(Vec3e newClamp);
+  void setClamp(Vec3e& newClamp);
   EnergySource inline const energySource() { return External; }
 };
 
@@ -92,11 +94,12 @@ private:
   /// The stiffness of the spring.
   real stiffness;
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   MouseSpring(const Rod& r, EvalType et, std::size_t index, real stiffness);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   /// Set the 3D mouse position, and record whether the mouse is being held down. Call this every
   /// timestep.
-  void setMouse(Vec3e newMouse, bool newDown);
+  void setMouse(Vec3e& newMouse, bool newDown);
   EnergySource inline const energySource() { return External; }
 };
 
@@ -185,7 +188,8 @@ class PlaneContact : public RodEnergy {
   /// The spring stiffness.
   real stiffness;
 public:
-  PlaneContact(const Rod& r, EvalType et, Vec3e normal, Vec3e origin, real stiffness);
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  PlaneContact(const Rod& r, EvalType et, Vec3e& normal, Vec3e& origin, real stiffness);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   EnergySource inline const energySource() { return External; }
 };
@@ -201,7 +205,8 @@ class Impulse : public RodEnergy {
   /// The index of the control point on the rod this impulse affects.
   std::size_t index;
 public:
-  Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e force,
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e& force,
           std::size_t index);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   EnergySource inline const energySource() { return External; }

@@ -45,7 +45,7 @@ ExIntegrator::ExIntegrator(Rod& r, std::vector<RodEnergy*>& energies,
 bool ExIntegrator::integrate(Clock& c) {
   PROFILER_START("Integrate");
   
-  uint32 dof = r.numCPs() * 3;
+  std::size_t dof = r.numCPs() * 3;
   VecXe forces = VecXe::Zero(dof);
   
   for (RodEnergy* e : energies) {
@@ -117,7 +117,7 @@ void ExIntegrator::setDamping() {
 
 void ExIntegrator::draw() {
 #ifdef DRAW_EIGENMODE
-  uint32 eigval = 56;
+  std::size_t eigval = 56;
   VecXe mode = modes.col(eigval);
   
   ci::gl::color(0.7, 0.1, 0.6);

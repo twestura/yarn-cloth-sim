@@ -42,6 +42,8 @@ protected:
     sStretch = sArea * youngs;
   }
 public:
+  // This class contains fixed-sized Eigen structures that need to be aligned.
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   /// Returns the area of the cross section in m^2.
   inline const real area() const { return sArea; }
   /// Returns the 2D area moment of the cross-section in m^4, aligned with the reference frame.

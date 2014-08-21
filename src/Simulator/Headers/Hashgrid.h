@@ -36,6 +36,8 @@ private:
     static real l;
     
   public:
+    // FIXME: Alignment issues prevent passing a Vec3e by value, but this must be done if Vec3e is
+    // the Key type for this map.
     inline std::size_t operator()(Vec3e v) const {
       std::size_t x = (std::size_t) (v.x() / l);
       std::size_t y = (std::size_t) (v.y() / l);

@@ -8,7 +8,7 @@
 
 #include "Energy.h"
 
-void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet value) {
+void pushBackIfNotZero(std::vector<Triplet>& GradFx, Triplet& value) {
   if (value.value() != 0.0) {
     GradFx.push_back(value);
   }
@@ -24,7 +24,7 @@ void const RodEnergy::draw(real scale) {
 
 // GRAVITY
 
-Gravity::Gravity(const Rod& r, EvalType et, Vec3e dir) : RodEnergy(r, et), dir(dir) { }
+Gravity::Gravity(const Rod& r, EvalType et, Vec3e& dir) : RodEnergy(r, et), dir(dir) { }
 
 bool Gravity::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
   if (Fx) {
@@ -67,7 +67,7 @@ bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) 
   return true;
 }
 
-void Spring::setClamp(Vec3e newClamp) { clamp = newClamp; }
+void Spring::setClamp(Vec3e& newClamp) { clamp = newClamp; }
 
 
 // MOUSE SPRING
@@ -104,7 +104,7 @@ bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* off
   return true;
 }
 
-void MouseSpring::setMouse(Vec3e newMouse, bool newDown) {
+void MouseSpring::setMouse(Vec3e& newMouse, bool newDown) {
   mouse = newMouse;
   mouseDown = newDown;
   mouseSet = true;
@@ -194,7 +194,8 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
         for (int k=0; k<9; k++) {
           real val = hess(j,k);
           CHECK_NAN(val);
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, val));
+          Triplet t(3*(i-1)+j, 3*(i-1)+k, val);
+          pushBackIfNotZero(*GradFx, t);
         }
       }
     }
@@ -304,7 +305,8 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
         for (int k=0; k<9; k++) {
           real val = hess(j,k);
           CHECK_NAN(val);
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, val));
+          Triplet t(3*(i-1)+j, 3*(i-1)+k, val);
+          pushBackIfNotZero(*GradFx, t);
         }
       }
       
@@ -415,17 +417,26 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
       
       for(int j=0; j<3; j++) {
         for(int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, totalcoeff*block[0](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*i+k,     totalcoeff*block[1](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i+1)+k, totalcoeff*block[2](j, k)));
+          Triplet t(3*(i-1)+j, 3*(i-1)+k, totalcoeff*block[0](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i-1)+j, 3*i+k, totalcoeff*block[1](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i-1)+j, 3*(i+1)+k, totalcoeff*block[2](j, k));
+          pushBackIfNotZero(*GradFx, t);
           
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i-1)+k, totalcoeff*block[3](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     totalcoeff*block[4](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, totalcoeff*block[5](j, k)));
+          t = Triplet(3*i+j, 3*(i-1)+k, totalcoeff*block[3](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*i+j, 3*i+k, totalcoeff*block[4](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*i+j, 3*(i+1)+k, totalcoeff*block[5](j, k));
+          pushBackIfNotZero(*GradFx, t);
           
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i-1)+k, totalcoeff*block[6](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     totalcoeff*block[7](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, totalcoeff*block[8](j, k)));
+          t = Triplet(3*(i+1)+j, 3*(i-1)+k, totalcoeff*block[6](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*i+k, totalcoeff*block[7](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*(i+1)+k, totalcoeff*block[8](j, k));
+          pushBackIfNotZero(*GradFx, t);
         }
       }
 #endif // ifdef NOT_DEFINED
@@ -484,10 +495,14 @@ bool Stretching::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
       
       for (int j=0; j<3; j++) {
         for (int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     -stretchCoeff * myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     stretchCoeff * myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, stretchCoeff * myHess(j,k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, -stretchCoeff * myHess(j,k)));
+          Triplet t(3*i+j, 3*i+k, -stretchCoeff * myHess(j,k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*i+k, stretchCoeff * myHess(j,k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*i+j, 3*(i+1)+k, stretchCoeff * myHess(j,k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*(i+1)+k, -stretchCoeff * myHess(j,k));
+          pushBackIfNotZero(*GradFx, t);
         }
       }
     }
@@ -582,17 +597,26 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
       
       for(int j=0; j<3; j++) {
         for(int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i-1)+k, block[0](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*i+k,     block[1](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i-1)+j, 3*(i+1)+k, block[2](j, k)));
+          Triplet t(3*(i-1)+j, 3*(i-1)+k, block[0](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i-1)+j, 3*i+k, block[1](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i-1)+j, 3*(i+1)+k, block[2](j, k));
+          pushBackIfNotZero(*GradFx, t);
           
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i-1)+k, block[3](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*i+k,     block[4](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j,     3*(i+1)+k, block[5](j, k)));
+          t = Triplet(3*i+j, 3*(i-1)+k, block[3](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*i+j, 3*i+k, block[4](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*i+j, 3*(i+1)+k, block[5](j, k));
+          pushBackIfNotZero(*GradFx, t);
           
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i-1)+k, block[6](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*i+k,     block[7](j, k)));
-          pushBackIfNotZero(*GradFx, Triplet(3*(i+1)+j, 3*(i+1)+k, block[8](j, k)));
+          t = Triplet(3*(i+1)+j, 3*(i-1)+k, block[6](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*i+k,     block[7](j, k));
+          pushBackIfNotZero(*GradFx, t);
+          t = Triplet(3*(i+1)+j, 3*(i+1)+k, block[8](j, k));
+          pushBackIfNotZero(*GradFx, t);
         }
       }
     }
@@ -745,14 +769,14 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
           for (int l=0; l<4; l++) {
             for (int p=0; p<3; p++) {
               for (int q=0; q<3; q++) {
-                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(i-1+l)+q,
-                                                   coeff*hess[k][l](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(i-1+k)+p, 3*(j-1+l)+q,
-                                                   coeff*hess[k+4][l](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(i-1+l)+q,
-                                                   coeff*hess[k][l+4](p, q)));
-                pushBackIfNotZero(*GradFx, Triplet(3*(j-1+k)+p, 3*(j-1+l)+q,
-                                                   coeff*hess[k+4][l+4](p, q)));
+                Triplet t(3*(i-1+k)+p, 3*(i-1+l)+q, coeff*hess[k][l](p, q));
+                pushBackIfNotZero(*GradFx, t);
+                t = Triplet(3*(i-1+k)+p, 3*(j-1+l)+q, coeff*hess[k+4][l](p, q));
+                pushBackIfNotZero(*GradFx, t);
+                t = Triplet(3*(j-1+k)+p, 3*(i-1+l)+q, coeff*hess[k][l+4](p, q));
+                pushBackIfNotZero(*GradFx, t);
+                t = Triplet(3*(j-1+k)+p, 3*(j-1+l)+q, coeff*hess[k+4][l+4](p, q));
+                pushBackIfNotZero(*GradFx, t);
               }
             }
           }
@@ -781,7 +805,7 @@ bool IntContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offs
 
 // PLANAR CONTACT
 
-PlaneContact::PlaneContact(const Rod& r, EvalType et, Vec3e normal, Vec3e origin, real stiffness)
+PlaneContact::PlaneContact(const Rod& r, EvalType et, Vec3e& normal, Vec3e& origin, real stiffness)
 : RodEnergy(r, et), normal(normal.normalized()), origin(origin), stiffness(stiffness) { }
 
 bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -800,7 +824,8 @@ bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* of
       Mat3e hess = -stiffness * normal * normal.transpose();
       for (int j=0; j<3; j++) {
         for (int k=0; k<3; k++) {
-          pushBackIfNotZero(*GradFx, Triplet(3*i+j, 3*i+k, hess(j, k)));
+          Triplet t(3*i+j, 3*i+k, hess(j, k));
+          pushBackIfNotZero(*GradFx, t);
         }
       }
     }
@@ -811,7 +836,7 @@ bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* of
 
 // IMPULSE
 
-Impulse::Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e force,
+Impulse::Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e& force,
                  std::size_t index) : RodEnergy(r, et), c(c), start(start), end(end), force(force),
 index(index) { }
 

@@ -81,17 +81,17 @@ class RodSoundApp : public AppNative {
   
   // Sound stuff
 #define SimulationLength 3.0 // in seconds
-  const static uint32 BufferSize = (uint32)(SampleRate * SimulationLength);
+  const static std::size_t BufferSize = (std::size_t)(SampleRate * SimulationLength);
   double sampleBuffer[BufferSize];
   
   real tAtLastDraw = 0.0;
   bool stopNow = false;
   Vec3e ear2Pos = Vec3e(28.0, 10.0, 28.0);
   double sampleBuffer2[BufferSize];
-  uint32 curSample = 0;
+  std::size_t curSample = 0;
   double sampleBuffer3[BufferSize];
   
-  uint32 multiSample = 13;
+  std::size_t multiSample = 13;
   FrameExporter fe;
 };
 
@@ -524,7 +524,7 @@ void RodSoundApp::loadRodFile(std::string filename) {
   
   std::string line;
   std::getline(rodFile, line);
-  const uint32 numPoints = std::stoi(line);
+  const std::size_t numPoints = std::stoi(line);
   
   VecXe rodPos(3*numPoints);
   
@@ -623,25 +623,33 @@ void RodSoundApp::loadStdEnergies() {
   RodEnergy* twisting = new Twisting(*r, Explicit);
 //  energies.push_back(twisting);
   
-  RodEnergy* gravity = new Gravity(*r, Explicit, Vec3e(0.0, -9.8, 0.0));
+  Vec3e dir(0.0, -9.8, 0.0);
+  RodEnergy* gravity = new Gravity(*r, Explicit, dir);
 //  energies.push_back(gravity);
   
   mouseSpring = new MouseSpring(*r, Explicit, r->numCPs()-1, 100.0);
   energies.push_back(mouseSpring);
   
-  RodEnergy* floor = new PlaneContact(*r, Explicit, Vec3e(0.0, 1.0, 0.0), Vec3e::Zero(), 5000.0);
+  Vec3e floorNormal(0.0, 1.0, 0.0);
+  Vec3e floorOrigin = Vec3e::Zero();
+  RodEnergy* floor = new PlaneContact(*r, Explicit, floorNormal, floorOrigin, 5000.0);
 //  energies.push_back(floor);
   
   
-  RodEnergy* imp1 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(1.0e-5, 0.0, 0.0), 3);
-  RodEnergy* imp2 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(-1.0e-5, 0.0, 0.0), r->numCPs()-2);
-  RodEnergy* imp3 = new Impulse(*r, Explicit, c, 0.2, 0.201, Vec3e(0.0, 0.0, 1.0e-10), r->numCPs()-1);
+  Vec3e imp1dir(1.0e-5, 0.0, 0.0);
+  Vec3e imp2dir(-1.0e-5, 0.0, 0.0);
+  Vec3e imp3dir(0.0, 0.0, 1.0e-10);
+  RodEnergy* imp1 = new Impulse(*r, Explicit, c, 0.2, 0.201, imp1dir, 3);
+  RodEnergy* imp2 = new Impulse(*r, Explicit, c, 0.2, 0.201, imp2dir, r->numCPs()-2);
+  RodEnergy* imp3 = new Impulse(*r, Explicit, c, 0.2, 0.201, imp3dir, r->numCPs()-1);
   energies.push_back(imp1);  // energies.push_back(imp2); // energies.push_back(imp3);
   
   RodEnergy* spr1 = new Spring(*r, Explicit, 0, 1e5);
-  static_cast<Spring*>(spr1)->setClamp(r->rest().POS(0) + Vec3e(0.0, 0.1, 0.0));
+  Vec3e spr1clamp = r->rest().POS(0) + Vec3e(0.0, 0.1, 0.0);
+  static_cast<Spring*>(spr1)->setClamp(spr1clamp);
   RodEnergy* spr2 = new Spring(*r, Explicit, r->numCPs()-1, 1e5);
-  static_cast<Spring*>(spr2)->setClamp(r->rest().POS(r->numCPs()-1));
+  Vec3e spr2clamp = r->rest().POS(r->numCPs()-1);
+  static_cast<Spring*>(spr2)->setClamp(spr2clamp);
   energies.push_back(spr1); energies.push_back(spr2);
   
   /*
