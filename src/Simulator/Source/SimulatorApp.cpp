@@ -27,8 +27,6 @@
 #include "ConstraintIntegrator.h"
 #include "YarnBuilder.h"
 
-#include "TypeDefs.h"
-
 using namespace ci;
 using namespace ci::app;
 
@@ -476,7 +474,7 @@ void SimulatorApp::loadRodFile(std::string filename) {
     std::getline(rodFile, line);
     u(i) = std::stof(line);
   }
-  //assert((rodPos.segment<3>(3) - rodPos.segment<3>(0)).dot(u) < 5.0e-6);
+  assert((rodPos.segment<3>(3) - rodPos.segment<3>(0)).dot(u) < 5.0e-6);
   
   rodFile.close();
   if (r) delete r;

@@ -7,7 +7,6 @@
 //
 
 #include "Integrator.h"
-#include "Simulator_Prefix.pch"
 
 Integrator::Integrator(Rod& r, std::vector<RodEnergy*>& energies) : r(r), energies(energies) { }
 

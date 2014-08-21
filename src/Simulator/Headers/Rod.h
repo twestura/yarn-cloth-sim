@@ -279,8 +279,8 @@ public:
       invMass.sparse.setIdentity();
     }
     
-	Shape* s = new EllipsePleaseWork(constants::radius, constants::radius, youngsModulus, shearModulus);
-    cs = new CrossSection(s);
+    cs = new CrossSection(new cs::Ellipse(constants::radius, constants::radius,
+                                          youngsModulus, shearModulus));
   }
   
   // WARNING: The following methods are safe as long as curRS and nextRS are always allocated upon

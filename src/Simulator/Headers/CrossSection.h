@@ -72,58 +72,60 @@ public:
   virtual ~Shape() { }
 };
 
-/// An elliptic cross section.
-class EllipsePleaseWork : public Shape {
-protected:
-  /// The radius of the ellipse in the u direction.
-  real r1;
-  /// The radius of the ellipse in the v direction.
-  real r2;
-public:
-	EllipsePleaseWork(real r1, real r2, real youngs, real shear) : r1(r1), r2(r2) {
-    sArea = constants::pi * r1 * r2;
-    sAreaMoment << constants::pi / 4.0 * r1 * r2 * r2 * r2, 0.0,
-                   0.0, constants::pi / 4.0 * r1 * r1 * r1 * r2;
+namespace cs {
+  /// An elliptic cross section.
+  class Ellipse : public Shape {
+  protected:
+    /// The radius of the ellipse in the u direction.
+    real r1;
+    /// The radius of the ellipse in the v direction.
+    real r2;
+  public:
+    Ellipse(real r1, real r2, real youngs, real shear) : r1(r1), r2(r2) {
+      sArea = constants::pi * r1 * r2;
+      sAreaMoment << constants::pi / 4.0 * r1 * r2 * r2 * r2, 0.0,
+      0.0, constants::pi / 4.0 * r1 * r1 * r1 * r2;
+      
+      sRadius = r1 + r2 / 2.0;
+      
+      setStiffnesses(youngs, shear);
+    }
     
-    sRadius = r1 + r2 / 2.0;
-    
-    setStiffnesses(youngs, shear);
-  }
+    // FIXME: May need a better approximation for long, thin ellipses.
+    const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
+      // Approximate as circle
+      return (constants::rhoAir * sRadius * sRadius * sRadius /
+              (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
+    }
+  };
   
-  // FIXME: May need a better approximation for long, thin ellipses.
-  const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
-    // Approximate as circle
-    return (constants::rhoAir * sRadius * sRadius * sRadius /
-            (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
-  }
-};
-
-/// A rectangular cross section.
-class Rectangle : public Shape {
-protected:
-  // FIXME
-  /// The length of the side orthogonal to the u direction
-  real s1;
-  /// The length of the side orthogonal to the v direction
-  real s2;
-public:
-  Rectangle(real s1, real s2, real youngs, real shear) : s1(s1), s2(s2) {
-    sArea = s1 * s2;
-    sAreaMoment << s1 * s2 * s2 * s2 / 12.0, 0.0,
-                   0.0, s1 * s1 * s1 * s2 / 12.0;
+  /// A rectangular cross section.
+  class Rectangle : public Shape {
+  protected:
+    // FIXME
+    /// The length of the side orthogonal to the u direction
+    real s1;
+    /// The length of the side orthogonal to the v direction
+    real s2;
+  public:
+    Rectangle(real s1, real s2, real youngs, real shear) : s1(s1), s2(s2) {
+      sArea = s1 * s2;
+      sAreaMoment << s1 * s2 * s2 * s2 / 12.0, 0.0,
+      0.0, s1 * s1 * s1 * s2 / 12.0;
+      
+      sRadius = s1 + s2 / 4.0;
+      
+      setStiffnesses(youngs, shear);
+    }
     
-    sRadius = s1 + s2 / 4.0;
-    
-    setStiffnesses(youngs, shear);
-  }
-  
-  // FIXME: there should be a better approximation for this
-  const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
-    // Approximate as circle
-    return (constants::rhoAir * sRadius * sRadius * sRadius /
-            (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
-  }
-};
+    // FIXME: there should be a better approximation for this
+    const real calcSample(const Vec3e& ear, const Vec3e& jerk) const {
+      // Approximate as circle
+      return (constants::rhoAir * sRadius * sRadius * sRadius /
+              (2.0 * constants::cAir * ear.dot(ear))) * ear.dot(jerk);
+    }
+  };
+}
 
 /// A class representing the cross section of either the entire rod or at a single point on the rod.
 class CrossSection {

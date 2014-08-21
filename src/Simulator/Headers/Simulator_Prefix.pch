@@ -28,8 +28,8 @@
 #include "cinder/Vector.h"
 #include "cinder/Quaternion.h"
 
-#include <Eigen/dense>
-#include <Eigen/sparse>
+#include "Eigen/dense"
+#include "Eigen/sparse"
 
 // Global typedefs
 typedef double real;

@@ -7,7 +7,6 @@
 //
 
 #include "Constraint.h"
-#include "Simulator_Prefix.pch"
 
 // C(p1, p2) = |p1 - p2| - |\bar{p1} - \bar{p2}|
 /// A constraint enforcing that the distance between control points does not change.
