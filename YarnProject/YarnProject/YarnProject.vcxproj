@@ -87,6 +87,7 @@
     <ClCompile Include="..\..\src\Simulator\Source\SimulatorApp.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\include\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="..\..\src\Simulator\Source\XMLParser.cpp" />
     <ClCompile Include="..\..\src\Simulator\Source\YarnBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -105,6 +106,7 @@
     <ClInclude Include="..\..\src\Simulator\Headers\Rod.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\SimulatorApp.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\Util.h" />
+    <ClInclude Include="..\..\src\Simulator\Headers\XMLParser.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\YarnBuilder.h" />
     <ClInclude Include="TypeDefs.h" />
   </ItemGroup>

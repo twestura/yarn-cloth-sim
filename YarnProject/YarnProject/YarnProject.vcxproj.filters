@@ -39,6 +39,9 @@
     <ClCompile Include="..\..\src\Simulator\Source\YarnBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\Simulator\Source\XMLParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\Simulator\Headers\autodiff.h">
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Simulator\Headers\XMLParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
