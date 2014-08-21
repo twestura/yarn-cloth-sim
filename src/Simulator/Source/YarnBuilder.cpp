@@ -8,6 +8,7 @@
 
 #include "YarnBuilder.h"
 #include "Eigen/Dense"
+#include "cinder/app/AppNative.h"
 #include <fstream>
 //#include "Simulator_Prefix.pch"
 

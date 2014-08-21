@@ -16,6 +16,7 @@
 #include "cinder/TriMesh.h"
 #include "cinder/Sphere.h"
 #include "cinder/Camera.h"
+#include "cinder/ImageIo.h"
 
 #include "Resources.h"
 #include "Util.h"
