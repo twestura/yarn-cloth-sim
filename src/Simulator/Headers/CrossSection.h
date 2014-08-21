@@ -73,14 +73,14 @@ public:
 };
 
 /// An elliptic cross section.
-class Ellipse : public Shape {
+class EllipsePleaseWork : public Shape {
 protected:
   /// The radius of the ellipse in the u direction.
   real r1;
   /// The radius of the ellipse in the v direction.
   real r2;
 public:
-  Ellipse(real r1, real r2, real youngs, real shear) : r1(r1), r2(r2) {
+	EllipsePleaseWork(real r1, real r2, real youngs, real shear) : r1(r1), r2(r2) {
     sArea = constants::pi * r1 * r2;
     sAreaMoment << constants::pi / 4.0 * r1 * r2 * r2 * r2, 0.0,
                    0.0, constants::pi / 4.0 * r1 * r1 * r1 * r2;
@@ -133,7 +133,7 @@ protected:
 public:
   CrossSection(Shape* constShape) : constShape(constShape) { }
   
-  const Shape& operator[](uint32 i) const {
+  const Shape& operator[](std::size_t i) const {
     if (constShape) { return *constShape; }
     return *(varShape[i]);
   }

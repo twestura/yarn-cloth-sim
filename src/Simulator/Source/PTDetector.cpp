@@ -7,3 +7,4 @@
 //
 
 #include "PTDetector.h"
+#include "Simulator_Prefix.pch"

@@ -23,7 +23,7 @@ private:
   /// Timestep of the model for the next step.
   real h;
   /// Number of times the clock has been incremented.
-  uint32 ticks = 0;
+  std::size_t ticks = 0;
   
 public:
   Clock(real defaultTimestep = constants::INITIAL_TIMESTEP) : defaultTimestep(defaultTimestep),
@@ -36,7 +36,7 @@ public:
   /// Get the size of the next timestep.
   const real inline timestep() const { return h; }
   /// Get the number of times the clock has been incremented.
-  const uint32 inline getTicks() const { return ticks; }
+  const std::size_t inline getTicks() const { return ticks; }
 
   /// Suggest the size of the next timestep. If larger than the current timestep, the request
   /// will be ignored. The size of the timestep will not decrease beyond the minimum timestep.

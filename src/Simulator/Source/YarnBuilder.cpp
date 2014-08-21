@@ -8,7 +8,9 @@
 
 #include "YarnBuilder.h"
 #include "Eigen/Dense"
+#include "cinder/app/AppNative.h"
 #include <fstream>
+//#include "Simulator_Prefix.pch"
 
 void YarnBuilder::buildBraid() {
   const real height = 20.0;

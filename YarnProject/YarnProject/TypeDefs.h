@@ -21,6 +21,7 @@
 #if defined( __cplusplus )
 #include "cinder/Cinder.h"
 
+#include "cinder/app/AppBasic.h"
 #include "cinder/gl/gl.h"
 
 #include "cinder/CinderMath.h"
@@ -28,8 +29,8 @@
 #include "cinder/Vector.h"
 #include "cinder/Quaternion.h"
 
-#include <Eigen/dense>
-#include <Eigen/sparse>
+#include "Eigen/dense"
+#include "Eigen/sparse"
 
 // Global typedefs
 typedef double real;

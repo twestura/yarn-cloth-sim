@@ -16,6 +16,7 @@
 #include "cinder/TriMesh.h"
 #include "cinder/Sphere.h"
 #include "cinder/Camera.h"
+#include "cinder/ImageIo.h"
 
 #include "Resources.h"
 #include "Util.h"
@@ -25,6 +26,8 @@
 #include "IMEXIntegrator.h"
 #include "ConstraintIntegrator.h"
 #include "YarnBuilder.h"
+
+#include "TypeDefs.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -81,6 +84,8 @@ class SimulatorApp : public AppNative {
   bool isMouseDown = false;
   Vec3c mousePosition;
   bool isRotate = false;
+
+  bool isSetup = false;
 };
 
 void SimulatorApp::setup()
@@ -157,6 +162,8 @@ void SimulatorApp::setup()
 #else
   loadStdEnergiesAndConsts();
 #endif // ifndef CONST_INTEGRATOR
+
+  isSetup = true;
 }
 
 void SimulatorApp::mouseDown(MouseEvent event)
@@ -282,7 +289,7 @@ void SimulatorApp::resize() {
 
 void SimulatorApp::update()
 {
-  if (!running) return;
+  if (!running || !isSetup) return;
   
   Vec3e mp;
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
@@ -348,6 +355,11 @@ void SimulatorApp::update()
 }
 
 void SimulatorApp::draw() {
+
+	if (!isSetup) {
+		return;
+	}
+
 	// Clear out the window with grey
 	gl::clear(Color(0.45, 0.45, 0.5));
   
@@ -447,7 +459,7 @@ void SimulatorApp::loadRodFile(std::string filename) {
   
   std::string line;
   std::getline(rodFile, line);
-  const uint32 numPoints = std::stoi(line);
+  const std::size_t numPoints = std::stoi(line);
   
   VecXe rodPos(3*numPoints);
   
@@ -464,7 +476,7 @@ void SimulatorApp::loadRodFile(std::string filename) {
     std::getline(rodFile, line);
     u(i) = std::stof(line);
   }
-  assert((rodPos.segment<3>(3) - rodPos.segment<3>(0)).dot(u) < 5.0e-6);
+  //assert((rodPos.segment<3>(3) - rodPos.segment<3>(0)).dot(u) < 5.0e-6);
   
   rodFile.close();
   if (r) delete r;
