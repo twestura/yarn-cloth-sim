@@ -47,7 +47,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
     
     // TODO: Figure out a thread-safe way to fill this
     // TODO: Query energies to figure out a good estimate
-    uint32 numTriplets = 9*9*r.numIntCPs();
+    std::size_t numTriplets = 9*9*r.numIntCPs();
     
     // Calculate Fx contribution from Explicit energies
     // (these do not change between Newton iterations)

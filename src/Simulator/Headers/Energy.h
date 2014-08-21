@@ -13,7 +13,6 @@
 #include "Rod.h"
 #include "Constants.h"
 #include "Clock.h"
-#include "PTDetector.h"
 
 /// How the force should be evaluated.
 enum EvalType {
@@ -69,11 +68,11 @@ protected:
   /// The position of the spring clamp (the fixed end of the spring).
   Vec3e clamp;
   /// The index of the point on the rod to which the spring is attached.
-  uint32 index;
+  std::size_t index;
   /// The stiffness of the spring.
   real stiffness;
 public:
-  Spring(const Rod& r, EvalType et, uint32 index, real stiffness);
+  Spring(const Rod& r, EvalType et, std::size_t index, real stiffness);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   void setClamp(Vec3e newClamp);
   EnergySource inline const energySource() { return External; }
@@ -89,11 +88,11 @@ private:
   /// The 3D position of the mouse.
   Vec3e mouse;
   /// The index of the point on the rod which is affected by the mouse spring.
-  uint32 index;
+  std::size_t index;
   /// The stiffness of the spring.
   real stiffness;
 public:
-  MouseSpring(const Rod& r, EvalType et, uint32 index, real stiffness);
+  MouseSpring(const Rod& r, EvalType et, std::size_t index, real stiffness);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   /// Set the 3D mouse position, and record whether the mouse is being held down. Call this every
   /// timestep.
@@ -200,10 +199,10 @@ class Impulse : public RodEnergy {
   /// The direction and magnitude of the impulse (direction is constant over the duration).
   Vec3e force;
   /// The index of the control point on the rod this impulse affects.
-  uint32 index;
+  std::size_t index;
 public:
   Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e force,
-          uint32 index);
+          std::size_t index);
   bool eval(VecXe* Fx, std::vector<Triplet>* GradFx = nullptr, const VecXe* offset = nullptr);
   EnergySource inline const energySource() { return External; }
 };

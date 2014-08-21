@@ -54,7 +54,7 @@
  * \sa DScalar2
  * \author Wenzel Jakob
  */
-template <typename _Scalar, uint32 variableCount,
+template <typename _Scalar, std::size_t variableCount,
 typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1> >
 struct DScalar1 {
 public:
@@ -73,7 +73,7 @@ public:
 	}
   
 	/// Construct a new scalar with the specified value and one first derivative set to 1
-	DScalar1(uint32 index, const Scalar &value) : value(value) {
+	DScalar1(std::size_t index, const Scalar &value) : value(value) {
 		grad.setZero();
 		grad(index) = 1;
 	}
@@ -342,7 +342,7 @@ protected:
 	Gradient grad;
 };
 
-template <typename Scalar, uint32 variableCount, typename VecType>
+template <typename Scalar, std::size_t variableCount, typename VecType>
 std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, variableCount, VecType> &s) {
 	out << "[" << s.getValue()
   << ", grad=" << s.getGradient().format(Eigen::IOFormat(4, 1, ", ", "; ", "", "", "[", "]"))
@@ -373,7 +373,7 @@ std::ostream &operator<<(std::ostream &out, const DScalar1<Scalar, variableCount
  * \sa DScalar1
  * \author Wenzel Jakob
  */
-template <typename _Scalar, uint32 variableCount, typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1>,
+template <typename _Scalar, std::size_t variableCount, typename _Gradient = Eigen::Matrix<_Scalar, variableCount, 1>,
 typename _Hessian = Eigen::Matrix<_Scalar, variableCount, variableCount> >
 struct DScalar2 {
 public:
@@ -396,7 +396,7 @@ public:
 	}
   
 	/// Construct a new scalar with the specified value and one first derivative set to 1
-	DScalar2(uint32 index, const Scalar &value) : value(value) {
+	DScalar2(std::size_t index, const Scalar &value) : value(value) {
 		grad.setZero();
 		grad(index) = 1;
 		hess.setZero();
@@ -789,7 +789,7 @@ protected:
 	Hessian hess;
 };
 
-template <typename Scalar, uint32 variableCount, typename VecType, typename MatType>
+template <typename Scalar, std::size_t variableCount, typename VecType, typename MatType>
 std::ostream &operator<<(std::ostream &out, const DScalar2<Scalar, variableCount, VecType, MatType> &s) {
 	out << "[" << s.getValue()
   << ", grad=" << s.getGradient().format(Eigen::IOFormat(4, 1, ", ", "; ", "", "", "[", "]"))

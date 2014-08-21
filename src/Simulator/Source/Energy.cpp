@@ -38,7 +38,7 @@ bool Gravity::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 
 // SPRING
 
-Spring::Spring(const Rod& r, EvalType et, uint32 index, real stiffness) :
+Spring::Spring(const Rod& r, EvalType et, std::size_t index, real stiffness) :
   RodEnergy(r, et), index(index), stiffness(stiffness) {}
 
 bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -73,7 +73,7 @@ void Spring::setClamp(Vec3e newClamp) { clamp = newClamp; }
 
 // MOUSE SPRING
 
-MouseSpring::MouseSpring(const Rod& r, EvalType et, uint32 index, real stiffness) :
+MouseSpring::MouseSpring(const Rod& r, EvalType et, std::size_t index, real stiffness) :
   RodEnergy(r, et), index(index), stiffness(stiffness) {}
 
 bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -813,7 +813,7 @@ bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* of
 // IMPULSE
 
 Impulse::Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e force,
-                 uint32 index) : RodEnergy(r, et), c(c), start(start), end(end), force(force),
+                 std::size_t index) : RodEnergy(r, et), c(c), start(start), end(end), force(force),
 index(index) { }
 
 bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -826,7 +826,7 @@ bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 }
 
 FEMBending::FEMBending(const Rod& r, EvalType et) : RodEnergy(r, et) {
-  uint32 n = r.numCPs();
+  std::size_t n = r.numCPs();
   real l = (r.rest().POS(0) - r.rest().POS(n-1)).norm();
   real h = (r.rest().POS(0) - r.rest().POS(1)).norm();
   real modmu2 = r.youngsModulus * r.getCS()[0].areaMoment()(0, 0) / (n * l * l * l * h * h * h * h);
