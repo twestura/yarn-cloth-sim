@@ -84,6 +84,8 @@ class SimulatorApp : public AppNative {
   bool isMouseDown = false;
   Vec3c mousePosition;
   bool isRotate = false;
+
+  bool isSetup = false;
 };
 
 void SimulatorApp::setup()
@@ -160,6 +162,8 @@ void SimulatorApp::setup()
 #else
   loadStdEnergiesAndConsts();
 #endif // ifndef CONST_INTEGRATOR
+
+  isSetup = true;
 }
 
 void SimulatorApp::mouseDown(MouseEvent event)
@@ -285,7 +289,7 @@ void SimulatorApp::resize() {
 
 void SimulatorApp::update()
 {
-  if (!running) return;
+  if (!running || !isSetup) return;
   
   Vec3e mp;
   if (isMouseDown) mp << mousePosition.x, mousePosition.y, mousePosition.z;
@@ -351,6 +355,11 @@ void SimulatorApp::update()
 }
 
 void SimulatorApp::draw() {
+
+	if (!isSetup) {
+		return;
+	}
+
 	// Clear out the window with grey
 	gl::clear(Color(0.45, 0.45, 0.5));
   

@@ -1,3 +1,9 @@
 #include "../include/Resources.h"
 
-1	ICON	"..\\resources\\cinder_app_icon.ico"
+RES_VIS_VERT_GLSL
+RES_VIS_FRAG_GLSL
+RES_SIM_VERT_GLSL
+RES_SIM_FRAG_GLSL
+RES_SIM_VERT_TEX_GLSL
+RES_SIM_FRAG_TEX_GLSL
+RES_SIM_YARN_TEX
