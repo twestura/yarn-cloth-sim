@@ -89,6 +89,9 @@
     <ClInclude Include="TypeDefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\Resources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\Simulator\Headers\Simulator_Prefix.pch" />
@@ -130,5 +133,13 @@
     <Image Include="..\..\resources\yarnTex.tga">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\..\resources\cinder_app_icon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resources\Resources.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

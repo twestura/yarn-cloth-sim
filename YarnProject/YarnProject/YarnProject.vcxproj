@@ -59,6 +59,9 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim;C:\Users\Travis\Desktop\Graphics\yarn-cloth-sim\resources;..\include;..\..\..\cinder_0.8.6_vc2013\cinder_0.8.6_vc2013\include;C:\Users\Travis\Desktop\cinder_0.8.6_vc2013\cinder_0.8.6_vc2013\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -87,6 +90,7 @@
     <ClCompile Include="..\..\src\Simulator\Source\YarnBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\Resources.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\autodiff.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\Clock.h" />
     <ClInclude Include="..\..\src\Simulator\Headers\Constants.h" />
@@ -118,8 +122,12 @@
     <None Include="..\..\src\Simulator\Headers\Simulator_Prefix.pch" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\resources\cinder_app_icon.ico" />
     <Image Include="..\..\resources\yarnTex.png" />
     <Image Include="..\..\resources\yarnTex.tga" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resources\Resources.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
