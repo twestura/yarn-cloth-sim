@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-const size_t SampleRate = 44100;
+const uint32 SampleRate = 44100;
 
 template <typename T>
 static uint16_t inline toSample(const T val, const T max) {
@@ -41,7 +41,7 @@ template <typename SampleType>
 void writeWAVData(
                   char const* outFile,
                   SampleType* buf,
-                  size_t bufSize,
+                  uint32 bufSize,
                   int sampleRate,
                   short channels)
 {

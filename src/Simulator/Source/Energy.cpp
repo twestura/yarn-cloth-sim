@@ -38,7 +38,7 @@ bool Gravity::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 
 // SPRING
 
-Spring::Spring(const Rod& r, EvalType et, size_t index, real stiffness) :
+Spring::Spring(const Rod& r, EvalType et, uint32 index, real stiffness) :
   RodEnergy(r, et), index(index), stiffness(stiffness) {}
 
 bool Spring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -73,7 +73,7 @@ void Spring::setClamp(Vec3e newClamp) { clamp = newClamp; }
 
 // MOUSE SPRING
 
-MouseSpring::MouseSpring(const Rod& r, EvalType et, size_t index, real stiffness) :
+MouseSpring::MouseSpring(const Rod& r, EvalType et, uint32 index, real stiffness) :
   RodEnergy(r, et), index(index), stiffness(stiffness) {}
 
 bool MouseSpring::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -120,7 +120,7 @@ bool Bending::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
   PROFILER_START("Bend Eval");
   
 #ifdef DRAW_BENDING
-  VecXe forces = VecXe::Zero(3*r.numCPs());
+  VecXe forces = VecXe::Zero(r.numDOF());
 #endif //ifdef DRAW_BENDING
   
   for (int i=1; i<r.numCPs()-1; i++) {
@@ -602,9 +602,9 @@ bool Twisting::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset
 #ifdef DRAW_TWIST
   for (int i=0; i<r.numCPs(); i++) {
     Vec3c delta = EtoC(twist.segment<3>(3*i));
-    const Rod* yp = &y;
-    if (delta.length() > 0.0) drawFuncs.push_back([i, delta, yp] (real scale) {
-      Vec3c s = EtoC(yp->cur().POS(i));
+    const Rod* rp = &r;
+    if (delta.length() > 0.0) drawFuncs.push_back([i, delta, rp] (real scale) {
+      Vec3c s = EtoC(rp->cur().POS(i));
       Vec3c e = s + delta * scale;
       ci::gl::color(ci::Color(1.0, 0.5, 0.5));
       ci::gl::drawLine(s, e);
@@ -813,7 +813,7 @@ bool PlaneContact::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* of
 // IMPULSE
 
 Impulse::Impulse(const Rod& r, EvalType et, const Clock& c, real start, real end, Vec3e force,
-                 size_t index) : RodEnergy(r, et), c(c), start(start), end(end), force(force),
+                 uint32 index) : RodEnergy(r, et), c(c), start(start), end(end), force(force),
 index(index) { }
 
 bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset) {
@@ -826,7 +826,7 @@ bool Impulse::eval(VecXe* Fx, std::vector<Triplet>* GradFx, const VecXe* offset)
 }
 
 FEMBending::FEMBending(const Rod& r, EvalType et) : RodEnergy(r, et) {
-  size_t n = r.numCPs();
+  uint32 n = r.numCPs();
   real l = (r.rest().POS(0) - r.rest().POS(n-1)).norm();
   real h = (r.rest().POS(0) - r.rest().POS(1)).norm();
   real modmu2 = r.youngsModulus * r.getCS()[0].areaMoment()(0, 0) / (n * l * l * l * h * h * h * h);

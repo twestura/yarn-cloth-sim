@@ -19,6 +19,7 @@ namespace constants {
   // Mascarenhas test: 0.00955
   // 1/2 inch diameter = 1/4 inch radius: 0.00635
   // 3/4 inch diameter = 3/8 inch radius: 0.009525
+  // High E guitar string: 0.00015875
   
   /// The default Young's modulus of the rod in N/m^2.
   const real youngsModulus = 6.89e10;

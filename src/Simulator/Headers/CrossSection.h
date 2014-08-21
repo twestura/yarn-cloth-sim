@@ -133,7 +133,7 @@ protected:
 public:
   CrossSection(Shape* constShape) : constShape(constShape) { }
   
-  const Shape& operator[](size_t i) const {
+  const Shape& operator[](uint32 i) const {
     if (constShape) { return *constShape; }
     return *(varShape[i]);
   }

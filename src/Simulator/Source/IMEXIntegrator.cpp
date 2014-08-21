@@ -9,8 +9,7 @@
 #include "IMEXIntegrator.h"
 #include "Simulator_Prefix.pch"
 
-DECLARE_DIFFSCALAR_BASE(); // Initialization of static struct
-DECLARE_PROFILER();
+DECLARE_PROFILER(); // Initialization of static struct
 
 IMEXIntegrator::IMEXIntegrator(std::vector<RodEnergy*>& energies, Rod& r) :
 Integrator(r, energies) {
@@ -48,7 +47,7 @@ bool IMEXIntegrator::integrate(Clock& c) {
     
     // TODO: Figure out a thread-safe way to fill this
     // TODO: Query energies to figure out a good estimate
-    size_t numTriplets = 9*9*r.numIntCPs();
+    uint32 numTriplets = 9*9*r.numIntCPs();
     
     // Calculate Fx contribution from Explicit energies
     // (these do not change between Newton iterations)

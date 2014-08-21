@@ -15,7 +15,7 @@
 class FrameExporter {
   real fr;
   real lastFrame;
-  size_t frameCount = 0;
+  uint32 frameCount = 0;
 public:
   FrameExporter(real framerate = 1.0/60.0) : fr(framerate), lastFrame(-fr) { }
   

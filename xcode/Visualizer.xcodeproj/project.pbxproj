@@ -101,7 +101,6 @@
 		7101FBBF18595AA9008553D8 /* PosFileConv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PosFileConv.cpp; path = ../src/Visualizer/Source/PosFileConv.cpp; sourceTree = "<group>"; };
 		7101FBC018595AA9008553D8 /* PosFileConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PosFileConv.h; path = ../src/Visualizer/Headers/PosFileConv.h; sourceTree = "<group>"; };
 		71197EED190ABB18003D1E8D /* PTDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTDetector.cpp; sourceTree = "<group>"; };
-		71197EEE190ABB18003D1E8D /* PTDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PTDetector.h; path = Headers/PTDetector.h; sourceTree = "<group>"; };
 		71197EF11911758B003D1E8D /* sim-vert.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-vert.glsl"; path = "../resources/sim-vert.glsl"; sourceTree = "<group>"; };
 		71197EF4191175E6003D1E8D /* sim-frag.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "sim-frag.glsl"; path = "../resources/sim-frag.glsl"; sourceTree = "<group>"; };
 		711E97E7183DE8DF00BAFB0B /* InfoPanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = InfoPanel.cpp; path = ../src/Visualizer/Source/InfoPanel.cpp; sourceTree = "<group>"; };
@@ -362,7 +361,6 @@
 				719B0C4F18BBDD7100FB1633 /* IMEXIntegrator.h */,
 				713EE1F91947792A0010304B /* Integrator.h */,
 				71CA57001940E6930076A3F2 /* Macros.h */,
-				71197EEE190ABB18003D1E8D /* PTDetector.h */,
 				71CAE65218C78CB7002C9FD3 /* Simulator_Prefix.pch */,
 				71CAE65418C78D7E002C9FD3 /* SimulatorApp.h */,
 				719B0C5318BBEB9400FB1633 /* Util.h */,
