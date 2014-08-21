@@ -51,7 +51,7 @@ const Vec3e static inline CtoE(const Vec3c& v) {
 }
 
 /// Returns a parallel transported vector given a previous vector and its orthogonal u component.
-Vec3e static parallelTransport(const Vec3e vecPrev, const Vec3e vecCur, const Vec3e uPrev) {
+Vec3e static parallelTransport(const Vec3e& vecPrev, const Vec3e& vecCur, const Vec3e& uPrev) {
   Vec3e cross = vecPrev.cross(vecCur).normalized();
   real cosT = vecCur.dot(vecPrev)/(vecCur.norm() * vecPrev.norm());
   if (!cross.hasNaN() && cosT < 1.0 && cosT >= -1.0) {

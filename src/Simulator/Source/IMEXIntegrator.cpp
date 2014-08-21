@@ -7,7 +7,6 @@
 //
 
 #include "IMEXIntegrator.h"
-#include "Simulator_Prefix.pch"
 
 DECLARE_PROFILER(); // Initialization of static struct
 

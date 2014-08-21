@@ -25,16 +25,16 @@ static inline Vec2e circle_normal(real t) {
 
 static Mat2e solveBEM(real r) {
   /// This is the number of samples to use on the cross section we're solving for.
-  uint32 n_N = 100;
+  std::size_t n_N = 100;
   
   /// This is a real factor that determines the radius (and sampling rate) of the outer circle.
   /// At infinity, this is most accurate: The Krichoff vector has a 1/alpha falloff, which we
   /// approximate as 0 at the outer boundary.
-  uint32 alpha = 40;
+  std::size_t alpha = 40;
   
-  uint32 n_D = n_N * alpha;
+  std::size_t n_D = n_N * alpha;
   
-  uint32 n = n_N + n_D;
+  std::size_t n = n_N + n_D;
   
   Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic> C(n, n);
   Eigen::Matrix<real, Eigen::Dynamic, Eigen::Dynamic> A_N(n, n_N);

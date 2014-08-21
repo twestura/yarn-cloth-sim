@@ -12,6 +12,7 @@
 #include "Util.h"
 #include "Constants.h"
 #include "CrossSection.h"
+#include "Eigen/StdVector"
 
 /// A rod at a specific point in time. Data that can change between updates is stored here.
 class RodSnapshot {
@@ -20,9 +21,9 @@ private:
   /// valus.
   bool frozen = false;
   /// Stores v reference frame components when the rod is frozen (nEdges entries).
-  std::vector<Vec3e> frozV;
+  std::vector<Vec3e, Eigen::aligned_allocator<Vec3e>> frozV;
   /// Stores edges of the rod when the rod is frozen (nEdges entries).
-  std::vector<Vec3e> frozEdge;
+  std::vector<Vec3e, Eigen::aligned_allocator<Vec3e>> frozEdge;
   
   /// Calculate a 3-vector representing a rod edge for a given edge index.
   const Vec3e inline compEdge(std::size_t index) const {
@@ -189,11 +190,11 @@ private:
   /// The rest Voronoi lengths defined at each internal control point of the rod.
   std::vector<real> rvl;
   /// The rest curvature with respect to the previous edge (﻿﻿omega bar ^i _i)
-  std::vector<Vec2e> rcp;
+  std::vector<Vec2e, Eigen::aligned_allocator<Vec2e>> rcp;
   /// The rest curvature with respect to the next edge (omega bar ^i _i+1)
-  std::vector<Vec2e> rcn;
+  std::vector<Vec2e, Eigen::aligned_allocator<Vec2e>> rcn;
   /// The rest curvature defined at each internal control point of the rod.
-  std::vector<Vec2e> rc;
+  std::vector<Vec2e, Eigen::aligned_allocator<Vec2e>> rc;
   
   
 public:
@@ -207,7 +208,7 @@ public:
   /// by parallel transport through space. A vector of lumped masses may be optionally passed in;
   /// if it is null, all masses are set uniformly to 1kg.
   /// Young's and shear moduli may also be specified.
-  Rod(VecXe pos, Vec3e u0, VecXe* masses = nullptr,
+  Rod(const VecXe& pos, const Vec3e& u0, VecXe* masses = nullptr,
        real youngs = constants::youngsModulus, real shear = constants::shearModulus) :
   youngsModulus(youngs), shearModulus(shear), ndof(pos.rows()) {
     nCPs = ndof / 3;
@@ -279,8 +280,8 @@ public:
       invMass.sparse.setIdentity();
     }
     
-	Shape* s = new EllipsePleaseWork(constants::radius, constants::radius, youngsModulus, shearModulus);
-    cs = new CrossSection(s);
+    cs = new CrossSection(new cs::Ellipse(constants::radius, constants::radius,
+                                          youngsModulus, shearModulus));
   }
   
   // WARNING: The following methods are safe as long as curRS and nextRS are always allocated upon
@@ -369,7 +370,7 @@ protected:
   
 public:
   /// Construct the spline from 4 control points.
-  Spline(const Vec3e p0, const Vec3e p1, const Vec3e p2, const Vec3e p3) {
+  Spline(const Vec3e& p0, const Vec3e& p1, const Vec3e& p2, const Vec3e& p3) {
     p[0] = p0; p[1] = p1; p[2] = p2; p[3] = p3;
   }
 
